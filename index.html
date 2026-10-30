@@ -2432,11 +2432,12 @@ function damageKid(k,dmg){
   k.hp=Math.max(0,k.hp-dmg);k.flash=6;sfx('hurt');rumble(.45,140);floatText(...kidCenter(k),dmg,'#ff4d6d');
   if(k.hp===0){S.roster.filter(p=>p!==k&&!p.down&&p.charm==='token').forEach(p=>{heal(p,Math.round(p.hpMax*.25));log(`The Guardian Token glows. ${p.name} steadies.`)});sfx('ko');rumble(.9,320);k.down=true;k.ct=null;k.haste=0;k.powered=0;k.cd=0;k.disarmed=false;log(`${k.name} is down!`)}
 }
+const VIRTUE={lightheart:'Hope',scareth:'Courage',kaytahn:'Calm',thornforge:'Making',nightshade:'Memory'};
 function morph(k){
   if(S.ch.key==='embermaw'){k.burn=(k.burn||0)+1}
   k.powered=(S.ch.rusty?2:3)+(k.charm==='spark'?1:0);k.focused=false;if(k.charm==='watch')k.watchT=true;k.flash=14;sfx('morph');rumble(.35,260);k.voidUsed=false;if(k.id==='lightheart')k.unbreak=true;
   for(let i=0;i<3;i++)burst(...kidCenter(k),i?k.glint:'#fff',20);
-  floatText(...kidCenter(k),'MORPH!','#ffcc33');log(`METEOR POWER! ${k.kid} morphs into ${k.name}!`);
+  floatText(...kidCenter(k),'MORPH!','#ffcc33');log(`METEOR POWER! ${k.kid} morphs into ${k.name}!${VIRTUE[k.id]?` The light of ${VIRTUE[k.id]}!`:''}`);
 }
 function swapIn(slotIdx,nk){
   const old=S.slots[slotIdx];S.bench=S.bench.filter(x=>x!==nk);
@@ -2468,7 +2469,7 @@ function actionsFor(k){
     if(k.id==='lightheart')A.push({label:'Focus Strike',desc:evo('lightheart')?"Leader's Focus: heavier hit that also cuts a friend's cooldown":'Heavier hit that powers Inspire',run:async()=>{await hitBoss(k,k.atk*2.6,{label:'focus strikes'});if(!S.over&&evo('lightheart')){const t=S.roster.filter(p=>p!==k&&!p.down&&p.cd>0).sort((a,c)=>c.cd-a.cd)[0];if(t){t.cd--;if(kidPos(t))floatText(...kidCenter(t),'Focus!','#9fc0ff');log(`Leader's Focus: ${t.name}'s cooldown drops to ${t.cd}.`);renderStatus()}}}});
     if(k.id==='thornforge')A.push({label:'Reforge',desc:evo('thornforge')?"Master Reforge: rearm everyone and heat up friends' next hits":'Rearm every disarmed ally',disabled:!evo('thornforge')&&!S.roster.some(p=>p.disarmed),run:async()=>{S.roster.forEach(p=>{p.disarmed=false;if(evo('thornforge')&&p!==k&&!p.down)p.temper=true});burst(...kidCenter(k),'#ff9a3a',20);log(evo('thornforge')?'Master Reforge! Josh rearms the team and their weapons glow forge-hot.':'Enzayer hammers out new weapons for the whole team!');renderStatus()}});
     if(k.id==='nightshade')A.push({label:'Shadow Bolt',desc:evo('nightshade')?'Binding Bolt: dark magic that hexes and slows the boss':'Dark magic, good hex chance',run:async()=>{await hitBoss(k,k.mag*2.4,{magic:true,label:'casts Shadow Bolt at'});if(!S.over&&!S.transition&&evo('nightshade')){b.slow=Math.max(b.slow|0,1);floatText(BOSS_C[0],BOSS_C[1]-30,'Bound','#c88aff');renderStatus()}}});
-    if(!C.noMorph&&C.rusty&&!k.focused&&!k.stoneless)A.push({label:'Focus',desc:k.cd?`Cooling down: ${k.cd} turn${k.cd>1?'s':''}`:'Concentrate on your rusty stone. You can morph on your next turn.',disabled:k.cd>0,rank:.8,run:async()=>{k.focused=true;sfx('magic');if(kidPos(k))floatText(...kidCenter(k),'Focus...','#ffe89a');log(`${k.name} closes their eyes and reaches for the stone.`);renderStatus()}});
+    if(!C.noMorph&&C.rusty&&!k.focused&&!k.stoneless)A.push({label:'Focus',desc:k.cd?`Cooling down: ${k.cd} turn${k.cd>1?'s':''}`:`Reach for your light's virtue, ${VIRTUE[k.id]||'your stone'}. You can morph on your next turn.`,disabled:k.cd>0,rank:.8,run:async()=>{k.focused=true;sfx('magic');if(kidPos(k))floatText(...kidCenter(k),'Focus...','#ffe89a');log(`${k.name} closes their eyes and reaches for ${VIRTUE[k.id]||'the stone'}.`);renderStatus()}});
     else if(!C.noMorph)A.push({label:'Morph',desc:k.stoneless?'His stone was taken':k.cd?`Cooling down: ${k.cd} turn${k.cd>1?'s':''}`:`Become ${k.name} for ${(C.rusty?2:3)+(k.charm==='spark'?1:0)} turns`,disabled:k.cd>0||!!k.stoneless,morph:true,run:async()=>morph(k)});
   }else{
     if(k.id==='scareth'){
@@ -4586,25 +4587,25 @@ const PAGES={
   text:['No sightings in three weeks. The old observatory has been dark since the night of the meteor shower.'],letter:'Please come back. You can rest at our house.',
   react:()=>[['me','He just disappeared. Nobody ever found out why.']]},
  mem1:{n:10,part:2,ch:'ch13',where:'Hometown High',kind:'memory',find:'a sliver of crystal that hums when you touch it',title:'Memory: The Tower of Lights',
-  text:['Two moons hang over a city of white towers. Five lights burn at the very top of the tallest one.','Every night, the people climb the stairs just to sit near them. Nobody up there is ever alone.'],
-  react:()=>[['lightheart','Five lights. Those were our stones. That was home for them.']]},
+  text:['Two moons hang over a city of white towers. At the top of the tallest one, five lights burn in a circle around a sixth, a crimson light in the center that holds them together.','Every night, the people climb the stairs just to sit near them. Nobody up there is ever alone.'],
+  react:()=>[['lightheart','Five lights. Those were our stones. That was home for them.'],['nightshade','And a red one in the middle. Holding them together. That was Aldric\'s.']]},
  mem2:{n:11,part:2,ch:'ch14',where:'the Hollow',kind:'memory',find:'a sliver of crystal, warm as a hand',title:'Memory: The Keepers',
-  text:['Each light had a keeper, and no keeper ever stood alone.','Every night the five keepers met at the top of the tower and passed the lights between them, so no one held one for too long.'],
-  react:()=>[['nightshade','Passed between them. "They were meant to be given." That is what Aldric meant.']]},
+  text:['The lights always chose the young. Each keeper was a child who carried one virtue: Hope, Courage, Calm, Making, or Memory.','The Warden stood in the middle and held all five together, so no keeper ever stood alone. Every night they passed the lights between them, so no one held one for too long.'],
+  react:()=>[['nightshade','Passed between them. "They were meant to be given." That is what Aldric meant.'],['scareth','Wait. Courage? Mine is Courage? Not... scary?'],['nightshade','Courage, Joseph. Power over fear. Not fear itself.']]},
  mem3:{n:12,part:2,ch:'ch15',where:'the Mountain Forge mines',kind:'memory',find:'a sliver of crystal with frost on it',title:'Memory: The First Dark',
-  text:['One night, the sky over the white city went black. Not cloudy. Empty.','Something was eating the stars around Lumora, one by one, and it was getting closer.'],
+  text:['Long ago, the keepers sealed something hungry in the dark, and the five lights were the lock.','One night, the sky over the white city went black. Not cloudy. Empty. The seal was failing, and something was eating the stars around Lumora, one by one.'],
   react:()=>[['kaytahn','Something ate the stars around them. And we are the lights that got away.']]},
  mem4:{n:13,part:2,ch:'ch16',where:'the Hall of Mirrors',kind:'memory',find:'a sliver of crystal with a hairline crack',title:'Memory: Hidden Cracks',
-  text:['The keepers saw the cracks in their lights long before the dark came. They hid them from each other.','By the time they finally told the truth, the dark was already at the door.'],
-  react:()=>[['lightheart','They hid it too. Just like we did.']]},
+  text:['The keepers saw the cracks in their lights long before the dark came. They hid them from each other.','The Warden hid the deepest crack of all. By the time they finally told the truth, the dark was already at the door.'],
+  react:()=>[['lightheart','They hid it too. Just like we did.'],['nightshade','And the Warden hid the most. Like Aldric.']]},
  mem5:{n:14,part:2,ch:'ch17',where:'the Void Spire',kind:'memory',find:'a sliver of crystal, cold as ice',title:'Memory: The Voice Before the Dark',
-  text:['The dark sent a voice ahead of itself: a knight in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."'],
-  react:()=>[['nightshade',"He's been doing this a long time."]]},
+  text:['The dark sent a voice ahead of itself: a knight in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."','As the city fell, the keepers threw all six lights into the sky. Behind them, Lumora cracked and went dim, a red ember in the dark.'],
+  react:()=>[['nightshade',"He's been doing this a long time."],['kaytahn','A red ember. The Ember Star in the old telescope. That is Lumora.']]},
  last:{n:9,ch:'ch10',where:"the Knight's Keep",kind:'journal',find:'a page scratched out in crimson ink',title:'The last page',
   text:['If anyone finds this: I was wrong.',"The stone didn't break because I fought too much. It broke because I fought alone.",'If others come after me, tell them to share the weight.'],sign:'A.',
   react:()=>[['me','Share the weight. We will.']]}};
 function pageLines(id){const g=PAGES[id],L=[];
-  if(g.kind==='memory'){L.push(['','The crystal hums. For a moment, you see a place that is not Earth.']);g.text.forEach(t=>L.push(['',t]));return L}
+  if(g.kind==='memory'){L.push(['','The crystal hums. Lumoran script runs along its edge, and Tricia reads it aloud. For a moment, you see a place that is not Earth.']);g.text.forEach(t=>L.push(['',t]));return L}
   if(g.kind==='clip'){L.push(['',`Hometown Herald: "${g.title}"`]);g.text.forEach(t=>L.push(['',t]));if(g.note)L.push(['',`Someone wrote in the margin: "${g.note}"`]);if(g.letter)L.push(['',`A little girl's letter is printed below it: "${g.letter}"`])}
   else{if(g.kind==='ticket')L.push(['','A repair ticket from the Old Forge, written in a careful hand.']);g.text.forEach((t,i)=>L.push(['',`"${t}"${i===g.text.length-1&&g.sign?` Signed, ${g.sign}`:''}`]))}
   return L}
@@ -5327,7 +5328,7 @@ SCENES.ch13={pre:{label:'Chapter 13 · Five Years Later',steps:[
   {say:'scareth',text:"Ready? On three. Morph!"},
   {fx:'flash'},
   {say:'kaytahn',text:'...Nothing happened.'},
-  {say:'lightheart',text:"We're rusty. Remember how it felt in the hallway? Focus first. Then morph."},
+  {say:'lightheart',text:"We're rusty. Don't just reach for the stone. Reach for what it stands for. Focus first. Then morph."},
   {cap:'Five years off. Morphing takes Focus now: spend a turn concentrating, then morph on your next turn. Morphs last 2 turns.',top:true},
   {cap:'The MEGAPHONE breaks everyone\'s Focus. Focus right after he uses it.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 13 · Five Years Later',steps:[
@@ -5335,6 +5336,8 @@ SCENES.ch13={pre:{label:'Chapter 13 · Five Years Later',steps:[
   {unmorph:['scareth','lightheart','kaytahn']},
   {say:'lightheart',text:'Okay. I missed that. I really missed that.'},
   {say:'kaytahn',text:"Did anyone else feel it click at the end? Like it was never gone."},
+  {say:'nightshade',text:'Mine clicked when I remembered something. Literally. A memory.'},
+  {say:'scareth',text:'Mine clicked when I stopped being scared of it.'},
   {say:'scareth',text:"It's like riding a bike."},
   {say:'kaytahn',text:'A bike that shoots water.'},
   {say:'lightheart',text:'Same time next week?'},
@@ -5360,6 +5363,7 @@ SCENES.ch14={pre:{label:'Chapter 14 · The Hollow Returns',steps:[
   {say:'kaytahn',text:'Did you see that? Something took it.'},
   {say:'scareth',text:'Who collects evil glowing rocks?'},
   {say:'lightheart',text:"I don't know. But I know what Hart was right about."},
+  {say:'lightheart',text:"I kept thinking if I handled everything myself, nobody would get hurt. That's exactly how Aldric started."},
   {say:'lightheart',text:"Group chat. Every day. Even if it's just a dumb meme."},
   {say:'scareth',text:'Especially if it is a dumb meme.'},
   {fade:'out',ms:1200}]}};
@@ -5400,6 +5404,8 @@ SCENES.ch15={pre:{label:'Chapter 15 · Burning Out',steps:[
   {say:'scareth',text:"There's another test next month. There's only one of you, big sis."},
   {say:'kaytahn',text:'...Okay. I hear you.'},
   {say:'thornforge',text:'For the record, I have been saying that for weeks.'},
+  {say:'thornforge',text:"Also. This was my grandpa's forge, and the Guardian of Magma wasn't even here. We were. I used to think you could swap me out for anyone with a wrench."},
+  {say:'lightheart',text:'Nobody else fixes Lindsey\'s bike at midnight, Josh. You were never replaceable.'},
   {say:'kaytahn',text:'For the record, you are my boyfriend. You HAVE to say that.'},
   {say:'lightheart',text:'Also, my application is due at midnight. So I am going to go type very fast.'},
   {fade:'out',ms:1200}]}};
@@ -5427,6 +5433,8 @@ SCENES.ch16={pre:{label:'Chapter 16 · Cracks in the Armor',steps:[
   {cap:"Vane's shard blinks out. That makes three.",top:true},
   {say:'kaytahn',text:"So we're all cracking."},
   {say:'lightheart',text:'Then we crack together. Same as always.'},
+  {say:'scareth',text:'My crack? My shadow scares people. Sometimes it scares me.'},
+  {say:'kaytahn',text:'Your light is Courage, Joseph. Tricia read it to us. Not fear.'},
   {say:'scareth',text:"And Tricia? You're not turning into him. You're way cooler than him."},
   {say:'nightshade',text:'...Thanks, Joseph.'},
   {say:'kaytahn',text:'Oh my gosh.'},
