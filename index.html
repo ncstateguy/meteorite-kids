@@ -112,6 +112,17 @@ button.pad-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);o
 .mm-bar{flex:1;height:6px;background:#2a2440;border-radius:3px;overflow:hidden;max-width:90px}.mm-bar i{display:block;height:100%;background:#6a7ab8}
 .mm-bar.ready i{background:#7af0c8;animation:mmglow 1.4s ease-in-out infinite}.mm-n{color:#c8d0dc}
 @keyframes mmglow{50%{opacity:.55}}
+
+#netVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;image-rendering:pixelated;z-index:1}
+#netBody p{margin:8px 0}#netBody input{font:inherit;padding:6px 8px;background:var(--panel2);color:var(--fg);border:2px solid var(--line);border-radius:4px}
+.net-code{font-family:var(--display);font-size:34px;letter-spacing:6px;color:var(--accent);margin:6px 0}
+.net-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}.net-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:4px}
+.net-row select{font:inherit;background:var(--panel2);color:var(--fg);border:1px solid var(--line);padding:3px}
+.net-err{color:#ff8a9a}.net-on{border-color:#7af0c8!important;color:#7af0c8}
+body.net-guest #menu button,body.net-guest #battleUI button{pointer-events:none;opacity:.55}
+body.net-guest.net-myturn #btns button:not([disabled]){pointer-events:auto;opacity:1}
+body.net-guest.net-myturn .cmds{outline:2px solid #7af0c8;outline-offset:4px;border-radius:4px}
+body.net-guest #skipBtn,body.net-guest #exitBtn{display:none}
 </style>
 
 <div class="wrap">
@@ -123,11 +134,13 @@ button.pad-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);o
       <button class="mini" id="soundBtn" aria-pressed="true">Sound on</button>
       <label class="vol" title="Music volume">Music<input type="range" id="volMusic" min="0" max="100" step="5" aria-label="Music volume"></label>
       <label class="vol" title="Sound effects volume">Effects<input type="range" id="volSfx" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
+      <button class="mini" id="netBtn" title="Play online with friends">Online</button>
       <button class="mini" id="manualBtn">Manual</button>
       <button class="mini" id="exitBtn" hidden>Exit</button>
     </div>
   </header>
-  <div class="screen" id="screen"><canvas id="cv" width="512" height="288"></canvas>
+  <div class="screen" id="screen"><canvas id="cv" width="512" height="288"></canvas><video id="netVideo" muted autoplay playsinline hidden></video>
+    <div class="modal" id="netDlg" hidden><div class="modal-box" style="width:min(94%,560px)"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Play Online</h2><button id="netX">Close</button></div><div id="netBody"></div></div></div>
     <div class="cap" id="cap" hidden></div>
     <div class="modal" id="manualDlg" hidden><div class="modal-box" style="width:min(94%,760px);max-height:86vh;display:flex;flex-direction:column"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">How to Play</h2><button id="manualX">Close</button></div><div class="row" id="manualTabs" style="margin:10px 0"></div><div id="manualBody" style="overflow:auto;line-height:1.5"></div></div></div>
     <div class="modal" id="exitDlg" hidden><div class="modal-box"><h2>Exit game?</h2><p id="exitMsg"></p><div class="row"><button class="primary" id="exitYes">Save and exit</button><button id="exitDiscard">Exit without saving</button><button id="exitNo">Keep playing</button></div></div></div>
@@ -1950,7 +1963,7 @@ let FRAME_LAST=0,FRAME_ACC=0;
 function render(now){
   now=now||performance.now();const dt=FRAME_LAST?Math.min(100,now-FRAME_LAST):16.67;FRAME_LAST=now;FRAME_ACC+=dt;
   if(FRAME_ACC<16.2){requestAnimationFrame(render);return}FRAME_ACC=Math.min(FRAME_ACC-16.67,16.67);if(FRAME_ACC<0)FRAME_ACC=0;
-  T++;if(TITLE.active){renderTitle();requestAnimationFrame(render);return}if(CUT.active){renderCut();requestAnimationFrame(render);return}if(HUB.active){renderHub();requestAnimationFrame(render);return}const C=S.ch;BGS[C.bg]();applyLayout(C.bg);
+  if(NET.guest){requestAnimationFrame(render);return}T++;if(TITLE.active){renderTitle();requestAnimationFrame(render);return}if(CUT.active){renderCut();requestAnimationFrame(render);return}if(HUB.active){renderHub();requestAnimationFrame(render);return}const C=S.ch;BGS[C.bg]();applyLayout(C.bg);
   const b=S.boss;ctx.save();ctx.translate(0,BOSS_DY);
   if(C.key==='ch2')drawPins(b);
   if(C.drawExtra)C.drawExtra(b);
@@ -2485,11 +2498,11 @@ function actionsFor(k){
 function chooseAction(k){
   return new Promise(res=>{
     const show=(list,back)=>{
-      $('who').textContent=`${k.name}'s turn${k.powered?' · morphed':''}`;
+      $('who').textContent=`${k.name}'s turn${k.powered?' · morphed':''}`;NET.onTurn(k);
       $('btns').innerHTML='';
       list.forEach((a,i)=>{const bt=document.createElement('button');bt.id='cmd-'+i;bt.disabled=!!a.disabled;bt.innerHTML=`${a.label}<small>${a.desc}</small>`;
         if(a.special)bt.className='special';bt.onmouseenter=bt.onfocus=()=>renderTurnOrder(a.swapTo||a.morph?1:rankOf(a)*(k.watchT?.7:1));
-        bt.onclick=()=>{if(a.sub)return show(a.sub,list);$('btns').querySelectorAll('button').forEach(x=>x.disabled=true);res(a)};$('btns').appendChild(bt)});
+        bt.onclick=()=>{if(a.sub)return show(a.sub,list);$('btns').querySelectorAll('button').forEach(x=>x.disabled=true);NET.onTurn(null);res(a)};$('btns').appendChild(bt)});
       if(back){const bt=document.createElement('button');bt.id='cmd-back';bt.innerHTML='Back<small>Return to commands</small>';bt.onclick=()=>show(back,null);$('btns').appendChild(bt)}
     };
     show(actionsFor(k),null);renderTurnOrder(1);
@@ -2876,6 +2889,7 @@ function padStatus(text,ok){const el=$('padStatus');if(el){el.textContent=text;e
 window.addEventListener('gamepadconnected',e=>{PAD.active=true;PAD.index=e.gamepad.index;padStatus('Controller connected',true);navMode='pad';ensureFocus()});
 window.addEventListener('gamepaddisconnected',()=>{PAD.active=false;PAD.index=-1;padStatus('No controller')});
 function pollPad(){
+  if(NET.guest){requestAnimationFrame(pollPad);return}
   let pads=[];
   if(!PAD.blocked){try{pads=navigator.getGamepads?[...navigator.getGamepads()]:[]}catch(e){PAD.blocked=true;padStatus('Controller blocked here')}}
   const g=pads.find(p=>p&&p.connected);
@@ -5493,7 +5507,8 @@ const ENC={off:!!navigator.webdriver,skip:false,cv:null,ctx:null,shards:null,
   drawShard(sh,x,y,r,col,edge,alpha){const g=this.ctx;g.save();g.globalAlpha=alpha;g.translate(x,y);g.rotate(r);g.beginPath();sh.pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();
     g.fillStyle=col;g.fill();g.lineWidth=.7;g.strokeStyle=edge;g.stroke();g.restore()},
   async cover(kind,c){this.init();if(this.off||this.reduced()){this.active=false;return}
-    this.active=true;this.skip=false;const g=this.ctx,cv=this.cv,P=this.pal(kind),snap=document.createElement('canvas');snap.width=512;snap.height=288;snap.getContext('2d').drawImage($('cv'),0,0);
+    NET.share({t:'enc',p:'cover',kind,v:c.villain||'',ti:c.title||''});
+    this.active=true;this.skip=false;const g=this.ctx,cv=this.cv,P=this.pal(kind),snap=document.createElement('canvas');snap.width=512;snap.height=288;try{snap.getContext('2d').drawImage(NET.guest?$('netVideo'):$('cv'),0,0,512,288)}catch(e){}
     cv.style.display='block';g.setTransform(1,0,0,1,0,0);g.drawImage(snap,0,0);g.setTransform(2,0,0,2,0,0);
     const base=()=>{g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288);g.drawImage(snap,0,0);g.setTransform(2,0,0,2,0,0)};
     sfx(kind==='boss'?'meteor':'whoosh');
@@ -5517,10 +5532,135 @@ const ENC={off:!!navigator.webdriver,skip:false,cv:null,ctx:null,shards:null,
         g.font='700 11px "Pixelify Sans", monospace';g.fillStyle='#fff';g.fillText(name,128+bx,79);if(title){g.font='8px "Pixelify Sans", monospace';g.fillStyle='#c8d0dc';g.fillText(title,128+bx,94)}g.globalAlpha=1;g.textAlign='left';g.textBaseline='alphabetic'};
       sfx('confirm');await this.frames(1100,p=>banner(p,1))}
   },
-  async reveal(kind){if(!this.active)return;const g=this.ctx,S2=this.shards,P=this.pal(kind);this.skip=false;
+  async reveal(kind){NET.share({t:'enc',p:'reveal',kind});if(!this.active)return;const g=this.ctx,S2=this.shards,P=this.pal(kind);this.skip=false;
     await this.frames(520,p=>{g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288);g.setTransform(2,0,0,2,0,0);
       S2.forEach(sh=>{const d=sh.shade*.25,q=Math.max(0,Math.min(1,(p-d)/.75));const vy=q*q*170,vx=sh.ux*q*40;this.drawShard(sh,sh.cx+vx,sh.cy+vy,q*sh.rot,sh.shade<.5?P.base:P.lite,P.edge,1-q)})});
     g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288);this.cv.style.display='none';this.active=false;this.skip=false}};
+// ================= Online co-op =================
+// The host runs the real game. Guests watch a live video of the host's screen, hear the same music and
+// sound effects (played on their own device), see the battle panels mirrored, and pick moves on their kid's turn.
+// Connections go browser to browser through PeerJS. Nothing is stored online; saves stay with the host.
+const NET={host:false,guest:false,peer:null,code:'',conns:new Map(),players:[],owners:{},myId:'host',turnOwner:null,turnKid:null,last:{},timer:0,hostConn:null,
+  MIRROR:['cap','hubBanner','banter','dlg','menu','battleUI','chLabel'],
+  name(){try{return localStorage.getItem('mk-net-name')||''}catch(e){return ''}},
+  saveName(n){try{localStorage.setItem('mk-net-name',n)}catch(e){}},
+  opts(){const q=new URLSearchParams(location.search);const o={debug:0};if(q.get('peerhost'))Object.assign(o,{host:q.get('peerhost'),port:+(q.get('peerport')||9000),path:'/',secure:false});return o},
+  load(src){return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.crossOrigin='anonymous';sc.onload=res;sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc)})},
+  async libs(){if(!window.Peer)await this.load('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js');if(!window.DOMPurify)await this.load('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js')},
+  newCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<5;i++)c+=A[Math.floor(Math.random()*A.length)];return c},
+  pid(code){return 'meteorite-kids-'+code.toLowerCase()},
+  clean(n){return String(n||'').replace(/[^\w .'-]/g,'').trim().slice(0,16)||'Player'},
+  kids(){return HERO_IDS.filter(id=>{try{return heroUnlocked(id)}catch(e){return true}})},
+  playerName(id){const p=this.players.find(p=>p.id===id);return p?p.name:'Host'},
+  ownerOf(kid){return this.owners[kid]||'host'},
+  // ---------- sending ----------
+  send(conn,m){try{if(conn&&conn.open)conn.send(m)}catch(e){}},
+  share(m){if(!this.host)return;this.conns.forEach(c=>this.send(c,m))},
+  lobbyMsg(){return {t:'lobby',code:this.code,players:this.players,owners:this.owners,kids:this.kids()}},
+  pushLobby(){this.share(this.lobbyMsg());this.render()},
+  domState(id){const el=$(id);return el?{id,hidden:el.hidden,html:el.innerHTML}:null},
+  queueDom(){if(this.timer)return;this.timer=setTimeout(()=>{this.timer=0;this.flushDom(false)},70)},
+  flushDom(all,conn){this.MIRROR.forEach(id=>{const st=this.domState(id);if(!st)return;const key=st.hidden+'|'+st.html;if(!all&&this.last[id]===key)return;this.last[id]=key;conn?this.send(conn,{t:'dom',...st}):this.share({t:'dom',...st})})},
+  onTurn(k){if(!this.host)return;const owner=k?this.ownerOf(k.id):null;this.turnOwner=owner;this.turnKid=k?k.id:null;
+    if(k&&owner!=='host')$('who').textContent=`${k.name}'s turn · ${this.playerName(owner)} is choosing`;
+    this.share({t:'turn',owner,kid:this.turnKid})},
+  // ---------- hosting ----------
+  async startHost(){const nm=this.clean($('netName').value);this.saveName(nm);this.status('Opening a room...');
+    try{await this.libs()}catch(e){return this.status("Couldn't load the online tools. Check your internet connection.",true)}
+    const open=tries=>{this.code=this.newCode();const p=new Peer(this.pid(this.code),this.opts());
+      p.on('open',()=>{this.peer=p;this.host=true;this.myId='host';this.players=[{id:'host',name:nm}];this.owners={};this.watch();this.render();this.pill();
+        this.beat=setInterval(()=>{const now=Date.now();this.conns.forEach(c=>{if(now-(c._seen||now)>12000)c._gone&&c._gone();else this.send(c,{t:'ping'})})},3000)});
+      p.on('error',e=>{if(e.type==='unavailable-id'&&tries<4){p.destroy();open(tries+1)}else if(!this.host)this.status("Couldn't reach the matchmaking server. Try again in a minute.",true)});
+      p.on('connection',c=>this.addGuest(c))};
+    open(0)},
+  addGuest(c){c.on('open',()=>{if(this.players.length>=5){this.send(c,{t:'full'});setTimeout(()=>c.close(),300);return}
+      this.conns.set(c.peer,c);c._seen=Date.now();this.players.push({id:c.peer,name:'Joining...'});
+      this.send(c,{t:'hello',you:c.peer});this.flushDom(true,c);this.send(c,{t:'song',n:AU.song?AU.song.name:null});
+      this.send(c,{t:'turn',owner:this.turnOwner,kid:this.turnKid});this.pushLobby();
+      try{if(!this.stream){this.stream=$('cv').captureStream(30);this.stream.getVideoTracks().forEach(t=>{try{t.contentHint='detail'}catch(e){}})}this.peer.call(c.peer,this.stream)}catch(e){}});
+    c.on('data',m=>{c._seen=Date.now();this.fromGuest(c,m)});
+    const gone=()=>{if(!this.conns.has(c.peer))return;this.conns.delete(c.peer);this.players=this.players.filter(p=>p.id!==c.peer);
+      for(const k in this.owners)if(this.owners[k]===c.peer)delete this.owners[k];
+      if(this.turnOwner===c.peer)this.turnOwner='host';this.pushLobby();this.pill()};
+    c._gone=()=>{gone();try{c.close()}catch(e){}};c.on('close',gone);c.on('error',gone)},
+  fromGuest(c,m){if(!m||typeof m!=='object')return;const id=c.peer;
+    if(m.t==='pong'||m.t==='ping')return;if(m.t==='bye'){c._gone();return}if(m.t==='name'){const p=this.players.find(p=>p.id===id);if(p)p.name=this.clean(m.name);this.pushLobby();this.pill()}
+    else if(m.t==='claim'){if(this.kids().includes(m.kid)&&this.ownerOf(m.kid)==='host'){this.owners[m.kid]=id;this.pushLobby()}}
+    else if(m.t==='release'){if(this.owners[m.kid]===id){delete this.owners[m.kid];this.pushLobby()}}
+    else if(m.t==='pick'){if(this.turnOwner!==id||$('battleUI').hidden)return;const b=$('btns').querySelectorAll('button')[m.i|0];if(b&&!b.disabled)b.click()}},
+  watch(){const ob=new MutationObserver(()=>{if(this.conns.size)this.queueDom()});
+    this.MIRROR.forEach(id=>{const el=$(id);if(el)ob.observe(el,{subtree:true,childList:true,attributes:true,characterData:true})})},
+  stopHost(){clearInterval(this.beat);this.conns.forEach(c=>{this.send(c,{t:'bye'});c.close()});this.conns.clear();if(this.peer)this.peer.destroy();Object.assign(this,{host:false,peer:null,players:[],owners:{},code:''});this.pill();this.render()},
+  // ---------- joining ----------
+  async join(){const nm=this.clean($('netName').value);this.saveName(nm);const code=($('netCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(code.length!==5)return this.status('Room codes are 5 letters and numbers.',true);this.status('Connecting...');unlockAudio();
+    try{await this.libs()}catch(e){return this.status("Couldn't load the online tools. Check your internet connection.",true)}
+    const p=new Peer(undefined,this.opts());this.peer=p;
+    p.on('error',e=>{if(e.type==='peer-unavailable')this.status(`No room found for ${code}. Check the code with your host.`,true);else if(!this.guest)this.status("Couldn't connect. Try again in a minute.",true)});
+    p.on('call',call=>{if(call.peer!==this.pid(code))return;call.answer();call.on('stream',st=>{const v=$('netVideo');v.srcObject=st;v.play().catch(()=>{})})});
+    p.on('open',()=>{const c=p.connect(this.pid(code),{reliable:true});this.hostConn=c;this.code=code;
+      c.on('open',()=>{this.send(c,{t:'name',name:nm})});
+      c.on('data',m=>{this.seenHost=Date.now();this.fromHost(m)});
+      c.on('close',()=>this.hostLeft());})},
+  becomeGuest(){if(this.guest)return;this.guest=true;this.seenHost=Date.now();this.beat=setInterval(()=>{if(this.guest&&Date.now()-this.seenHost>12000)this.hostLeft()},2000);
+    addEventListener('pagehide',()=>this.send(this.hostConn,{t:'bye'}));document.body.classList.add('net-guest');$('netVideo').hidden=false;
+    TITLE.active=false;HUB.active=false;CUT.active=false;try{if(AU.song&&AU.song.stop)AU.song.stop()}catch(e){};
+    ['exitBtn','skipBtn'].forEach(id=>{const b=$(id);if(b)b.hidden=true});
+    $('battleUI').addEventListener('click',e=>{const b=e.target.closest('#btns button');if(!b||!this.guest||this.turnOwner!==this.myId)return;const i=[...$('btns').querySelectorAll('button')].indexOf(b);if(i>=0){this.send(this.hostConn,{t:'pick',i});document.body.classList.remove('net-myturn')}});
+    this.pill()},
+  fromHost(m){if(!m||typeof m!=='object')return;if(m.t==='ping'){this.send(this.hostConn,{t:'pong'});return}
+    if(m.t==='hello'){this.myId=m.you;this.becomeGuest();this.render()}
+    else if(m.t==='full'){this.status('That room is full (5 players max).',true)}
+    else if(m.t==='lobby'){this.players=(m.players||[]).map(p=>({id:String(p.id),name:this.clean(p.name)}));this.owners=m.owners||{};this.lobbyKids=m.kids||[];this.render();this.pill()}
+    else if(m.t==='dom'){if(!this.MIRROR.includes(m.id))return;const el=$(m.id);el.hidden=!!m.hidden;el.innerHTML=DOMPurify.sanitize(String(m.html||''));if(m.id==='battleUI')this.markTurn()}
+    else if(m.t==='turn'){const mine=m.owner===this.myId&&m.owner!==this.turnOwner;this.turnOwner=m.owner;this.markTurn();if(mine)this.remote(()=>sfx('confirm'))}
+    else if(m.t==='song'){this.remote(()=>{if(m.n)playSong(String(m.n))})}
+    else if(m.t==='sfx'){this.remote(()=>sfx(String(m.n)))}
+    else if(m.t==='enc'){if(m.p==='cover')ENC.cover(m.kind,{villain:this.clean2(m.v),title:this.clean2(m.ti)});else ENC.reveal(m.kind)}
+    else if(m.t==='bye')this.hostLeft()},
+  clean2(t){return String(t||'').slice(0,40)},
+  markTurn(){document.body.classList.toggle('net-myturn',this.guest&&this.turnOwner===this.myId)},
+  remote(fn){this._remote=true;try{fn()}finally{this._remote=false}},
+  hostLeft(){clearInterval(this.beat);if(!this.guest){this.status('Lost the connection to the host.',true);return}this.guest=false;document.body.classList.remove('net-guest','net-myturn');$('netVideo').hidden=true;
+    this.open();$('netBody').innerHTML='<p>The host ended the game or the connection dropped.</p><div class="row"><button class="primary" id="netReload">Back to my game</button></div>';$('netReload').onclick=()=>location.reload()},
+  leave(){if(this.peer)this.peer.destroy();location.reload()},
+  // ---------- UI ----------
+  pill(){const b=$('netBtn');if(!b)return;const on=this.host||this.guest;b.classList.toggle('net-on',on);b.textContent=on?`Online · ${this.code} · ${this.players.length}`:'Online'},
+  open(){$('netDlg').hidden=false;this.render()},
+  close(){$('netDlg').hidden=true},
+  status(t,err){const el=$('netStatus');if(el){el.textContent=t;el.className=err?'net-err':''}},
+  render(){const B=$('netBody');if(!B||$('netDlg').hidden)return;const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const okHere=/github\.io$|^localhost$|^127\./.test(location.hostname)||location.protocol==='file:';
+    if(!okHere&&!this.host&&!this.guest){B.innerHTML=`<p>Online play runs on the public version of the game, where friends can join without an account.</p><p><a href="https://ncstateguy.github.io/meteorite-kids/" target="_blank" rel="noopener" style="color:var(--accent)">Open the online version</a></p><p style="font-size:12px;opacity:.75">Saves there are separate from this copy.</p>`;return}
+    if(!this.host&&!this.guest){const nm=esc(this.name()||'');
+      B.innerHTML=`<p>Play together from different houses. One person hosts and everyone else joins with the room code. Each player picks which kids they control in battle.</p>
+        <p><label>Your name <input id="netName" maxlength="16" value="${nm}" placeholder="Player"></label></p>
+        <div class="row"><button class="primary" id="netHost">Host a game<small>Uses your save</small></button></div>
+        <p style="margin-top:14px"><label>Room code <input id="netCode" maxlength="5" size="7" style="text-transform:uppercase;letter-spacing:3px"></label> <button id="netJoin" style="display:inline-flex">Join</button></p>
+        <p id="netStatus"></p><p style="font-size:12px;opacity:.7">Works best on home Wi-Fi. Some school and work networks block online play.</p>`;
+      $('netHost').onclick=()=>this.startHost();$('netJoin').onclick=()=>this.join();$('netCode').onkeydown=e=>{if(e.key==='Enter')this.join()};return}
+    const kids=this.host?this.kids():(this.lobbyKids||[]);
+    const rows=kids.map(id=>{const nm=esc((KIDS[id]&&KIDS[id].name)||id),own=this.ownerOf(id);
+      if(this.host)return `<div class="net-row"><span>${nm}</span><select data-kid="${esc(id)}">${this.players.map(p=>`<option value="${esc(p.id)}"${p.id===own?' selected':''}>${esc(p.name)}${p.id==='host'?' (host)':''}</option>`).join('')}</select></div>`;
+      const mine=own===this.myId,free=own==='host';
+      return `<div class="net-row"><span>${nm} · <b>${esc(this.playerName(own))}</b></span>${mine?`<button data-rel="${esc(id)}">Give back</button>`:free?`<button data-claim="${esc(id)}">Claim</button>`:''}</div>`}).join('');
+    B.innerHTML=`<p>${this.host?'Share this room code with your friends:':'Connected to room'}</p><div class="net-code">${esc(this.code)}</div>
+      <p><b>Players</b></p><div class="net-list">${this.players.map(p=>`<div class="net-row"><span>${esc(p.name)}${p.id==='host'?' (host)':''}${p.id===this.myId?' · you':''}</span></div>`).join('')}</div>
+      <p><b>Who controls each kid in battle</b>${this.host?'':'<br><small>Kids the host controls are free to claim.</small>'}</p><div class="net-list">${rows}</div>
+      <p style="font-size:12px;opacity:.75">${this.host?'You walk the party and run cutscenes. Friends pick moves on their kids’ turns. If someone drops, their kids come back to you.':'The host walks the party. When it’s your kid’s turn in battle, the command buttons light up for you.'}</p>
+      <div class="row"><button id="netStop">${this.host?'Stop hosting':'Leave game'}</button></div><p id="netStatus"></p>`;
+    B.querySelectorAll('select[data-kid]').forEach(sel=>sel.onchange=()=>{const k=sel.dataset.kid;if(sel.value==='host')delete this.owners[k];else this.owners[k]=sel.value;this.pushLobby()});
+    B.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>this.send(this.hostConn,{t:'claim',kid:b.dataset.claim}));
+    B.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>this.send(this.hostConn,{t:'release',kid:b.dataset.rel}));
+    $('netStop').onclick=()=>this.host?this.stopHost():this.leave()}};
+$('netBtn').onclick=()=>NET.open();$('netX').onclick=()=>NET.close();
+// Guests: block input to their own idle copy of the game, except the online panel, header and command buttons.
+['keydown','click','pointerdown'].forEach(ev=>window.addEventListener(ev,e=>{if(!NET.guest)return;const t=e.target;if(t&&t.closest&&t.closest('#netDlg,header,#btns'))return;e.stopPropagation()},true));
+// Share music and sound effects. Guests ignore their own game's calls and play only what the host sends.
+{const _ps=playSong,_sf=sfx;
+  playSong=function(n){if(NET.guest&&!NET._remote)return;_ps(n);if(NET.host)NET.share({t:'song',n})};
+  sfx=function(n){if(NET.guest&&!NET._remote)return;_sf(n);if(NET.host&&n!=='text')NET.share({t:'sfx',n})}}
+
 
 // Each boss gets the last word when the team goes down.
 const TAUNTS={
