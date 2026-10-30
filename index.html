@@ -1847,6 +1847,63 @@ const CH17={key:'ch17',num:17,title:'The Herald',villain:'The Herald',bg:'woods'
   else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4));if(!t.down){if(t.powered){t.powered=Math.max(1,t.powered-1)}else t.cd=(t.cd||0)+1;log(`${t.name}'s stone dims. One more turn to wait.`)}}}
   b.aegis=!b.aegis;if(b.aegis)log('The Aegis of the Void rises around him.');else log('The Aegis of the Void falls away.');renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH17);
+// ================= Part 2 · Chapter 18: The Breaking =================
+// 18a, Side by Side: Bastion fights alone behind a Shield Wall that blocks most of every hit. Jake beats him the way
+// Bastion never learned: Call the Team. 18, The Breaking: the Herald, fought beside the Earth Guardians (one Team-Up
+// per kid), then past the limit, where only a Meteor Strike can finish him and the stones crack.
+function drawBastion(b,x0,y0){const f=NPCS.bastion.spr.armor[Math.floor(T/30)%2];ctx.save();ctx.translate(x0+46,y0+2);ctx.scale(-1.3,1.3);ctx.drawImage(f,0,0);ctx.restore();
+  if(b.wall){ctx.save();ctx.globalAlpha=.3+.12*Math.sin(T/10);ctx.fillStyle='#ffc860';ctx.fillRect(x0+4,y0+8,5,46);ctx.globalAlpha=.8;ctx.fillRect(x0+4,y0+8,1,46);ctx.restore()}}
+const CH18A={key:'ch18a',num:18,title:'Side by Side',villain:'Bastion',bg:'town',hp:640,age:'teen',part:2,music:'battle',
+ roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
+ intro:'The morning after the world learned their names, the Earth Guardians are waiting at the fountain. Bastion wants the kids out of the fight.',
+ tip:"Bastion's Shield Wall blocks most of every hit. He fights alone, so beat him the way he never learned: Jake can Call the Team.",
+ victory:'Bastion drops to one knee and lowers his shield. "...You asked them for help. Just like that."',
+ init(b){b.cycle=0;b.wall=true},draw:drawBastion,
+ chips(b){return [b.wall?{t:'Shield Wall: blocks 75%',w:true}:{t:'Shield Wall broken',o:true}]},
+ form(b){return b.wall?'Standing alone':'Shoulder to shoulder'},
+ onHit(b,k,dmg,m){if(b.wall){floatText(BOSS_C[0],BOSS_C[1]-30,'Shield Wall','#ffc860');return Math.round(dmg*.25)}return dmg},
+ extra(k){const b=S.boss;if(!b||!b.wall||k.id!=='lightheart')return [];
+  return [{label:'Call the Team',desc:"Stop carrying it alone. Every friend beside you strikes at once, and Bastion's wall breaks.",special:true,rank:.9,run:async()=>{
+   b.wall=false;sfx('shield');rumble(.6,300);floatText(BOSS_C[0],BOSS_C[1]-30,'WALL BROKEN','#ffc860');log('Jake: "Everybody, with me!"');
+   for(const o of activeAlive()){if(S.over||S.transition)break;await hitBoss(o,(o.powered?o.atk*2:o.atk)*2,{label:'charges in at'})}
+   if(!S.over)log('Bastion staggers. "...You asked them."');renderStatus()}}]},
+ async turn(b){b.cycle++;
+  if(b.cycle%3===0){log('Bastion slams his tower shield down. Rockfall on everyone!');floatText(BOSS_C[0],BOSS_C[1]-30,'ROCKFALL','#ffc860');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)))}
+  else{const t=pickTarget();if(t){log(`Shield Bash on ${t.name}!`);await lunge(b,-1);damageKid(t,11+rnd(3))}}
+  if(b.wall&&b.cycle%2===0)log('Bastion: "Face me alone, if you think you can."')}};
+const PARTNER={lightheart:'bastion',kaytahn:'tidewarden',thornforge:'emberwright',scareth:'gale',nightshade:'verdance'};
+const TEAMUP={
+ bastion:{desc:"Bastion plants his tower shield. Everyone takes half damage from the next hit.",run:async(k,b)=>{activeAlive().forEach(p=>{p.barrier=true;floatText(...kidCenter(p),'Shield','#ffc860')});sfx('shield');log('Bastion plants his tower shield in front of everyone.')}},
+ tidewarden:{desc:'Tidewarden sends a healing tide. Everyone recovers a quarter of their HP.',run:async(k,b)=>{activeAlive().forEach(p=>heal(p,Math.round(p.hpMax*.25)));sfx('heal');log('A cool tide rolls over the team.')}},
+ emberwright:{desc:'Emberwright brings his war hammer down with you. One huge hit.',run:async(k,b)=>{await hitBoss(k,(k.powered?k.atk*2:k.atk)*6,{label:'and Emberwright hammer'})}},
+ gale:{desc:"Ride Gale's wind: three fast strikes.",run:async(k,b)=>{for(let i=0;i<3&&!S.over&&!S.transition;i++)await hitBoss(k,(k.powered?k.atk*2:k.atk)*2,{label:"rides Gale's wind into"})}},
+ verdance:{desc:"Verdance pins the Aegis with a living arrow. It drops, and the Herald is hexed.",run:async(k,b)=>{b.aegis=false;b.hex=Math.max(b.hex|0,2);sfx('magic');floatText(BOSS_C[0],BOSS_C[1]-30,'Aegis pinned','#c8ff8a');log('A living arrow pins the Aegis open. Tricia hexes him through the gap.')}}};
+async function heraldBreak(){const b=S.boss;S.skipBoss=true;await sleep(600);await playCutscene(SCENES.ch18.p2);
+  Object.assign(b,{phase:2,hp:999,hpMax:999,hideHp:true,stun:0,aegis:false,gorged:0,cycle:0});S.roster.forEach(k=>{k.cd=0});playSong('finale');showBattleUI(true);renderStatus()}
+const CH18={key:'ch18',num:18,title:'The Breaking',villain:'The Herald',bg:'void',hp:1000,age:'teen',part:2,music:'herald',phased:true,phaseFn:()=>heraldBreak(),
+ roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
+ intro:"On the bridge of his ship, the Herald waits. This time the Earth Guardians stand beside you.",
+ tip:'Phase 1: each kid can Team-Up with their Guardian once. When the Herald Tithes, he heals but gorges himself and takes 50% more damage for two turns. Phase 2: your stones go past the limit. Morphing has no cooldown but costs HP. Only Meteor Strike can finish him.',
+ victory:'The Herald shatters into black glass. Five stones crack, and the sky goes quiet.',
+ init(b){b.cycle=0;b.aegis=false;b.phase=1;b.gorged=0},draw:drawHerald,drawOver:heraldGlow,
+ chips(b){return b.phase===1?[{t:b.aegis?'Aegis up: magic blocked':'Aegis down',w:b.aegis,o:!b.aegis},...(b.gorged>0?[{t:`Gorged ${b.gorged}: +50% damage`,o:true}]:[]),{t:'Phase 1 of 2',o:true}]:[{t:'Only Meteor Strike can finish him',w:true},{t:'Past the limit',o:true}]},
+ form(b){return b.phase===1?(b.gorged>0?'Gorged on guardian power':'Counting the lights'):'Feeding on the fallen'},
+ onHit(b,k,dmg,m){if(b.phase===2){floatText(BOSS_C[0],BOSS_C[1]-30,'He feeds on it','#7ae8e0');return 0}
+  if(b.aegis&&m.magic){sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Blocked','#7ae8e0');log('The Aegis of the Void swallows the spell.');return 0}return b.gorged>0?Math.round(dmg*1.5):dmg},
+ extra(k){const b=S.boss;if(!b||b.phase!==1)return [];const g=PARTNER[k.id];if(!g)return [];
+  return [{label:`Team-Up: ${NPCS[g].name}`,desc:k.teamUsed?'Already used this fight':TEAMUP[g].desc,disabled:!!k.teamUsed,special:true,rank:.9,run:async()=>{k.teamUsed=true;await TEAMUP[g].run(k,b);renderStatus()}}]},
+ async turn(b){b.cycle++;if(S.humbled>0)S.humbled--;
+  if(b.phase===2){log('The Herald drains the fallen Guardians and lashes out at everyone.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,8+rnd(3))}
+   S.roster.forEach(k=>{k.cd=0});renderStatus();return}
+  if(b.gorged>0)b.gorged--;
+  if(b.cycle%4===0){const h=Math.round(b.hpMax*.12);b.hp=Math.min(b.hpMax,b.hp+h);b.gorged=2;sfx('drain');floatText(BOSS_C[0],BOSS_C[1]-30,'+'+h,'#7ae8e0');
+   log("TITHE! The Herald drinks the Guardians' power and heals. He's gorged: he takes 50% more damage for 2 turns.")}
+  else if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)));S.humbled=2}
+  else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4));if(!t.down){if(t.powered){t.powered=Math.max(1,t.powered-1)}else t.cd=(t.cd||0)+1}}}
+  b.aegis=!b.aegis;log(b.aegis?'The Aegis of the Void rises around him.':'The Aegis of the Void falls away.');renderStatus()},
+ after(){playCutscene(SCENES.whatsLeft).then(()=>{progress.whatsLeft=true;saveProgress();showResult(true)})}};
+CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH18A,CH18);
+
 
 
 
@@ -2067,7 +2124,7 @@ function storyLevel(){const o=storyOrder();const i=o.findIndex(k=>!progress[k]);
 function expectedLevel(ch){const k=(ch.base&&ch.base.key)||ch.key;if(ch.E)return ch.E;const i=storyOrder().indexOf(k);return i<0?storyLevel():1+i}
 // Balance pass: bosses keep pace with how fast heroes grow (about 13% Attack and 12% HP per level at par),
 // a global damage bump keeps story fights tense, and the long gauntlets are trimmed so they don't drag.
-const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
+const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1,ch18a:1,ch18:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch18a:1.9,ch18:1.35,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
 const tuneKey=ch=>(ch.base&&ch.base.key)||ch.key;
 
 // ---- difficulty, guide arrow, and boss telegraphs ----
@@ -2079,6 +2136,8 @@ let GUIDE=true;try{GUIDE=localStorage.getItem('mk-guide')!=='off'}catch(e){}
 function toggleGuide(){GUIDE=!GUIDE;try{localStorage.setItem('mk-guide',GUIDE?'on':'off')}catch(e){}sfx('cursor');document.querySelectorAll('.guideBtn').forEach(b=>b.textContent=`Guide arrow: ${GUIDE?'On':'Off'}`)}
 // what a boss will do on its next turn, when that turn is a big one (shown on its card and in the turn strip)
 const BOSS_WARN={
+ ch18a:b=>b.cycle%3===2?'ROCKFALL hits everyone':'SHIELD BASH on one kid',
+ ch18:b=>b.phase===2?'He lashes out at everyone':(b.cycle+1)%4===0?'TITHE: he heals, then takes extra damage':(b.cycle+1)%3===0?'PROCLAMATION hits everyone':'MACE OF JUDGMENT on one kid',
  ch17:b=>(b.cycle+1)%3===0?'PROCLAMATION hits everyone and Humbles the team':'MACE OF JUDGMENT: one kid, plus a cooldown turn',
  ch16:b=>(b.cycle+1)%3===0?'"I NEED NO ONE": he hunts the weakest kid who has not confided':null,
  ch15:b=>b.heat+(S.rested?-1:1)>=5?'CINDER WAVE hits everyone (unless someone rests)':null,
@@ -2434,6 +2493,7 @@ function damageKid(k,dmg){
 }
 const VIRTUE={lightheart:'Hope',scareth:'Courage',kaytahn:'Calm',thornforge:'Making',nightshade:'Memory'};
 function morph(k){
+  if(S.ch.key==='ch18'&&S.boss&&S.boss.phase===2){const c=Math.round(k.hpMax*.1);k.hp=Math.max(1,k.hp-c);floatText(...kidCenter(k),'-'+c,'#ff8a8a');log(`${k.name}'s stone cracks a little more.`)}
   if(S.ch.key==='embermaw'){k.burn=(k.burn||0)+1}
   k.powered=(S.ch.rusty?2:3)+(k.charm==='spark'?1:0);k.focused=false;if(k.charm==='watch')k.watchT=true;k.flash=14;sfx('morph');rumble(.35,260);k.voidUsed=false;if(k.id==='lightheart')k.unbreak=true;
   for(let i=0;i<3;i++)burst(...kidCenter(k),i?k.glint:'#fff',20);
@@ -2499,7 +2559,7 @@ function actionsFor(k){
   if(allPow)A.push({label:'Meteor Strike',desc:'All three combine. Ends every morph.',special:true,run:async()=>{
     log('METEOR STRIKE! Three stones blaze as one.');sfx('meteor');rumble(1,700);
     for(const c of activeAlive().map(p=>p.glint).concat('#fff')){burst(BOSS_C[0],BOSS_C[1],c,24);await sleep(120)}
-    let dmg=Math.round(190*b.vuln*tinker()*(C.scripted?.05:1)*(activeAlive().some(p=>p.charm==='star')?1.25:1));if(C.key==='ch11'&&b.phase===3){S.finalDone=true;dmg=b.hp;log('The shard shatters under five stones at once!')}dmg=C.key==='ch6'&&b.copies.length?(b.copies=[],dmg):dmg;
+    let dmg=Math.round(190*b.vuln*tinker()*(C.scripted?.05:1)*(activeAlive().some(p=>p.charm==='star')?1.25:1));if(C.key==='ch11'&&b.phase===3){S.finalDone=true;dmg=b.hp;log('The shard shatters under five stones at once!')}else if(C.key==='ch18'&&b.phase===2){S.finalDone=true;dmg=b.hp;log('Five cracked stones blaze past every limit!')}dmg=C.key==='ch6'&&b.copies.length?(b.copies=[],dmg):dmg;
     b.hp-=dmg;b.flash=12;if(C.key==='ch2')b.pins=0;floatText(BOSS_C[0],BOSS_C[1]-14,dmg,'#ffcc33');
     activeAlive().forEach(p=>{p.powered=0;p.cd=cdFor(p);p.unbreak=false});renderStatus();if(b.hp<=0)win()}});
   return A;
@@ -2572,7 +2632,7 @@ async function battle(){
 }
 function win(){if(S.over)return;
   if(S.base&&S.base.stages&&S.stageIdx<S.base.stages.length-1){if(!S.transition)S.transition=nextStage().then(()=>{S.transition=null});return}
-  if(S.ch.phased&&!S.finalDone){if(!S.transition)S.transition=knightPhase().then(()=>{S.transition=null});return}
+  if(S.ch.phased&&!S.finalDone){if(!S.transition)S.transition=(S.ch.phaseFn||knightPhase)().then(()=>{S.transition=null});return}
   if(S.ch.final&&!S.finalDone){if(!S.transition)S.transition=finalPhase().then(()=>{S.transition=null});return}S.over=true;playSong('fanfare');lockMenu('Victory!');burst(BOSS_C[0],BOSS_C[1],'#ffcc33',40);log(`${BN()} is defeated!`);
   const B=S.base||S.ch;const first=!progress[B.key];progress[B.key]=true;if(B.key==='ch17')progress.reveal=true;saveProgress();setTimeout(async()=>{const sc=SCENES[B.key]&&SCENES[B.key].post;if(sc)await playCutscene(sc);S.ch=B;$('tut').hidden=true;await awardRewards(B,first);if(B.key==='ch11'){playFarewell();return}if(B.after)B.after();else showResult(true)},1100)}
 function lose(){if(S.over)return;if(S.itemsAtStart){P().items=JSON.parse(S.itemsAtStart);saveProgress()}if(S.ch.key==='patrol'&&HUB.down)HUB.down.delete(S.ch.zone);S.over=true;playSong('defeat');lockMenu('Defeat');log('The Meteorite Kids are knocked out.');setTimeout(()=>showResult(false),900)}
@@ -2962,7 +3022,7 @@ async function runStep(s){
       CUT.boss={C,b,alpha:s.ms?0:1,yo:s.yo||0};if(s.ms){sfx('whoosh');await animate(s.ms,p=>{CUT.boss.alpha=p})}
       if(s.drop){const B=CUT.boss;B.yo=-110;sfx('whoosh');await animate(s.drop,p=>{B.yo=-110*(1-p*p)});CUT.fx.shake=22;CUT.fx.flash=.7;sfx('meteor');rumble(1,500);burst(214,88,VOID,30);await csleep(500)}}}
   if(s.say){const id=s.say;CUT.speaker=id;const knight=id==='boss'&&(s.shard||(CUT.boss&&['ch7','ch11'].includes(CUT.boss.C.key)));
-    const nm=s.voice?(s.vname||'Aldric'):s.shard&&!CUT.boss?'???':id==='boss'?actorName('boss'):actorName(id),col=s.voice?'#f4efe6':knight?'#ff3a4a':SPEAKER_COLOR[id]||'var(--accent)';
+    const nm=s.name?s.name:s.voice?(s.vname||'Aldric'):s.shard&&!CUT.boss?'???':id==='boss'?actorName('boss'):actorName(id),col=s.name?(s.col||'#ffd0a0'):s.voice?'#f4efe6':knight?'#ff3a4a':SPEAKER_COLOR[id]||'var(--accent)';
     await typeLine(nm,col,s.text);CUT.speaker=null}
   if(s.cap){$('dlg').hidden=true;const c=$('cap');c.textContent=s.cap;c.style.top=s.top?'16%':'';c.hidden=false;if(!CUT.skip){await sleep(350);if(s.auto)await csleep(s.auto);else await cutWait()}c.hidden=true}
   if(s.morph){const ids=[].concat(s.morph);for(const id of ids){const a=CUT.actors[id];a.flash=16;sfx('morph');rumble(.3,200);for(let i=0;i<3;i++)burst(a.x+12,a.y+12,i?CHR(id).glint:'#fff',18);await csleep(220);a.form='armor';await csleep(380)}}
@@ -4040,6 +4100,11 @@ BANTER.push(
  {id:'i_t11',idle:true,era:'teen',lines:[['kaytahn','Josh fixed my car for free.'],['scareth',"He fixes everybody's car for free."],['thornforge','Hers I fix FIRST.']]},
  {id:'i_t12',idle:true,era:'teen',lines:[['lightheart','Oldest gets the front seat.'],['scareth','Youngest gets blamed for everything.'],['kaytahn','Middle kid. Nobody even remembers I am in the car.']]},
  {id:'i_t13',idle:true,era:'teen',lines:[['nightshade','Joseph, your shoe is untied.'],['scareth','I meant to do that.'],['nightshade','You trip over it every single time.'],['scareth','Every single time, on purpose.']]});
+BANTER.push(
+ {id:'a_sh_hold',area:'sh_hold',lines:[['thornforge','A spaceship. An actual spaceship.'],['emberwright','Focus, kid.']]},
+ {id:'a_sh_bridge',area:'sh_bridge',lines:[['kaytahn','Whatever happens up there, we do it together.'],['lightheart','Always.']]},
+ {id:'t_ch18a',town:true,era:'teen',when:()=>progress.ch18a&&!progress.ch18,lines:[['scareth','Grounded AND saving the world. Busy week.'],['nightshade','You love it.']]},
+ {id:'t_ch18',town:true,era:'teen',when:()=>progress.ch18,lines:[['lightheart','It is so quiet.'],['kaytahn','Quiet is good. Quiet is earned.']]});
 // Party banter: short lines that drift by in the corner while you explore. They never stop you, and each plays once.
 const BQ={q:[],cur:null,t:0,walk:0,next:2400,hold:0,townDone:false};
 function banterOK(b){if(b.town&&b.era&&(HUB.age||'kid')!==b.era)return false;if(HUB.state['bt_'+b.id])return false;if(b.era&&(HUB.age||'kid')!==b.era)return false;if(b.when&&!b.when())return false;return b.lines.every(([w])=>heroUnlocked(w))}
@@ -4118,7 +4183,7 @@ function bTarget(id){const b=BUILDINGS.find(x=>x.id===id);return {tx:b.door,ty:b
 function nextGoal(){
   if(HUB.area){const A=AREAS[HUB.area];return A&&A.goal?A.goal():null}
   if(!STORY)return null;const k=chapterOrder().find(k=>!progress[k]&&k!=='ch27');
-  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
+  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
   if(CHAPTERS.find(c=>c.key===k&&c.part===2)&&HUB.age!=='teen')return {text:'Part 2 happens five years later. Press the Era button to switch to the teens.'};
   const gate=HUB.state.gate,hedge=HUB.state.hedge,fixGate=["The crater is past the rusted gate in the southwest corner of town. Someone handy with tools could fix it.",{tx:12,ty:23}];
   const G={ch1:['Head to the School on the west side of town.',bTarget('school')],
@@ -4130,6 +4195,8 @@ function nextGoal(){
     ch7:gate?['Something feels wrong at the crater where it all began. Go see.',{tx:6,ty:26}]:fixGate,
     ch8:gate?["Follow the echo of Jake's stone into the Hollow, past the crater.",{tx:3,ty:21}]:fixGate,
     ch13:["Captain Cinder's Ashlings took over Hometown High. Head to the high school on the south side of town.",bTarget('high')],
+    ch18a:['The morning after. The whole world knows your names, and Mom wants everyone home. Head to the house.',bTarget('home')],
+    ch18:["The Herald's ship hangs over the crater. The Earth Guardians are waiting there. Head to the crater past the old gate.",{tx:6,ty:26}],
     ch17:['A black spire is rising out of the crater where the stones first fell. Head to the crater past the old gate.',{tx:6,ty:26}],
     ch16:['The museum\'s new Hall of Mirrors exhibit is locked from the inside. Something made of iron is in there.',bTarget('museum')],
     ch15:["Smoke is pouring out of the old mines under the Mountain Forge. Take the east road out of town.",{tx:38,ty:13}],
@@ -4184,6 +4251,7 @@ async function hubInteract(o){
   if(o.type==='door'){const b=o.b;
     if(b.id==='museum'&&HUB.age==='teen'&&progress.ch15){if(progress.ch16)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch16'),b.name)}
     if(b.id==='high'&&HUB.age==='teen'){if(progress.ch13)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch13'),b.name)}
+    if(b.id==='home'&&HUB.age==='teen'&&progress.ch17&&!progress.ch18a)return exitHubTo(CHAPTERS.find(c=>c.key==='ch18a'));
     if(HUB.age==='teen'){const t=teenDoor(b,L,me);if(t){await hubSay(t.lines);if(t.then)t.then();return}}
     if(b.id==='high'){await hubSay([['','Hometown High. It looks a lot smaller than it used to.']]);return}
     if(b.id==='forge'&&progress.ch4){await hubSay([['','The Old Forge. The furnace is already warm.'],[KIDS.thornforge.kid,L==='thornforge'?'Home sweet home. What are we making today?':'Come on in. Let\'s see what you brought me.',kidCol('thornforge')]]);openForge(L);return}
@@ -4194,6 +4262,7 @@ async function hubInteract(o){
       const lines={lightheart:"Joseph left his shoes in the hallway again. Classic little brother.",kaytahn:"Jake's hogging the bathroom and Joseph ate the last of the cereal. Typical.",scareth:"Jake and Lindsey think I can't keep a secret. I'm keeping the biggest one in town."};
       await hubSay(sib?[['','Home. The house smells like dinner.'],me(lines[L]),me('One day we are going to tell Mom about the stones. Maybe.')]:[['',"Jake, Lindsey, and Joseph's house. It smells like dinner in there."],me('Their mom always makes too much food. Not complaining.')])}
     else await hubSay([['','Nobody seems to be home.']]);return}
+  if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch7'&&progress.ch18a){const c=CHAPTERS.find(c=>c.key==='ch18');if(progress.ch18)await hubSay(TEEN_SIGNS.ch7(me));return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch7'&&progress.ch16){const c=CHAPTERS.find(c=>c.key==='ch17');if(progress.ch17)await hubSay(TEEN_SIGNS.ch7(me));return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch10'&&progress.ch14){const c=CHAPTERS.find(c=>c.key==='ch15');if(progress.ch15)await hubSay(TEEN_SIGNS.ch10(me));return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch8'&&progress.ch13){const c=CHAPTERS.find(c=>c.key==='ch14');if(progress.ch14)await hubSay(TEEN_SIGNS.ch8(me));return enterDungeon(c,o.name)}
@@ -5060,6 +5129,42 @@ Object.assign(AREAS,{
   objs:()=>[AEXIT(5,7,'mm_maze','fromVault'),SAVEPT(9,5),BOSSD('ch16',5,1,"Vane's Gallery",'Behind the last mirror, a knight of polished iron stands perfectly still, admiring himself.','Face him')],
   goal(){return progress.ch16?null:goalTo('Something made of iron waits in the gallery.',5,1)}}});
 
+
+// ================= The Herald's Ship (Chapter 18) =================
+// Each kid works with their mirrored Guardian. Pair panels need the kid's power; clear every pair in a room to open the way.
+DUNGEONS.ch18={scene:'ch18open',start:'sh_hold',name:"the Herald's ship",town:[6,27],enterText:"The Herald's ship hangs over the crater like a black blade.",againText:'The crater is quiet. Black glass glitters in the grass.'};
+const PAIR=(id,tx,ty,o)=>Object.assign({type:'pair',area:true,id,tx,ty,solid:true},o);
+Object.assign(AREAS,{
+ sh_hold:{name:"Herald's Ship · Hold",short:'the hold',ch:'ch18',theme:'void',tf:{z:'sh_a'},
+  rows:["#########D##########","#........z.........#","#..................#","#..c............c..#","#..................#","#..................#","#..................#","#..p............p..#","#..................#","#########E##########"],
+  spawns:{entry:[9,8,'up'],back:[9,2,'down']},
+  intro:()=>[['','Inside, the ship hums like a held breath. The Earth Guardians step in behind you.'],['Bastion','Pairs. Each of you with one of us.'],['nightshade','Like the keepers.']],
+  objs:()=>[AEXIT(9,9,'town'),AEXIT(9,0,'sh_core','fromHold'),
+    PAIR('sh_bulk',5,5,{g:'emberwright',grp:'sh_a',power:'heave',name:'Void Bulkhead',hint:'A slab of void metal blocks a hatch. Too heavy for one person.',
+     done:[['','Josh and Emberwright brace their shoulders against the bulkhead together.'],['Emberwright','On three. ...THREE!'],['','It groans, lifts, and slams aside.'],['me:thornforge','Not bad for a guy with a wrench.'],['Emberwright','Not bad for a kid who froze my vents.']]}),
+    PAIR('sh_fire',14,5,{g:'tidewarden',grp:'sh_a',power:'tide',name:'Void Fire',hint:'Void flames pour from a cracked conduit.',
+     done:[['','Lindsey calls the water, and Tidewarden shapes it into a wall that rolls over the flames.'],['Tidewarden','You were right. Saying it out loud helped.'],['me:kaytahn','Told you.']]})],
+  grpDone:[['','The seal on the hatch above flickers out.']],
+  enemies:[{id:'sh_p1',kind:'void',name:'Hold',bg:'void',y:7,x0:2,x1:16}],
+  goal(){const S2=aSt();if(S2.sh_a)return goalTo('The way deeper into the ship is open.',9,0);const nx=OBJS.find(o=>o.type==='pair'&&!S2[o.id]);return nx?goalTo(`${nx.name}. ${nx.hint}`,nx.tx,nx.ty):null}},
+ sh_core:{name:"Herald's Ship · Core",short:'the core',ch:'ch18',theme:'void',tf:{z:'sh_b'},
+  rows:["#########D##########","#........z.........#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#########E##########"],
+  spawns:{fromHold:[9,8,'up'],fromBridge:[9,2,'down']},
+  intro:()=>[['','At the heart of the ship, a cradle of void holds a suit of crimson armor. Empty. Still.'],['nightshade',"That's Aldric's armor. It was lying in the crater."],
+    ['The Herald',"The Warden's last spark. My master will want it."],['','A hand of void reaches down for the armor.'],['','For one heartbeat, the empty armor RISES. Its gauntlet comes up, and the void shatters against it.'],
+    ['','Then it settles back into the cradle, still again.'],['lightheart',"...He's still protecting us."]],
+  objs:()=>[AEXIT(9,9,'sh_hold','back'),AEXIT(9,0,'sh_bridge','fromCore'),
+    {type:'relicarmor',area:true,id:'sh_armor',tx:9,ty:4,name:"Aldric's Armor",solid:true},
+    PAIR('sh_gate',4,6,{g:'gale',grp:'sh_b',power:'swap',name:'Phase Gate',hint:'A gate of void flickers in and out. Someone has to slip through and open it from the other side.',
+     done:[['','Joseph swaps places with his own shadow on the far side, and Gale\'s wind holds the gate open while he pulls the lever.'],['Gale','Okay. That was brave. Not reckless.'],['me:scareth','See? You get it.']]}),
+    PAIR('sh_rune',15,6,{g:'verdance',grp:'sh_b',power:'hex',name:'Void Rune',hint:'A rune of void light twists across the floor, rewriting itself.',
+     done:[['','Tricia reads the rune aloud while Verdance pins it in place with a living arrow.'],['Verdance','Your magic is dark. And it is kind.'],['me:nightshade','Both can be true.']]})],
+  grpDone:[['','The last seal flickers out. Above, the bridge is waiting.']],
+  goal(){const S2=aSt();if(S2.sh_b)return goalTo('Climb to the bridge.',9,0);const nx=OBJS.find(o=>o.type==='pair'&&!S2[o.id]);return nx?goalTo(`${nx.name}. ${nx.hint}`,nx.tx,nx.ty):null}},
+ sh_bridge:{name:"Herald's Ship · Bridge",short:'the bridge',ch:'ch18',theme:'void',rows:bossRoom('south'),
+  spawns:{fromCore:[5,6,'up']},
+  objs:()=>[AEXIT(5,7,'sh_core','fromBridge'),SAVEPT(9,5),BOSSD('ch18',5,1,'The Bridge','On the bridge, the Herald turns from the window. Bastion steps up beside Jake without a word.','Step forward')],
+  goal(){return progress.ch18?null:goalTo('The Herald waits on the bridge.',5,1)}}});
 // ================= The Void Spire (Chapter 17) =================
 // Tricia's Hex grows into Bind: she freezes a moving thing in place. Time it so the void blade stops in the open.
 function learnBind(){progress.pw_bind=true;POWERS.nightshade.desc='Read runes, break curses, and freeze moving things in place';saveProgress()}
@@ -5160,6 +5265,11 @@ async function areaInteract0(o){const L=NET.actor||HUB.leader,S2=HUB.state;
     S2[o.id]=true;saveHub();learnFlare();sfx('morph');rumble(.8,500);for(let i=0;i<40;i++)HUB_PARTS.push({x:o.tx*TS+8,y:o.ty*TS+8,vx:(Math.random()-.5)*2.4,vy:(Math.random()-.5)*2.4,c:i%2?'#fff8d0':'#9fc0ff',l:40});AGROUND.key=null;buildAreaObjs();HUB.banner={s:'Glow grew into Flare!',t:150};
     return hubSay([['','The nest burns away to nothing, and the cafeteria lights flicker back on. Glow has grown into FLARE!'],['','(Flare burns through soot and can hit switches from far away. Look for things that are out of reach.)'],...sayLines([['kaytahn','Jake. Your stone. It has never done THAT before.'],['lightheart','I think it missed us too.']])])}
   if(o.type==='note')return hubSay(sayLines(o.lines));
+  if(o.type==='relicarmor')return hubSay(sayLines([['',"Aldric's crimson armor rests in the void cradle, empty and still."],['me','Thank you.']]));
+  if(o.type==='pair'){if(S2[o.id])return hubSay([['',`${NPCS[o.g].name} gives you a nod.`]]);if(L!==POWER_OWNER[o.power])return needPower(o);
+    await castPower(o);S2[o.id]=true;const A=AREAS[HUB.area],all=OBJS.filter(p=>p.type==='pair'&&p.grp===o.grp).every(p=>S2[p.id]);if(all)S2[o.grp]=true;
+    saveHub();AGROUND.key=null;buildAreaObjs();sfx('heal');for(let i=0;i<14;i++)HUB_PARTS.push({x:o.tx*TS+8,y:o.ty*TS+8,vx:(Math.random()-.5)*1.4,vy:-.4-Math.random(),c:NPCS[o.g].stone,l:40});
+    await hubSay(sayLines(o.done));if(all&&A&&A.grpDone)await hubSay(sayLines(A.grpDone));return}
   if(o.type==='blade'){if(S2[o.id])return hubSay([['','The void blade hangs frozen, wide open.']]);if(L!=='nightshade')return needPower(o);
     if(!progress.pw_bind){await hubSay(sayLines([['','The blade whips past, close enough to stir Tricia\'s hair.'],['me:nightshade','Stop. Just... STOP.'],['','Purple runes snap around the blade, and it freezes mid-spin.']]));learnBind();HUB.banner={s:'Hex grew into Hex and Bind!',t:150};
       await hubSay([['','Hex has grown into HEX AND BIND!'],['','(Bind freezes a moving thing in place. Time it right.)']])}
@@ -5220,6 +5330,10 @@ function drawAreaObj(o){const x=o.tx*TS,y=o.ty*TS,S2=HUB.state,A=AREAS[HUB.area]
   if(o.type==='mirror'){const sl=(S2['rot_'+o.id]?o.init!=='/':o.init==='/');px(x+6,y+12,4,3,'#5a5a78');ctx.save();ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.beginPath();if(sl){ctx.moveTo(x+2,y+12);ctx.lineTo(x+14,y+1)}else{ctx.moveTo(x+2,y+1);ctx.lineTo(x+14,y+12)}ctx.stroke();ctx.strokeStyle='#8ab8e8';ctx.lineWidth=1;ctx.stroke();ctx.restore();return}
   if(o.type==='eye'){const lit=S2.mm_lit;px(x+3,y+3,10,10,'#5a5a78');px(x+4,y+4,8,8,lit?'#fff8d0':'#8ac8e8');px(x+7,y+6,2,4,'#1a1a2a');if(lit||T%60<30)glow(x+8,y+8,10,lit?'#fff2c0':'#8ac8e8',.3);return}
   if(o.type==='lens'){px(x+7,y+8,2,7,'#8a6a2a');px(x+4,y+14,8,2,'#6a4a1a');px(x+4,y+3,8,7,'#c8a040');px(x+5,y+4,6,5,'#bfe2ff');px(x+11,y+5,3,3,'#c8a040');return}
+  if(o.type==='pair'){const done=S2[o.id],G=NPCS[o.g];px(x+1,y+2,14,12,'#14141c');px(x+2,y+3,12,10,done?'#2a3a3a':'#2a2a3a');px(x+1,y+2,14,1,done?G.stone:'#4ae8e0');
+    if(!done){glow(x+8,y+8,10,'#4ae8e0',.2);px(x+6,y+6,4,4,'#4ae8e0')}else px(x+6,y+6,4,4,G.stone);
+    ctx.drawImage(G.spr.armor[Math.floor((T+o.tx*7)/30)%2],x+10,y-26);return}
+  if(o.type==='relicarmor'){const a=NPCS.aldric.spr.armor[0];glow(x+8,y+4,16,'#ff3a2a',.18+.06*Math.sin(T/20));px(x-4,y+10,24,4,'#2a2a34');ctx.globalAlpha=.9;ctx.drawImage(a,x-4,y-18);ctx.globalAlpha=1;return}
   if(o.type==='blade'){const bound=S2[o.id],open=bound||bladeOpen();px(x+6,y+6,4,4,'#e8e4d8');const a=bound?0:T/3;ctx.save();ctx.translate(x+8,y+8);ctx.rotate(open?Math.PI/2:a);ctx.fillStyle='#4ae8e0';ctx.fillRect(-1,-9,2,18);ctx.fillStyle='#14141c';ctx.fillRect(-9,-1,18,2);ctx.restore();
     if(!open){glow(x+8,y+8,10,'#4ae8e0',.25)}if(bound){ctx.globalAlpha=.6;px(x+2,y+2,12,12,'#8a5ab8');ctx.globalAlpha=1}return}
   if(o.type==='cell'){const free=S2[o.id];px(x,y-6,16,20,'rgba(10,10,16,.85)');px(x,y-6,16,1,'#4ae8e0');px(x,y+13,16,1,'#4ae8e0');if(!free){ctx.globalAlpha=.85;ctx.drawImage(NPCS[o.g].spr.armor[0],x-4,y-14);ctx.globalAlpha=1;for(let i=1;i<16;i+=5)px(x+i,y-6,1,20,'#4ae8e0');glow(x+8,y+2,12,'#4ae8e0',.18)}else{px(x+3,y-3,10,14,'#2a2a34');px(x+6,y+3,4,1,'#e8e4d8')}return}
@@ -5481,6 +5595,97 @@ SCENES.ch17={pre:{label:'Chapter 17 · The Herald',steps:[
   {say:'nightshade',text:'Good. No more hiding anything.'},
   {cap:'That night, the whole world learned the Meteorite Kids\' names.',top:true},
   {fade:'out',ms:1400}]}};
+
+const G18=[L('bastion',150,58,{form:'armor',flip:true}),L('tidewarden',184,74,{form:'armor',flip:true}),L('emberwright',206,52,{form:'armor',flip:true}),L('verdance',170,92,{form:'armor',flip:true}),L('gale',216,86,{form:'armor',flip:true})];
+SCENES.ch18a={pre:{label:'Chapter 18 · The Breaking',steps:[
+  {fx:'reset'},{bg:'town',music:'town_fall'},...P2_KIDS,{fade:'in',ms:1000},
+  {cap:"The morning after. Jake, Lindsey, and Joseph's kitchen.",top:true},
+  {say:'mom',name:'Mom',text:'You told me you were at the LIBRARY. For FIVE YEARS.'},
+  {say:'scareth',text:'To be fair, we did go to the library once.'},
+  {say:'kaytahn',text:'Joseph.'},
+  {say:'mom',name:'Mom',text:'Do you know what it is like to find out your kids are superheroes from the six o\'clock news?'},
+  {say:'lightheart',text:"We didn't want you to worry."},
+  {say:'mom',name:'Mom',text:"I'm your mother. Worrying is my whole job."},
+  {say:'mom',name:'Mom',text:'...I am so proud of you. All five of you.'},
+  {say:'mom',name:'Mom',text:'You are also grounded. All five of you.'},
+  {say:'thornforge',text:"Wait, she can ground me? I don't even live here."},
+  {say:'mom',name:'Mom',text:'Josh, you eat dinner here four nights a week. Grounded.'},
+  {fade:'out',ms:700},{cap:'Later, at the fountain.',top:true},...G18,{music:'herald'},{fade:'in',ms:700},
+  {say:'bastion',text:"You did good in the spire. Now you're done. Go home."},
+  {say:'lightheart',text:"The Herald comes back in two days. You can't stop him alone."},
+  {say:'bastion',text:"We are Earth's guardians. This is our fight. Not five kids with cracked rocks."},
+  {say:'lightheart',text:'A friend of ours tried doing it alone once. It broke him.'},
+  {say:'bastion',text:'Then prove you are not dead weight.'},
+  {cap:"Bastion's Shield Wall blocks most of every hit. He fights alone. Jake can Call the Team.",top:true},{fx:'flash'}]},
+ post:{label:'Chapter 18 · The Breaking',steps:[
+  {bg:'town',music:'town_fall'},...P2_KIDS,...G18,{fade:'in'},
+  {say:'bastion',text:'You asked them for help. Just like that.'},
+  {say:'lightheart',text:'Every time. That is the whole trick.'},
+  {say:'tidewarden',text:'He has carried us for three years. He never asks for anything.'},
+  {say:'kaytahn',text:"You've been glaring at him this whole time. Say it out loud. It helps. Trust me."},
+  {say:'tidewarden',text:'...Fine. I am angry that he never listens.'},
+  {say:'bastion',text:'...Noted.'},
+  {say:'emberwright',text:'You froze my vents, kid.'},
+  {say:'thornforge',text:'You were overseas running yourself into the ground. Somebody had to.'},
+  {say:'gale',text:'I could have taken the Herald on my own.'},
+  {say:'scareth',text:"I used to say stuff like that too. Then I learned brave and reckless aren't the same thing."},
+  {say:'verdance',text:'Your magic feels like the dark.'},
+  {say:'nightshade',text:"It is. It's also mine. And it's on your side."},
+  {say:'bastion',text:"Two days. The Herald's ship will be back over the crater."},
+  {say:'bastion',text:'Side by side, then.'},
+  {say:'lightheart',text:'Side by side.'},
+  {cap:'The Earth Guardians will fight beside you. When you are ready, head to the crater.',top:true},{fade:'out',ms:1000}]}};
+SCENES.ch18open={label:'Chapter 18 · The Breaking',steps:[
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'herald'},...P2_KIDS,...G18,{fade:'in',ms:1000},
+  {cap:"Two days later. The Herald's ship hangs over the crater like a black blade.",top:true},
+  {say:'scareth',text:'Is it weird that I am kind of excited?'},
+  {say:'gale',text:'No. Same.'},
+  {say:'lightheart',text:'Stones are cracking. Every power costs a little more now. Make them count.'},
+  {fade:'out',ms:900}]};
+const BR_KIDS=[L('scareth',38,21,{age:'teen'}),L('lightheart',60,49,{age:'teen'}),L('kaytahn',38,77,{age:'teen'})];
+SCENES.ch18={pre:{label:'Chapter 18 · The Breaking',steps:[
+  {fx:'reset'},{bg:'void',music:'herald'},{boss:'ch18'},...BR_KIDS,L('bastion',96,40,{form:'armor'}),{fade:'in',ms:1000},
+  {say:'boss',text:'Children. And their wounded guardians. My master is listening. He wanted to see this.'},
+  {say:'bastion',text:'Then let him watch.'},
+  {say:'lightheart',text:'Side by side!'},
+  {cap:'Each kid can Team-Up with their Guardian once. When he Tithes, he heals, but he gorges himself and takes extra damage for two turns.',top:true},{fx:'flash'}]},
+ p2:{label:'Chapter 18 · Past the Limit',steps:[
+  {bg:'void',music:null},{boss:'ch18'},...BR_KIDS,L('bastion',96,40,{form:'armor'}),
+  {say:'boss',text:'Enough. THE TITHE OF ALL.'},{fx:'shake',n:22},{sfx:'clang'},
+  {cap:'Void chains rip the light out of every Guardian at once. They fall.',top:true},{fadeActor:'bastion',ms:900},
+  {say:'lightheart',text:"No. We're done watching people fall."},
+  {say:'lightheart',text:'Everyone. All five stones. Past the limit. For them.'},
+  {say:'nightshade',text:"Aldric said don't hold on. So we don't. We give it. All of it."},
+  {cap:'Phase 2: your stones are past the limit. Morphing has no cooldown, but every morph costs HP. Only Meteor Strike can finish him.',top:true},{music:'finale'}]},
+ post:{label:'Chapter 18 · The Breaking',steps:[
+  {bg:'void',music:null},...BR_KIDS.map(a=>Object.assign({},a,{form:'armor'})),{boss:'ch18'},{fade:'in'},
+  {fx:'flash'},{cap:'Five cracked stones blaze as one.',top:true},{fx:'shake',n:24},
+  {say:'boss',text:'The Unmaker will... you cannot...'},
+  {fx:'flash'},{boss:null,ms:900},{cap:'The Herald shatters into black glass.',top:true},
+  {fx:'crack',who:'lightheart'},{cap:'And all five stones crack straight through.',top:true},
+  {unmorph:['scareth','lightheart','kaytahn']},
+  {say:'kaytahn',text:"...It's still glowing. Barely."},
+  {say:'lightheart',text:'We gave it. Like he said.'},
+  {fade:'out',ms:1000},{fx:'reset'},{bg:'void',music:'vorath'},{boss:'vorath',ms:1400},{fade:'in',ms:1400},
+  {cap:'Far away, past the last cold stars, a single eye opens.',top:true},
+  {cap:'It searches for five bright lights. Where they used to burn, the sky is empty and dark.',top:true},
+  {fade:'out',ms:1600}]}};
+SCENES.whatsLeft={label:"Part 2 Epilogue · What's Left",steps:[
+  {fx:'reset'},{bg:'town',music:'town_fall'},...P2_KIDS,{fade:'in',ms:1200},
+  {cap:'Graduation day.',top:true},
+  {say:'lightheart',text:'Feels weird. Normal day. Normal stone.'},
+  {say:'kaytahn',text:'Mine still works if I concentrate really hard. For about ten seconds.'},
+  {say:'scareth',text:"Mine makes my shadow wave. That's it. That's the power now."},
+  {say:'nightshade',text:'It suits you.'},
+  {cap:'The Earth Guardians watch over the world now. The five go their separate ways: college, the forge, the rest of their lives.',top:true},
+  {say:'thornforge',text:'So. Movies Friday?'},
+  {say:'kaytahn',text:'Movies Friday.'},
+  {say:'scareth',text:'So... I have my license now. I could drive you somewhere.'},
+  {say:'nightshade',text:'...Maybe.'},
+  {say:'lightheart',text:'Our part is done.'},
+  {cap:'Or so they think.',top:true},
+  {cap:'END OF PART 2. Part 3, The Last Light, is coming.',top:true},
+  {fade:'out',ms:1600}]};
 async function startPart2(){if(progress.part2)return;HUB.active=false;await playCutscene(SCENES.part2);progress.part2=true;saveProgress();
   HUB.age='teen';HUB.area=null;HUB.map=townMap();HUB.x=19*TS+16;HUB.y=17*TS+8;HUB.fromHub=true;HUB.pendingBeat={text:'Part 2: Called Back. Five years later, the stones are back in action. Sort of.'};enterHub()}
 async function playFarewell(){await playCutscene(SCENES.farewell);progress.ch12=true;saveProgress();await playCutscene(SCENES.interlude);progress.interlude=true;saveProgress();if(STORY){HUB.fromHub=true;HUB.pendingBeat={text:'The Black Knight is gone, Aldric is at peace, and Hometown is safe. For now, the Meteorite Kids get to just be kids.'};await startPart2();return}if(HUB.fromHub)enterHub();else showChapters()}
