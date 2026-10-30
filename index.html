@@ -1664,7 +1664,7 @@ async function knightPhase(){
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch8')+1,0,CH9,CH10,CH11);
 BGS.hideout=bgHideout;BGS.keep=()=>bgKeep(false);BGS.keeptop=()=>bgKeep(true);
 
-// ================= Chapter 27 (key ch27): the three-phase final battle =================
+// ================= Chapter 24 (key ch27): the three-phase final battle =================
 const BN=()=>(S.boss&&S.boss.name)||S.ch.villain;
 // Phase 2: the Unmade, the ghastly spirit that pours out of Vorath's empty robes. Drawn translucent, over the outline pass.
 function drawWraith(b,x0,y0){
@@ -1710,7 +1710,7 @@ function bgVoid(){
   for(let x=10;x<256;x+=37){lineP(x,96,x+8,104,VOID);lineP(x+8,104,x+5,112,'#2a8a78')}
   for(let i=0;i<5;i++){const fx=20+i*52,fy=74+Math.round(Math.sin(T/30+i)*2);px(fx,fy,10,4,'#2a2042');px(fx+1,fy,8,1,'#4a3a6a')}
 }
-const CH27={key:'ch27',num:27,title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:700,final:true,solo:true,roster:['lightheart'],
+const CH27={key:'ch27',num:24,title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:700,final:true,solo:true,roster:['lightheart'],
  intro:'Part 3 finale. Carrying all five stones, Lightheart crosses the rift to the place where Lumora\'s ghost still hangs in the sky. Vorath is waiting.',
  tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Hexfire) hurt it. Call on your friends through their stones once per phase each.',
  victory:'Vorath is gone. The lights of Lumora live on in Earth\'s guardians, and five friends finally finished what a lost world started.',
@@ -3372,7 +3372,7 @@ ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
 };
 
 SCENES.ch27={
- pre:{label:'Chapter 27 · Two Worlds, One Light',steps:[
+ pre:{label:'Chapter 24 · Two Worlds, One Light',steps:[
   {bg:'void',music:'vorath'},{boss:'vorath'},{fade:'in',ms:1200},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {cap:"Beyond the rift, Lumora's cracked ghost still hangs in the sky.",top:true},
@@ -3381,7 +3381,7 @@ SCENES.ch27={
   {say:'boss',text:'Then I will unmake you the way I unmade them.'},
   {say:'nightshade',text:"Jake, we're with you. Every one of us."},
   {cap:'Phase 1: his crown of stolen stones shields him. Starfall Blade shatters the shards.',top:true}]},
- p2:{label:'Chapter 27 · Phase 2',steps:[
+ p2:{label:'Chapter 24 · Phase 2',steps:[
   {bg:'void',music:null},{boss:'vorath'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'boss',text:'You would unmake ME? I am the hunger at the end of every world!'},
@@ -3391,7 +3391,7 @@ SCENES.ch27={
   {say:'boss',text:'SO MANY WORLDS. SO MANY LIGHTS. ALL OF THEM INSIDE ME.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
   {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land.',top:true}]},
- p3:{label:'Chapter 27 · Phase 3',steps:[
+ p3:{label:'Chapter 24 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'boss',text:'I CANNOT BE UNMADE. I AM WHAT REMAINS WHEN EVERYTHING ENDS.'},
@@ -3403,7 +3403,7 @@ SCENES.ch27={
   {music:'seraph'},{fx:'pillars'},
   {cap:"The last light of Lumora pours into Earth's fallen guardians. Five pillars of light rise from the ground.",top:true},
   {cap:'Final phase: Two Worlds, One Light.',top:true}]},
- post:{label:'Chapter 27 · Two Worlds, One Light',steps:[
+ post:{label:'Chapter 24 · Two Worlds, One Light',steps:[
   {bg:'void',music:'seraph'},{fx:'pillars'},{fade:'in'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'lightheart',text:"It's over."},
