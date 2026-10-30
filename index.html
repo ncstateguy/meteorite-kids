@@ -5532,7 +5532,9 @@ const ENC={off:!!navigator.webdriver,skip:false,cv:null,ctx:null,shards:null,
         g.font='700 11px "Pixelify Sans", monospace';g.fillStyle='#fff';g.fillText(name,128+bx,79);if(title){g.font='8px "Pixelify Sans", monospace';g.fillStyle='#c8d0dc';g.fillText(title,128+bx,94)}g.globalAlpha=1;g.textAlign='left';g.textBaseline='alphabetic'};
       sfx('confirm');await this.frames(1100,p=>banner(p,1))}
   },
-  async reveal(kind){NET.share({t:'enc',p:'reveal',kind});if(!this.active)return;const g=this.ctx,S2=this.shards,P=this.pal(kind);this.skip=false;
+  hide(){try{const g=this.ctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288)}catch(e){}if(this.cv)this.cv.style.display='none';this.active=false;this.skip=false},
+  async reveal(kind){NET.share({t:'enc',p:'reveal',kind});if(!this.active)return;if(!this.shards){this.hide();return}try{await this._reveal(kind)}finally{this.hide()}},
+  async _reveal(kind){const g=this.ctx,S2=this.shards,P=this.pal(kind);this.skip=false;
     await this.frames(520,p=>{g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288);g.setTransform(2,0,0,2,0,0);
       S2.forEach(sh=>{const d=sh.shade*.25,q=Math.max(0,Math.min(1,(p-d)/.75));const vy=q*q*170,vx=sh.ux*q*40;this.drawShard(sh,sh.cx+vx,sh.cy+vy,q*sh.rot,sh.shade<.5?P.base:P.lite,P.edge,1-q)})});
     g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,288);this.cv.style.display='none';this.active=false;this.skip=false}};
@@ -5595,14 +5597,14 @@ const NET={host:false,guest:false,peer:null,code:'',conns:new Map(),players:[],o
   async join(){const nm=this.clean($('netName').value);this.saveName(nm);const code=($('netCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
     if(code.length!==5)return this.status('Room codes are 5 letters and numbers.',true);this.status('Connecting...');unlockAudio();
     try{await this.libs()}catch(e){return this.status("Couldn't load the online tools. Check your internet connection.",true)}
-    const p=new Peer(undefined,this.opts());this.peer=p;
+    if(this.peer){try{this.peer.destroy()}catch(e){}}const p=new Peer(undefined,this.opts());this.peer=p;
     p.on('error',e=>{if(e.type==='peer-unavailable')this.status(`No room found for ${code}. Check the code with your host.`,true);else if(!this.guest)this.status("Couldn't connect. Try again in a minute.",true)});
     p.on('call',call=>{if(call.peer!==this.pid(code))return;call.answer();call.on('stream',st=>{const v=$('netVideo');v.srcObject=st;v.play().catch(()=>{})})});
     p.on('open',()=>{const c=p.connect(this.pid(code),{reliable:true});this.hostConn=c;this.code=code;
       c.on('open',()=>{this.send(c,{t:'name',name:nm})});
       c.on('data',m=>{this.seenHost=Date.now();this.fromHost(m)});
       c.on('close',()=>this.hostLeft());})},
-  becomeGuest(){if(this.guest)return;this.guest=true;this.seenHost=Date.now();this.beat=setInterval(()=>{if(this.guest&&Date.now()-this.seenHost>12000)this.hostLeft()},2000);
+  becomeGuest(){if(this.guest)return;this.guest=true;this.seenHost=Date.now();this.beat=setInterval(()=>{if(this.guest&&Date.now()-this.seenHost>12000)this.hostLeft();if(ENC.cv&&ENC.cv.style.display!=='none'&&!this.encP&&Date.now()-(this.encAt||0)>8000)ENC.hide()},2000);
     addEventListener('pagehide',()=>this.send(this.hostConn,{t:'bye'}));document.body.classList.add('net-guest');$('netVideo').hidden=false;
     TITLE.active=false;HUB.active=false;CUT.active=false;try{if(AU.song&&AU.song.stop)AU.song.stop()}catch(e){};
     ['exitBtn','skipBtn'].forEach(id=>{const b=$(id);if(b)b.hidden=true});
@@ -5616,7 +5618,8 @@ const NET={host:false,guest:false,peer:null,code:'',conns:new Map(),players:[],o
     else if(m.t==='turn'){const mine=m.owner===this.myId&&m.owner!==this.turnOwner;this.turnOwner=m.owner;this.markTurn();if(mine)this.remote(()=>sfx('confirm'))}
     else if(m.t==='song'){this.remote(()=>{if(m.n)playSong(String(m.n))})}
     else if(m.t==='sfx'){this.remote(()=>sfx(String(m.n)))}
-    else if(m.t==='enc'){if(m.p==='cover')ENC.cover(m.kind,{villain:this.clean2(m.v),title:this.clean2(m.ti)});else ENC.reveal(m.kind)}
+    else if(m.t==='enc'){if(m.p==='cover'){this.encAt=Date.now();this.encP=ENC.cover(m.kind,{villain:this.clean2(m.v),title:this.clean2(m.ti)}).catch(()=>ENC.hide())}
+      else{const p=this.encP||Promise.resolve();this.encP=null;Promise.race([p,new Promise(r=>setTimeout(r,3000))]).then(()=>ENC.reveal(m.kind)).catch(()=>ENC.hide())}}
     else if(m.t==='bye')this.hostLeft()},
   clean2(t){return String(t||'').slice(0,40)},
   markTurn(){document.body.classList.toggle('net-myturn',this.guest&&this.turnOwner===this.myId)},
