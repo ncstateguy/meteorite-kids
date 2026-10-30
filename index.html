@@ -4022,7 +4022,7 @@ function toggleBanter(){BANTER_ON=!BANTER_ON;try{localStorage.setItem('mk_banter
 function hubBanners(){banterTick();const sv=$('hubSaved');if(HUB.saveFlash>0){HUB.saveFlash--;sv.hidden=false;sv.style.opacity=Math.min(1,HUB.saveFlash/20)}else sv.hidden=true;
    const bn=$('hubBanner');if(HUB.banner&&HUB.banner.t-->0){if(bn.textContent!==HUB.banner.s)bn.textContent=HUB.banner.s;bn.hidden=false;bn.style.opacity=Math.min(1,HUB.banner.t/20)}else bn.hidden=true;HUB.lastDraw=performance.now()}
 function hubUpdate(){
-  if(HUB.talking||HUB.choosing||HUB.saving){HUB.moving=false;return}
+  if(HUB.talking||HUB.choosing||HUB.saving||NET.busy){HUB.moving=false;return}
   updatePatrols();if(!HUB.active)return;NET.updateMates();
   let vx=0,vy=0;const k=HUB.keys;
   if(k.ArrowLeft||k.a)vx-=1;if(k.ArrowRight||k.d)vx+=1;if(k.ArrowUp||k.w)vy-=1;if(k.ArrowDown||k.s)vy+=1;
@@ -4143,7 +4143,7 @@ async function storyBeat(b){for(let i=0;i<60&&(HUB.talking||HUB.choosing||CUT.ac
   if(!b.replay&&g)HUB.banner={s:'New goal',t:140};updateHubHud();if(lines.length)await hubSay(lines)}
 function lockedLines(key,me){const L=LOCK_LINES[key]||["Something about this place feels wrong.","Not yet. The stones aren't ready."];return [['',L[0]],me(L[1])]}
 async function hubInteract(o){
-  if(!o||HUB.talking)return;if(o.area)return areaInteract(o);const L=NET.actor||HUB.leader,me=(t)=>[kidName(L),t,kidCol(L)];
+  if(!o||HUB.talking||(NET.busy&&!NET.inCall))return;if(o.area)return areaInteract(o);const L=NET.actor||HUB.leader,me=(t)=>[kidName(L),t,kidCol(L)];
   if(o.type==='door'){const b=o.b;
     if(b.id==='museum'&&HUB.age==='teen'&&progress.ch15){if(progress.ch16)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch16'),b.name)}
     if(b.id==='high'&&HUB.age==='teen'){if(progress.ch13)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch13'),b.name)}
@@ -5098,7 +5098,7 @@ async function pushBlock(o){const ptx=Math.floor(HUB.x/TS),pty=Math.floor((HUB.y
     return hubSay([['',`Josh shoves the ${o.name.toLowerCase()} into the gap. It drops in with a boom and fills it perfectly.`],[kidName('thornforge'),'Instant floor. You are welcome.',kidCol('thornforge')]])}
   if(!c||areaSolid(c,nx,ny)||OBJS.some(x=>x!==o&&x.solid&&x.tx===nx&&x.ty===ny))return hubSay([['',"It won't budge that way. (If it gets stuck, leave the room and come back to reset it.)"]]);
   o.tx=nx;o.ty=ny;BLKPOS[o.id]=[nx,ny];sfx('clang');rumble(.2,120)}
-async function areaInteract(o){const r=await areaInteract0(o);regroupCheck();return r}
+async function areaInteract(o){if(NET.busy&&!NET.inCall)return;const r=await areaInteract0(o);regroupCheck();return r}
 async function areaInteract0(o){const L=NET.actor||HUB.leader,S2=HUB.state;
   if(o.type==='gold')return openGold(o);
   if(o.type==='npc')return hubSay(sayLines(o.lines(L)));
@@ -5652,7 +5652,7 @@ const NET={host:false,guest:false,peer:null,code:'',conns:new Map(),players:[],o
     B.innerHTML=`<p>${this.host?'Share this room code with your friends:':'Connected to room'}</p><div class="net-code">${esc(this.code)}</div>
       <p><b>Players</b></p><div class="net-list">${this.players.map(p=>`<div class="net-row"><span>${esc(p.name)}${p.id==='host'?' (host)':''}${p.id===this.myId?' · you':''}</span></div>`).join('')}</div>
       <p><b>Who controls each kid in battle</b>${this.host?'':'<br><small>Kids the host controls are free to claim.</small>'}</p><div class="net-list">${rows}</div>
-      <p style="font-size:12px;opacity:.75">${this.host?'You lead the party and run cutscenes. Each friend walks their first kid around with you (not the kid you are leading as) and picks moves on their kids’ turns. If someone drops, their kids come back to you.':'Walk your kid with the arrow keys, WASD or a controller. Press Enter, Space or A to talk to people. If you wander off screen you get pulled back to the group. In battle, the command buttons light up on your kid’s turn.'}</p>
+      <p style="font-size:12px;opacity:.75">${this.host?'You lead the party and run cutscenes. Each friend walks their first kid around with you (not the kid you are leading as) and picks moves on their kids’ turns. If someone drops, their kids come back to you.':'Walk your kid with the arrow keys, WASD or a controller. Press Enter, Space or A to talk, open chests and use your kid’s power on things that need it. If you wander off screen you get pulled back to the group. In battle, the command buttons light up on your kid’s turn.'}</p>
       <div class="row"><button id="netStop">${this.host?'Stop hosting':'Leave game'}</button></div><p id="netStatus"></p>`;
     B.querySelectorAll('select[data-kid]').forEach(sel=>sel.onchange=()=>{const k=sel.dataset.kid;if(sel.value==='host')delete this.owners[k];else this.owners[k]=sel.value;this.pushLobby()});
     B.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>this.send(this.hostConn,{t:'claim',kid:b.dataset.claim}));
@@ -5662,10 +5662,20 @@ $('netBtn').onclick=()=>NET.open();$('netX').onclick=()=>NET.close();
 // ---- Co-op walking: each friend walks their own kid around town and dungeons on the host's screen ----
 Object.assign(NET,{mates:{},actor:null,busy:false,gk:new Set(),gp:new Set(),gpA:false,lastKeys:'',
   walkKid(pid){return PARTY_ORDER.find(id=>this.owners[id]===pid&&id!==HUB.leader&&(()=>{try{return heroUnlocked(id)}catch(e){return true}})())||null},
-  TALK:['npc','note'],
-  nearFor(m){let best=null,bd=999;OBJS.forEach(o=>{if(!this.TALK.includes(o.type))return;const ox=o.tx*TS+8,oy=o.ty*TS+10,d=Math.hypot(ox-m.x,oy-m.y);if(d<(o.reach||22)&&d<bd){bd=d;best=o}});return best},
+  DENY:['exit','door','sign','bossdoor','save'],
+  nearFor(m){let best=null,bd=999;OBJS.forEach(o=>{if(this.DENY.includes(o.type)||o.b)return;if(o.type==='chest'&&HUB.state['chest_'+o.id])return;if(o.type==='bird'&&HUB.state.bird)return;
+    const ox=o.tx*TS+8,oy=o.ty*TS+10,d=Math.hypot(ox-m.x,oy-m.y);if(d<(o.reach||22)&&d<bd){bd=d;best=o}});return best},
+  verbFor(o,kid){return o.type==='npc'?'Talk':o.power&&POWER_OWNER[o.power]===kid&&POWERS[kid]?POWERS[kid].name:'Check'},
+  // While a friend acts, their kid briefly takes the lead (camera, powers, pushes and jumps all use the leader), then swaps back.
+  async withMate(m,fn){const area0=(HUB.area||'town')+'|'+HUB.age,L0=HUB.leader,P0={x:HUB.x,y:HUB.y,face:HUB.face,dir:HUB.dir};
+    HUB.leader=m.kid;Object.assign(HUB,{x:m.x,y:m.y,face:m.face,dir:m.dir,target:null,keys:{}});m.kid=L0;Object.assign(m,P0);m.swapped=true;
+    try{this.inCall=true;const p=fn();this.inCall=false;await p}finally{this.inCall=false;
+      const act={x:HUB.x,y:HUB.y,face:HUB.face,dir:HUB.dir},actKid=HUB.leader,moved=((HUB.area||'town')+'|'+HUB.age)!==area0;
+      HUB.leader=m.kid;m.kid=actKid;m.swapped=false;
+      if(moved){Object.assign(HUB,act);[m.x,m.y]=this.spotNear(HUB.x,HUB.y);m.map=(HUB.area||'town')+'|'+HUB.age+'|'+(HUB.split?'s':'')}
+      else{Object.assign(HUB,{x:m.x,y:m.y,face:m.face,dir:m.dir});Object.assign(m,act)}}},
   spotNear(x,y){for(const [dx,dy] of [[-14,0],[14,0],[0,10],[0,-10],[-12,8],[12,8],[0,0]])if(!blocked(x+dx,y+dy))return [x+dx,y+dy];return [x,y]},
-  updateMates(){if(!this.host||!this.conns.size)return;const key=(HUB.area||'town')+'|'+HUB.age+'|'+(HUB.split?'s':''),[cx,cy]=HUB.cam||[0,0];
+  updateMates(){if(!this.host||!this.conns.size||this.busy)return;const key=(HUB.area||'town')+'|'+HUB.age+'|'+(HUB.split?'s':''),[cx,cy]=HUB.cam||[0,0];
     this.players.forEach(p=>{if(p.id==='host')return;const kid=this.walkKid(p.id);let m=this.mates[p.id];
       if(!kid){if(m){delete this.mates[p.id];this.send(this.conns.get(p.id),{t:'hint',txt:''})}return}
       if(!m){const [x,y]=this.spotNear(HUB.x,HUB.y);m=this.mates[p.id]={x,y,face:1,dir:'down',moving:false,keys:'',map:key,hint:''}}
@@ -5676,14 +5686,14 @@ Object.assign(NET,{mates:{},actor:null,busy:false,gk:new Set(),gp:new Set(),gpA:
       if(m.moving){vx/=len;vy/=len;const nx=m.x+vx*1.25,ny=m.y+vy*1.25;if(!blocked(nx,m.y))m.x=nx;if(!blocked(m.x,ny))m.y=ny;if(Math.abs(vx)>.2)m.face=vx<0?-1:1;m.dir=Math.abs(vy)>Math.abs(vx)*1.1?(vy<0?'up':'down'):'side'}
       // stay on the host's screen: anyone who drifts off gets pulled back to the leader
       if(m.x<cx+6||m.x>cx+250||m.y<cy+22||m.y>cy+143||blocked(m.x,m.y))[m.x,m.y]=this.spotNear(HUB.x,HUB.y);
-      const o=this.nearFor(m),txt=o?`Talk: ${o.name||'someone'}`:'';m.near=o;if(txt!==m.hint){m.hint=txt;this.send(this.conns.get(p.id),{t:'hint',txt})}})},
+      const o=this.nearFor(m),txt=o?`${this.verbFor(o,m.kid)}: ${o.name||'something'}`:'';m.near=o;if(txt!==m.hint){m.hint=txt;this.send(this.conns.get(p.id),{t:'hint',txt})}})},
   mateItems(items){if(!this.host)return;let i=1;for(const id in this.mates){const m=this.mates[id];if(!m.kid)continue;const n=i++;
     items.push([m.y+.4,()=>{drawWalker(m.kid,m.x,m.y,m.face,m.moving,n,m.dir);
-      ctx.font='bold 5px monospace';ctx.textAlign='center';const nm=m.name.slice(0,12);ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillText(nm,m.x+.5,m.y-33.5);ctx.fillStyle='#7af0c8';ctx.fillText(nm,m.x,m.y-34);ctx.textAlign='left';
+      const tx=m.swapped?HUB.x:m.x,ty=m.swapped?HUB.y:m.y;ctx.font='bold 5px monospace';ctx.textAlign='center';const nm=m.name.slice(0,12);ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillText(nm,tx+.5,ty-33.5);ctx.fillStyle='#7af0c8';ctx.fillText(nm,tx,ty-34);ctx.textAlign='left';
       if(m.near&&!HUB.talking){const by=m.y-44+Math.round(Math.sin(T/8+n));px(m.x-3,by,7,8,'#ffffff');px(m.x-1,by+1,2,4,'#2a9a7a');px(m.x-1,by+6,2,1,'#2a9a7a')}}])}},
   mateLights(cx,cy){return this.host?Object.values(this.mates).filter(m=>m.kid).map(m=>[m.x-cx,m.y-12-cy,28]):[]},
-  guestAct(id){if(HUB.talking){if(HUB.wait||HUB.typing)hubAdvance();return}if(!HUB.active||this.busy||Date.now()<(this.calmUntil||0))return;const m=this.mates[id];if(!m)return;const o=this.nearFor(m);if(!o)return;
-    this.actor=m.kid;this.busy=true;Promise.resolve(HUB.area?areaInteract(o):hubInteract(o)).catch(()=>{}).finally(()=>{this.actor=null;this.busy=false;this.calmUntil=Date.now()+500})},
+  guestAct(id){if(HUB.choosing||HUB.saving)return;if(HUB.talking){if(HUB.wait||HUB.typing)hubAdvance();return}if(!HUB.active||this.busy||Date.now()<(this.calmUntil||0))return;const m=this.mates[id];if(!m)return;const o=this.nearFor(m);if(!o)return;
+    this.actor=m.kid;this.busy=true;this.withMate(m,()=>HUB.area?areaInteract(o):hubInteract(o)).catch(()=>{}).finally(()=>{this.actor=null;this.busy=false;this.calmUntil=Date.now()+500})},
   // guest side: send walking keys and the talk button
   KEYMAP:{ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r',ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d'},
   pushKeys(){const k=[...new Set([...this.gk,...this.gp])].sort().join('');if(k!==this.lastKeys){this.lastKeys=k;this.send(this.hostConn,{t:'keys',k})}},
