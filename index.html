@@ -50,7 +50,9 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .card.bench{border-style:dashed}
 .card.down{opacity:.5}
 .card .nm{font-family:var(--display);font-size:17px;font-weight:600;display:flex;justify-content:space-between;gap:6px}
-.card .nm small{font-family:var(--body);font-size:11px;color:var(--muted);font-weight:400;align-self:center}
+.card .nm small{font-family:var(--body);font-size:10px;color:var(--muted);font-weight:400;align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.card .nm{flex-wrap:nowrap;align-items:center;font-size:14px;letter-spacing:-.3px}.card .nm>span{white-space:nowrap;flex-shrink:0}
+@media (max-width:760px){.card .nm{font-size:12.5px}.card .nm small{font-size:9.5px}}
 .form{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .form.pow{color:var(--accent)}
 .bar{height:8px;background:#000;border:1px solid var(--line)}
@@ -2364,7 +2366,7 @@ function kidCard(k,bench){
   if(k.burn)ch.push(`<span class="chip warn">Burnout ${k.burn}</span>`);if(k.caged)ch.push('<span class="chip warn">Caged</span>');if(k.stoneless)ch.push('<span class="chip warn">No stone</span>');
   if(k.guard>0)ch.push(`<span class="chip ok">Guard ${k.guard}</span>`);if(k.haste>0)ch.push(`<span class="chip ok">Haste ${k.haste}</span>`);if(k.held)ch.push('<span class="chip warn">Held</span>');if(S.silence>0&&k.seraph)ch.push('<span class="chip warn">Friends silenced</span>');
   if(k.focused)ch.push('<span class="chip ok">Focused</span>');if(S.ch.flicker&&!bench&&!k.down)ch.push(k.confided?'<span class="chip ok">Told the truth</span>':'<span class="chip warn">Hiding a flicker</span>');if(S.ch.tired&&!bench&&!k.down)ch.push('<span class="chip">Running on empty</span>');if(S.ch.lonely&&!bench&&!k.down&&!k.caged)ch.push(`<span class="chip ${(k.lonely|0)>=2?'warn':(k.lonely|0)?'':'ok'}">${(k.lonely|0)>=2?'Alone!':(k.lonely|0)?'Drifting 1/2':'Connected'}</span>`);if(k.temper)ch.push('<span class="chip ok">Tempered</span>');if(k.hammer)ch.push('<span class="chip ok">Forge-hot</span>');if(k.watchT)ch.push('<span class="chip ok">Quick</span>');if(k.charm==='resolve'&&!k.resolved&&!k.down)ch.push('<span class="chip ok">Resolve</span>');if(k.disarmed)ch.push('<span class="chip warn">Disarmed</span>');
-  return `<div class="card ${S.active===k?'active':''} ${bench?'bench':''} ${k.down?'down':''}"><div class="nm">${k.name}<small>${bench?'Bench':k.kid}${k.lv?' · Lv '+k.lv:''}</small></div>${form}
+  return `<div class="card ${S.active===k?'active':''} ${bench?'bench':''} ${k.down?'down':''}"><div class="nm"><span>${k.name}</span><small>${bench?'Bench':k.kid}${k.lv?' · Lv '+k.lv:''}</small></div>${form}
     <div class="bar"><i style="width:${100*k.hp/k.hpMax}%"></i></div><div class="hp">HP ${k.hp} / ${k.hpMax}</div>${morphMeter(k)}<div class="chips">${ch.join('')}</div></div>`;
 }
 function renderStatus(){renderTurnOrder();
