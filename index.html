@@ -1622,8 +1622,11 @@ async function nextStage(){
 const CH11={key:'ch11',num:11,title:'Meteor Strike',villain:'The Black Knight',bg:'keeptop',hp:700,music:'knight',phased:true,roster:['scareth','lightheart','kaytahn','thornforge','nightshade'],
  intro:"Lightheart has his stone back. On the roof of the Keep, under a crimson storm, the Black Knight comes for all five.",
  tip:'Phase 1: Stone Drain rips armor off anyone morphed. Phase 2: his armor cracks and he copies your powers. Phase 3: the shard heals any normal hit. Only a Meteor Strike breaks it, so get three kids morphed at once.',
- victory:'The armor shatters. Kneeling in the wreckage is an old man with a white beard, looking up at the stars.',
- init(b){b.phase=1;b.cycle=0;b.name='The Black Knight'},draw:drawKnight,drawOver:knightGlow,
+ victory:'The armor breaks open. Kneeling in the wreckage is an old man with a white beard, looking up at the stars.',
+ init(b){b.phase=1;b.cycle=0;b.name='The Black Knight'},draw:drawKnight,
+ extra(k){const b=S.boss;if(!b||b.phase!==3||k.id!=='nightshade')return [];
+  return [{label:'Reach Him',desc:b.reachCd>0?`Aldric needs a moment (${b.reachCd})`:'Speak to Aldric through your Memory light. He holds the shard back for a turn.',disabled:b.reachCd>0,rank:.8,special:true,run:async()=>{
+   b.hold=1;b.reachCd=3;sfx('magic');floatText(...kidCenter(k),'Reach','#e0a0ff');log('Moritania: "Aldric, I know you are in there. Hold on to us."');await sleep(500);log('A tired voice answers: "...I hear you..."');renderStatus()}}]},drawOver:knightGlow,
  chips(b){return b.phase===1?[{t:'Stone Drain ready',w:activeAlive().some(k=>k.powered)},{t:'Phase 1 of 3',o:true}]:b.phase===2?[{t:b.shield?'Stolen barrier up':'Stolen powers',w:!!b.shield},{t:'Phase 2 of 3',o:true}]:[{t:'Only Meteor Strike can break the shard',w:true},{t:'Phase 3 of 3',o:true}]},
  form(b){return b.phase===1?'Hunting the stones':b.phase===2?'Armor cracking':'Crimson Rage'},
  stunText:'The Black Knight staggers, the shard flickering.',
@@ -1642,7 +1645,8 @@ const CH11={key:'ch11',num:11,title:'Meteor Strike',villain:'The Black Knight',b
    else if(m===1){b.shield=1;sfx('shield');log('He raises a stolen Crest Barrier!')}
    else if(m===2){t.held=1;sfx('drain');log(`Stolen Void Hold! ${t.name} is frozen and will lose a turn.`);damageKid(t,6)}
    else{log(`Stolen Starfall Blade on ${t.name}!`);await bossDash(b);damageKid(t,18+rnd(4))}}
-  else{log('CRIMSON RAGE! The shard lashes out twice.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,9+rnd(3))}}
+  else{if(b.reachCd>0)b.reachCd--;if(b.hold){b.hold=0;sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Held back','#f4efe6');log('"Not... this time." Aldric holds the shard back. The Crimson Rage falters.');return}
+   log('CRIMSON RAGE! The shard lashes out twice.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,9+rnd(3))}}
  }};
 async function knightPhase(){
   const b=S.boss;S.skipBoss=true;await sleep(600);
@@ -2423,6 +2427,7 @@ function damageKid(k,dmg){
   if(k.id==='thornforge'&&S.boss.taunt>0)mult*=.7;
   dmg=Math.max(1,Math.round(dmg*mult));k.barrier=false;
   if(k.hp-dmg<=0&&S.roster.some(p=>p.unbreak&&!p.down)){k.hp=1;S.roster.forEach(p=>p.unbreak=false);sfx('shield');floatText(...kidCenter(k),'Unbreakable!','#9fc0ff');log(`Unbreakable! ${k.name} holds on with 1 HP.`);return}
+  if(k.hp-dmg<=0&&S.ch.key==='ch11'&&S.boss&&S.boss.phase>=2&&!S.boss.mercy&&k.hp>1){S.boss.mercy=true;dmg=k.hp-1;floatText(...kidCenter(k),'Held back','#f4efe6');log(`The greatsword stops an inch from ${k.name}. A tired voice: "...not this one."`)}
   if(k.hp-dmg<=0&&k.charm==='resolve'&&!k.resolved){k.resolved=true;k.hp=1;k.flash=6;sfx('shield');floatText(...kidCenter(k),'Resolve!','#ffcc33');log(`Shard of Resolve! ${k.name} refuses to go down.`);return}
   k.hp=Math.max(0,k.hp-dmg);k.flash=6;sfx('hurt');rumble(.45,140);floatText(...kidCenter(k),dmg,'#ff4d6d');
   if(k.hp===0){S.roster.filter(p=>p!==k&&!p.down&&p.charm==='token').forEach(p=>{heal(p,Math.round(p.hpMax*.25));log(`The Guardian Token glows. ${p.name} steadies.`)});sfx('ko');rumble(.9,320);k.down=true;k.ct=null;k.haste=0;k.powered=0;k.cd=0;k.disarmed=false;log(`${k.name} is down!`)}
@@ -2955,7 +2960,9 @@ async function runStep(s){
     else{const C=CHAPTERS.find(c=>c.key===s.boss)||EXTRA_BOSSES[s.boss];const b={hp:1,hpMax:1,stun:0,vuln:1,hex:0,taunt:0,fear:0,ox:0,flash:0};C.init(b);if(s.state)Object.assign(b,s.state);
       CUT.boss={C,b,alpha:s.ms?0:1,yo:s.yo||0};if(s.ms){sfx('whoosh');await animate(s.ms,p=>{CUT.boss.alpha=p})}
       if(s.drop){const B=CUT.boss;B.yo=-110;sfx('whoosh');await animate(s.drop,p=>{B.yo=-110*(1-p*p)});CUT.fx.shake=22;CUT.fx.flash=.7;sfx('meteor');rumble(1,500);burst(214,88,VOID,30);await csleep(500)}}}
-  if(s.say){const id=s.say;CUT.speaker=id;await typeLine(id==='boss'?actorName('boss'):actorName(id),SPEAKER_COLOR[id]||'var(--accent)',s.text);CUT.speaker=null}
+  if(s.say){const id=s.say;CUT.speaker=id;const knight=id==='boss'&&(s.shard||(CUT.boss&&['ch7','ch11'].includes(CUT.boss.C.key)));
+    const nm=s.voice?(s.vname||'Aldric'):s.shard&&!CUT.boss?'???':id==='boss'?actorName('boss'):actorName(id),col=s.voice?'#f4efe6':knight?'#ff3a4a':SPEAKER_COLOR[id]||'var(--accent)';
+    await typeLine(nm,col,s.text);CUT.speaker=null}
   if(s.cap){$('dlg').hidden=true;const c=$('cap');c.textContent=s.cap;c.style.top=s.top?'16%':'';c.hidden=false;if(!CUT.skip){await sleep(350);if(s.auto)await csleep(s.auto);else await cutWait()}c.hidden=true}
   if(s.morph){const ids=[].concat(s.morph);for(const id of ids){const a=CUT.actors[id];a.flash=16;sfx('morph');rumble(.3,200);for(let i=0;i<3;i++)burst(a.x+12,a.y+12,i?CHR(id).glint:'#fff',18);await csleep(220);a.form='armor';await csleep(380)}}
   if(s.ascend){const a=CUT.actors[s.ascend];a.flash=30;F0=CUT.fx;F0.flash=1;F0.shake=20;sfx('meteor');rumble(1,700);
@@ -3193,16 +3200,22 @@ farewell:{label:"Chapter 12 · Farewell",steps:[
   {say:'aldric',text:'Thank you. You did what I never could. You let each other carry the weight.'},
   {say:'lightheart',text:"We couldn't have done it alone."},
   {say:'aldric',text:"Then listen closely. The shard showed me things, and I don't have long."},
+  {say:'aldric',text:'My stone was the sixth light. The Warden. It was never meant to fight. It was meant to hold five lights together.'},
+  {say:'aldric',text:'I never found my five. I tried to be all of them, and it broke me. You are the team I should have had.'},
   {say:'aldric',text:'Your stones came from a world called Lumora. They were its lights. The one who burned it is still out there, and he remembers the stones that got away.'},
   {say:'aldric',text:'He never comes all at once. First comes a herald. When you hear his voice, know that his master is listening.'},
   {say:'aldric',text:'This world has guardians of its own, sleeping deep in the ground. Guard it until they wake, then let them guard it.'},
   {say:'aldric',text:"These stones were never meant to last forever. They were meant to be given. When that day comes, don't hold on the way I did."},
   {say:'aldric',text:'If the light ever runs low, go back to where it fell.'},
   {say:'aldric',text:'And you, Lightheart. Your stone remembers being taken. One day it will carry all of you.'},
+  {move:'nightshade',x:132,ms:900},
+  {say:'nightshade',text:"You don't have to carry it anymore. We've got it."},
   {say:'kaytahn',text:'Aldric?'},
+  {say:'aldric',text:'See that faint red star? That is what is left of Lumora. Someday you will know why it matters.'},
   {say:'aldric',text:'The stars look just like the night I found my stone. I think I can finally rest.'},
   {fadeActor:'aldric',ms:2600,dust:true},
   {cap:'Aldric passed away at peace, smiling. His shard crumbled into crimson dust that drifted up like sparks.',top:true},
+  {cap:'Down in the crater, his empty armor lay still, as if it were standing guard.',top:true},
   {fx:'signal'},
   {cap:'Far out in space, a strange signal flickered once, then went quiet.',top:true},
   {fade:'out',ms:1500}]},
@@ -3267,6 +3280,8 @@ ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
   {say:'boss',text:'So the stones gathered themselves in one place. How generous.'},
   {say:'lightheart',text:'Who are you?'},
   {say:'boss',text:'The first. And the last thing you will ever face.'},
+  {say:'boss',voice:'aldric',vname:'???',text:'...Run. Please.'},
+  {say:'boss',text:'Silence.'},
   {say:'nightshade',text:"That feeling, the one from my magic... it's coming from him."},
   {say:'lightheart',text:'Everyone, together!'},{fx:'flash'}]},
  post:{label:'Chapter 7 · The Knight Arrives',steps:[
@@ -3275,6 +3290,8 @@ ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
   {say:'kaytahn',text:'Jake! Are you okay?'},
   {say:'lightheart',text:"He took it. I can't feel it anymore... no, wait. I can. Just barely. Like an echo."},
   {say:'nightshade',text:"Then it's still connected to you. We can follow that."},
+  {say:'thornforge',text:'He had all five of us right there. Why only take one?'},
+  {say:'nightshade',text:'And right before, his voice changed. Like someone else was telling us to run.'},
   {say:'thornforge',text:'Then we go get it back.'},
   {say:'scareth',text:'All of us.'},
   {cap:'To be continued in Chapter 8: Without Light.'},
@@ -3515,6 +3532,7 @@ SCENES.ch8={pre:{label:'Chapter 8 · Without Light',steps:[
   {say:'lightheart',text:'Every time one of us got caged, somebody came for them.'},
   {say:'thornforge',text:"That's the whole trick, isn't it? Nobody fights alone."},
   {say:'nightshade',text:"That lantern felt sad. Like it was made out of someone's memory."},
+  {say:'lightheart',text:"And the memories I keep seeing through my stone... it's like someone wants me to see them."},
   {cap:"Two more lieutenants wait in the Knight's Keep.",top:true}]}};
 SCENES.shardborn={label:'Preview · The Shard-Born',steps:[
   {bg:'woods',woods:{red:true,crater:false},music:'knight'},{fade:'in',ms:900},
@@ -3536,6 +3554,7 @@ SCENES.ch9={pre:{label:'Chapter 9 · The Red Hero',steps:SCENES.redhero.steps.co
   {cap:'The dreams lead them to a hidden room beneath the old observatory.',top:true},
   {say:'nightshade',text:"These runes are his. Aldric. He was the first one the meteorite ever chose."},
   {say:'lightheart',text:'The man from my dreams.'},
+  {say:'nightshade',text:'He sent those dreams, Jake. Part of him wanted us to find this place.'},
   {boss:'ch9',ms:1500},
   {cap:'A red echo of the hero he used to be rises to guard the room.',top:true},
   {say:'boss',text:'No one else has to be in danger. I can do this alone.'},
@@ -3543,6 +3562,7 @@ SCENES.ch9={pre:{label:'Chapter 9 · The Red Hero',steps:SCENES.redhero.steps.co
   {say:'nightshade',text:'Then we show it what he never had.'},{fx:'flash'}])},
  post:{label:'Chapter 9 · The Red Hero',steps:[
   {bg:'hideout'},...HIDE_KIDS,{fade:'in'},
+  {say:'kaytahn',text:'The Red Hero. The one on the mural by the fountain. It was him the whole time.'},
   {say:'nightshade',text:'The cage. The burnout. The armor that needed no one. The lieutenants are all pieces of him.'},
   {say:'thornforge',text:"Then the Knight isn't just a monster. He's somebody who got lost."},
   {say:'lightheart',text:"Then we don't just beat him. We bring him back."},
@@ -3570,12 +3590,16 @@ SCENES.ch10={pre:{label:"Chapter 10 · The Knight's Keep",steps:[
   {fx:'returnStone',who:'lightheart'},
   {say:'lightheart',text:'I can feel it again. All the way.'},
   {say:'kaytahn',text:'Welcome back, Jake.'},
+  {say:'boss',voice:'aldric',text:'Good... keep it close this time... before I...'},
+  {say:'boss',shard:true,text:'Climb, children. The roof is waiting.'},
+  {say:'nightshade',text:'That first voice was Aldric. He keeps fighting it.'},
   {cap:'Above the Keep, a crimson storm gathers. The Black Knight is coming.',top:true}]}};
 const ROOF_KIDS=[L('scareth',38,28),L('lightheart',60,56),L('kaytahn',38,84),L('thornforge',90,82),L('nightshade',96,40)];
 SCENES.ch11={pre:{label:'Chapter 11 · Meteor Strike',steps:[
   {bg:'keeptop',music:'knight'},...ROOF_KIDS,{fade:'in',ms:900},
   {boss:'ch11',ms:1500},{fx:'shake',n:16},
   {say:'boss',text:'You took back one stone. I will take all five.'},
+  {say:'boss',text:'Something is coming for this world. Only the shard, made whole, can stand against it.'},
   {say:'lightheart',text:'We know who you are, Aldric.'},
   {say:'boss',text:'That name... means nothing... to the shard.'},
   {say:'nightshade',text:"His voice cracked. There's still someone in there."},
@@ -3589,17 +3613,20 @@ SCENES.ch11={pre:{label:'Chapter 11 · Meteor Strike',steps:[
   {cap:'Phase 2: watch for his stolen barrier, and break free of his stolen Void Hold.',top:true},{music:'knight'}]},
  p3:{label:'Chapter 11 · Phase 3',steps:[
   {bg:'keeptop',music:null},{boss:'ch11',state:{cracked:true,rage:true}},...ROOF_KIDS,
-  {say:'boss',text:'...please... stop... the shard...'},
+  {say:'boss',voice:'aldric',text:'...please... stop... the shard...'},
   {say:'boss',text:'MINE! THE STONES ARE MINE!'},{fx:'shake',n:24},
+  {say:'nightshade',text:'Aldric! I can hear you under there. My light remembers yours.'},
   {say:'lightheart',text:'That was Aldric. Everyone, all five stones. Meteor Strike!'},
-  {cap:'Phase 3: the shard heals every normal hit. Morph three friends at once and unleash Meteor Strike.',top:true}]},
+  {cap:'Phase 3: the shard heals every normal hit. Morph three friends at once and unleash Meteor Strike. Moritania can Reach Him to hold the shard back.',top:true}]},
  post:{label:'Chapter 11 · Meteor Strike',steps:[
   {bg:'keeptop',music:'taken'},...ROOF_KIDS.map(a=>Object.assign({},a,{form:'armor'})),{boss:'ch11',state:{cracked:true}},{fade:'in'},
   {fx:'flash'},{fx:'shake',n:20},{boss:null,ms:900},
   L('aldric',190,48,{stoneless:true,flip:true}),
   {unmorph:['scareth','lightheart','kaytahn','thornforge','nightshade']},
-  {cap:'The armor shatters. Kneeling in the wreckage is an old man with a white beard.',top:true},
+  {cap:'The armor breaks open and falls away. Kneeling in the wreckage is an old man with a white beard.',top:true},
   {say:'aldric',text:'The stars. I can see the stars again.'},
+  {say:'aldric',text:'...You. The girl with the runes. You found me in the dark.'},
+  {say:'nightshade',text:'You found us first. You sent the dreams.'},
   {cap:'To be continued in Chapter 12.',top:true}]}};
 
 // ================= Hometown hub: a walkable town =================
@@ -3776,6 +3803,8 @@ function buildObjs(){
   if(HUB.age==='adult'){OBJS.push({type:'npc',id:'kylee',tx:15,ty:7,spr:'kylee',name:'Kylee',solid:true});OBJS.push({type:'dog',id:'baxter',tx:14,ty:7,name:'Baxter',solid:true});
     OBJS.push({type:'npc',id:'corran',tx:11,ty:7,spr:'corran',name:'Corran',solid:true});OBJS.push({type:'npc',id:'kaylen',tx:16,ty:8,spr:'kaylen',name:'Kaylen',solid:true})}
   if(HUB.age==='kid'){OBJS.push({type:'npc',id:'jeffrey',tx:11,ty:7,spr:'jeffrey',name:'Jeffrey',solid:true});OBJS.push({type:'npc',id:'kristy',tx:15,ty:7,spr:'kristy',name:'Kristy',solid:true})}
+  OBJS.push({type:'lore',id:'mural',tx:19,ty:11,name:'Red Hero Mural',solid:true});
+  OBJS.push({type:'lore',id:'scope',tx:25,ty:10,name:'Old Telescope',solid:true});
   OBJS.push({type:'save',tx:22,ty:13,name:'Meteor Crystal'});
   OBJS.push({type:'gate',tx:12,ty:23,name:'Rusted Gate',needs:'thornforge'});
   OBJS.push({type:'rune',tx:9,ty:10,name:'Rune Stone',needs:'nightshade',solid:true});
@@ -3883,6 +3912,11 @@ function drawObj(o){
   else if(o.type==='gate'){if(HUB.state.gate){px(x,y+2,2,12,'#6a5a4a');return}for(let i=0;i<16;i+=3)px(x+i,y-4,2,18,'#8a5a3a');px(x,y,16,2,'#7a4a2a');px(x,y+8,16,2,'#7a4a2a');px(x+6,y+3,4,4,'#c86a3a')}
   else if(o.type==='rune'){blob(x+8,y+6,6,9,'#8a8a96');const on=HUB.state.hedge||T%40<20;[[5,2],[9,5],[6,8],[10,10]].forEach(([a,b2])=>px(x+a,y+b2,2,2,on?'#c88aff':'#5a4a6a'))}
   else if(o.type==='chest'){if(HUB.state['chest_'+o.id])return;if(o.id==='crater'){px(x+5,y+6,6,6,'#3a2e28');px(x+7,y+7,3,3,'#e8f0ff');glow(x+8,y+8,8,'#bfe0ff',.4)}else{box(x+2,y+4,12,9,'#8a5a2a');px(x+2,y+7,12,1,'#c89a3a');px(x+7,y+7,2,3,'#ffd04a')}}
+  else if(o.type==='lore'&&o.id==='mural'){px(x+1,y-6,14,18,'#6a4a2a');px(x+2,y-5,12,16,HUB.age==='adult'?'#3a5a8a':'#4a5a7a');px(x+2,y+6,12,5,'#3a6a3a');
+    px(x+6,y-3,4,4,'#c8282a');px(x+5,y+1,6,6,'#c8282a');px(x+7,y-2,2,1,'#ffb03a');px(x+4,y+2,1,4,'#a01a1a');px(x+11,y+2,1,4,'#a01a1a');px(x+10,y-4,1,10,'#d8d8e0');
+    if(HUB.age==='teen'){px(x+3,y+11,2,2,'#ff7aa0');px(x+6,y+11,2,2,'#ffe07a');px(x+9,y+11,2,2,'#ff7aa0')}px(x+7,y+12,2,4,'#6a4a2a')}
+  else if(o.type==='lore'&&o.id==='scope'){px(x+4,y+8,1,7,'#5a5a64');px(x+11,y+8,1,7,'#5a5a64');px(x+7,y+8,1,7,'#5a5a64');px(x+3,y+3,10,4,'#8a8a94');px(x+3,y+3,10,1,'#b8b8c4');px(x+12,y+2,3,6,'#5a5a64');
+    if(T%90<45)px(x+1,y+1,1,1,'#ff8a6a')}
   else if(o.type==='sign'){px(x+7,y+6,2,9,'#6a4a2a');box(x+1,y,14,8,'#a87a4a');px(x+3,y+3,10,1,'#6a4a2a')}
 }
 // ---- hub party ----
@@ -4209,8 +4243,8 @@ async function hubInteract(o){
       scareth:[['Kylee','So, Joseph. Have you and Tricia picked a date yet?'],me("...We're working on it."),['Kylee','Well, I want plenty of notice. I am not missing this one.']],
       nightshade:[['Kylee','Tricia! Let me see the ring again.'],me('You have seen it nine times.'),['Kylee','And it gets prettier every time.']]}[L];
       return hubSay(K||[['Kylee','Hi there!']])}
-    if(o.id==='shop')return hubSay([['Rocco','Biggest meteor shower in fifty years, they said. Sold out of glow sticks in an hour.'],me('Did anything weird happen last time? Fifty years ago?'),['Rocco','Ask Mr. Hollis by the fountain. He remembers everything.']]);
-    if(o.id==='elder')return hubSay([['Mr. Hollis','Fifty years ago, the night of the last big shower, the old observatory went dark.'],['Mr. Hollis','A young fellow used to work up there. Called himself a hero. Nobody ever saw him again.'],me('Did he have a name?'),['Mr. Hollis','Al-something. My memory isn\'t what it was.']]);
+    if(o.id==='shop')return hubSay([['Rocco','Biggest meteor shower in fifty years, they said. Sold out of glow sticks in an hour.'],me('Did anything weird happen last time? Fifty years ago?'),['Rocco','See that clipping by the register? "Red Hero Saves County Fair." Fifty years old. My dad swore it was real.'],['Rocco','Ask Mr. Hollis by the fountain. He remembers everything.']]);
+    if(o.id==='elder')return hubSay([['Mr. Hollis','Fifty years ago, the night of the last big shower, the old observatory went dark.'],['Mr. Hollis','A young fellow used to work up there. Folks called him the Red Hero. Crimson armor, out every night, fighting things nobody else could see.'],['Mr. Hollis','The town painted that mural for him. Then one night he just... stopped coming. Nobody ever saw him again.'],me('Did he have a name?'),['Mr. Hollis','Al-something. My memory isn\'t what it was.']]);
     if(o.id==='ballkid'){if(HUB.state.shard_ball)return hubSay([['Kid','Thanks again! I climbed it all by myself. Well, mostly.']]);
       if(L!=='lightheart')return hubSay([['Kid','My ball is stuck in that tree, and I am way too scared to climb.'],['','(Jake is good at helping people find their nerve.)']]);
       await hubSay([['Kid','My ball is stuck up there. I can\'t do it.'],me('Sure you can. First branch, then the next one. I\'ll spot you.'),['Kid','...I got it! I GOT IT! Here, I found this shiny rock up there too.']]);return shardLines('ball')}
@@ -4218,6 +4252,14 @@ async function hubInteract(o){
       if(L!=='scareth')return hubSay([['Brian','Beat it, kid. This dock is mine.'],['','(Maybe Joseph could stare him down.)']]);
       await hubSay([me('...'),['Brian','What are you looking at?'],me('...'),['Brian','Okay, okay! Jeez! Take the dock. And take this weird rock I found, it gives me the creeps.']]);
       HUB.state.bully=true;saveHub();buildObjs();return shardLines('bully')}}
+  if(o.type==='lore'&&o.id==='mural'){
+    if(HUB.age==='adult')return hubSay([['','The Red Hero mural, freshly repainted. Someone added five small figures standing beside him.'],me('Six lights. He finally has his team.')]);
+    if(HUB.age==='teen')return hubSay([['','The Red Hero mural. Fresh flowers sit at the bottom, like always.'],me("I wonder who keeps leaving these."),['','A little card is tucked in the flowers. It says: "Thank you, Aldric."']]);
+    if(progress.ch9)return hubSay([['','The Red Hero mural. A knight in crimson armor stands over the town, a red star shining above him.'],me("It was Aldric. He was protecting everyone. All by himself.")]);
+    return hubSay([['','A faded mural of a knight in crimson armor standing over the town. A painted plaque reads: "THE RED HERO. He kept us safe."'],me('The Red Hero? Who was he?'),['','(Mr. Hollis by the fountain might remember.)']])}
+  if(o.type==='lore'&&o.id==='scope'){
+    if(progress.ch12)return hubSay([['','Through the old telescope, a faint red star glows low in the sky.'],me('Lumora. Or what is left of it.'),['','It flickers, as if it is watching.']]);
+    return hubSay([['','A coin-operated telescope. A faint reddish star glows low in the sky.'],['','A little sign says: "The Ember Star. Nobody knows why it glows red."'],me('Huh. It looks almost... cracked.')])}
   if(o.type==='bird'){if(L!=='kaytahn')return hubSay([['','A little bird with a hurt wing. It flinches when you get close.'],['','(Lindsey\'s calm might help.)']]);
     await hubSay([me('Shh, it\'s okay. Easy now.'),['','Lindsey\'s stone glows a soft teal. The bird stretches its wing, chirps, and flies off. Something glints where it was sitting.']]);
     HUB.state.bird=true;saveHub();buildObjs();return shardLines('bird')}
