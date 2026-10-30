@@ -4,7 +4,7 @@ A pixel turn-based RPG about five kids who find meteorite stones that give them 
 
 Play it in your browser: https://ncstateguy.github.io/meteorite-kids/
 
-Saves are kept in your own browser.
+Saves are kept in your own browser. To move them to another device, use **Move saves** on the main menu.
 
 ## Playing online
 

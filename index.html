@@ -116,6 +116,8 @@ button.pad-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);o
 @keyframes mmglow{50%{opacity:.55}}
 
 #diffBody button.primary small{color:#4a3600;opacity:1}
+#xferBody textarea{width:100%;min-height:90px;font:12px monospace;background:var(--panel2);color:var(--fg);border:2px solid var(--line);border-radius:4px;padding:6px;box-sizing:border-box;word-break:break-all}
+#xferBody h3{margin:12px 0 4px;font-size:15px}
 #netHint{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:3;background:rgba(10,8,20,.85);border:1px solid #7af0c8;color:#7af0c8;font-size:12px;padding:3px 10px;border-radius:4px;pointer-events:none;white-space:nowrap}
 #netVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;image-rendering:pixelated;z-index:1}
 #netBody p{margin:8px 0}#netBody input{font:inherit;padding:6px 8px;background:var(--panel2);color:var(--fg);border:2px solid var(--line);border-radius:4px}
@@ -146,6 +148,7 @@ body.net-guest #skipBtn,body.net-guest #exitBtn,body.net-guest #diffTop,body.net
     </div>
   </header>
   <div class="screen" id="screen"><canvas id="cv" width="512" height="288"></canvas><video id="netVideo" muted autoplay playsinline hidden></video><div id="netHint" hidden></div>
+    <div class="modal" id="xferDlg" hidden><div class="modal-box" style="width:min(94%,600px)"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Move saves</h2><button id="xferX">Close</button></div><div id="xferBody"></div></div></div>
     <div class="modal" id="diffDlg" hidden><div class="modal-box" style="width:min(94%,520px)"><h2 style="margin:0 0 6px">Difficulty</h2><div id="diffBody"></div></div></div>
     <div class="modal" id="netDlg" hidden><div class="modal-box" style="width:min(94%,560px)"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Play Online</h2><button id="netX">Close</button></div><div class="row" style="margin:8px 0 4px"><button class="mini" id="netTabPlay">Play</button><button class="mini" id="netTabTips">Tips</button></div><div id="netBody"></div></div></div>
     <div class="cap" id="cap" hidden></div>
@@ -1661,7 +1664,7 @@ async function knightPhase(){
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch8')+1,0,CH9,CH10,CH11);
 BGS.hideout=bgHideout;BGS.keep=()=>bgKeep(false);BGS.keeptop=()=>bgKeep(true);
 
-// ================= Chapter 30 (key ch27): the three-phase final battle =================
+// ================= Chapter 27 (key ch27): the three-phase final battle =================
 const BN=()=>(S.boss&&S.boss.name)||S.ch.villain;
 // Phase 2: the Unmade, the ghastly spirit that pours out of Vorath's empty robes. Drawn translucent, over the outline pass.
 function drawWraith(b,x0,y0){
@@ -1707,7 +1710,7 @@ function bgVoid(){
   for(let x=10;x<256;x+=37){lineP(x,96,x+8,104,VOID);lineP(x+8,104,x+5,112,'#2a8a78')}
   for(let i=0;i<5;i++){const fx=20+i*52,fy=74+Math.round(Math.sin(T/30+i)*2);px(fx,fy,10,4,'#2a2042');px(fx+1,fy,8,1,'#4a3a6a')}
 }
-const CH27={key:'ch27',num:30,title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:700,final:true,solo:true,roster:['lightheart'],
+const CH27={key:'ch27',num:27,title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:700,final:true,solo:true,roster:['lightheart'],
  intro:'Part 3 finale. Carrying all five stones, Lightheart crosses the rift to the place where Lumora\'s ghost still hangs in the sky. Vorath is waiting.',
  tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Hexfire) hurt it. Call on your friends through their stones once per phase each.',
  victory:'Vorath is gone. The lights of Lumora live on in Earth\'s guardians, and five friends finally finished what a lost world started.',
@@ -3369,7 +3372,7 @@ ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
 };
 
 SCENES.ch27={
- pre:{label:'Chapter 30 · Two Worlds, One Light',steps:[
+ pre:{label:'Chapter 27 · Two Worlds, One Light',steps:[
   {bg:'void',music:'vorath'},{boss:'vorath'},{fade:'in',ms:1200},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {cap:"Beyond the rift, Lumora's cracked ghost still hangs in the sky.",top:true},
@@ -3378,7 +3381,7 @@ SCENES.ch27={
   {say:'boss',text:'Then I will unmake you the way I unmade them.'},
   {say:'nightshade',text:"Jake, we're with you. Every one of us."},
   {cap:'Phase 1: his crown of stolen stones shields him. Starfall Blade shatters the shards.',top:true}]},
- p2:{label:'Chapter 30 · Phase 2',steps:[
+ p2:{label:'Chapter 27 · Phase 2',steps:[
   {bg:'void',music:null},{boss:'vorath'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'boss',text:'You would unmake ME? I am the hunger at the end of every world!'},
@@ -3388,7 +3391,7 @@ SCENES.ch27={
   {say:'boss',text:'SO MANY WORLDS. SO MANY LIGHTS. ALL OF THEM INSIDE ME.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
   {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land.',top:true}]},
- p3:{label:'Chapter 30 · Phase 3',steps:[
+ p3:{label:'Chapter 27 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'boss',text:'I CANNOT BE UNMADE. I AM WHAT REMAINS WHEN EVERYTHING ENDS.'},
@@ -3400,7 +3403,7 @@ SCENES.ch27={
   {music:'seraph'},{fx:'pillars'},
   {cap:"The last light of Lumora pours into Earth's fallen guardians. Five pillars of light rise from the ground.",top:true},
   {cap:'Final phase: Two Worlds, One Light.',top:true}]},
- post:{label:'Chapter 30 · Two Worlds, One Light',steps:[
+ post:{label:'Chapter 27 · Two Worlds, One Light',steps:[
   {bg:'void',music:'seraph'},{fx:'pillars'},{fade:'in'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {say:'lightheart',text:"It's over."},
@@ -5946,6 +5949,47 @@ const NET={host:false,guest:false,peer:null,code:'',conns:new Map(),players:[],o
     B.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>this.send(this.hostConn,{t:'claim',kid:b.dataset.claim}));
     B.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>this.send(this.hostConn,{t:'release',kid:b.dataset.rel}));
     $('netStop').onclick=()=>this.host?this.stopHost():this.leave()}};
+
+// ================= Move saves between devices =================
+// Export packs every save file and setting into one code (gzip + base64 when the browser supports it). Import replaces
+// this device's saves with the code's, then reloads. Works for the Claude copy too, so saves can move to the public site.
+const XFER={
+  keys(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&/^mk[-_]/.test(k)&&k!=='mk-net-name')o[k]=localStorage.getItem(k)}
+    SAVE.slots.forEach((d,i)=>{if(d)o['mk-save-'+slotKey(i)]=JSON.stringify(d)});if(SAVE.active!=null)o['mk-active-slot']=JSON.stringify(SAVE.active);return o},
+  async pack(obj){const txt=JSON.stringify({game:'meteorite-kids',v:1,at:Date.now(),data:obj});const b64=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)};
+    if(window.CompressionStream){try{const z=new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'));return 'MKZ1:'+b64(new Uint8Array(await new Response(z).arrayBuffer()))}catch(e){}}
+    return 'MK1:'+b64(new TextEncoder().encode(txt))},
+  async unpack(code){code=String(code||'').replace(/\s+/g,'');const raw=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));let txt;
+    if(code.startsWith('MKZ1:')){if(!window.DecompressionStream)throw new Error('This browser cannot read compressed codes.');const z=new Blob([raw(code.slice(5))]).stream().pipeThrough(new DecompressionStream('gzip'));txt=await new Response(z).text()}
+    else if(code.startsWith('MK1:'))txt=new TextDecoder().decode(raw(code.slice(4)));else throw new Error("That doesn't look like a Meteorite Kids save code.");
+    const j=JSON.parse(txt);if(!j||j.game!=='meteorite-kids'||!j.data||typeof j.data!=='object')throw new Error("That doesn't look like a Meteorite Kids save code.");return j},
+  summary(data){const out=[];for(let i=0;i<3;i++){const v=data['mk-save-slot'+(i+1)];if(!v)continue;try{const d=JSON.parse(v);out.push(`File ${i+1}: ${d.label||'Saved game'}`)}catch(e){}}return out.length?out.join(' · '):'Settings only'},
+  status(t,err){const el=$('xferStatus');if(el){el.textContent=t;el.style.color=err?'#ff8a9a':'var(--muted)'}},
+  async open(){if(SAVE.active!=null&&!TITLE.active){try{await writeSlot(SAVE.active)}catch(e){}}const box=$('xferDlg');box.hidden=false;sfx('cursor');
+    const data=this.keys(),code=await this.pack(data);this.code=code;
+    $('xferBody').innerHTML=`<p>Move your save files to another phone, tablet or computer. Each device keeps its own saves, so copy them over when you switch.</p>
+      <h3>Take my saves with me</h3><p class="tip">This device has: ${this.summary(data)}</p>
+      <div class="row"><button class="primary" id="xferCopy">Copy save code</button><button id="xferFile">Download save file</button></div>
+      <h3>Bring saves to this device</h3><p class="tip">Paste a save code, or open a save file. This replaces the saves on this device.</p>
+      <textarea id="xferIn" placeholder="Paste a save code here" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button id="xferLoad">Load save code</button><button id="xferPick">Open save file</button><input type="file" id="xferInput" accept=".txt,text/plain" hidden></div>
+      <p id="xferStatus" class="tip"></p>`;
+    $('xferCopy').onclick=async()=>{try{await navigator.clipboard.writeText(code);this.status('Copied. Paste it into this game on your other device.')}catch(e){$('xferIn').value=code;$('xferIn').select();this.status('Copy was blocked here. The code is in the box below: select it all and copy it.',true)}};
+    $('xferFile').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([code],{type:'text/plain'}));a.download=`meteorite-kids-saves-${new Date().toISOString().slice(0,10)}.txt`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);this.status('Save file downloaded.')}catch(e){this.status('Downloads are blocked here. Use Copy save code instead.',true)}};
+    $('xferLoad').onclick=()=>this.importCode($('xferIn').value);
+    $('xferPick').onclick=()=>$('xferInput').click();
+    $('xferInput').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;this.importCode(await f.text())}},
+  async importCode(code){let j;try{j=await this.unpack(code)}catch(e){return this.status(e.message||'That save code could not be read.',true)}
+    const sum=this.summary(j.data);this.status('');
+    const ok=await new Promise(res=>{$('xferStatus').innerHTML=`<b>Replace the saves on this device?</b><br>The code has: ${sum.replace(/[<>&]/g,'')}<br><span class="row" style="margin-top:6px;display:flex;gap:8px"><button class="primary" id="xferYes">Replace and reload</button><button id="xferNo">Cancel</button></span>`;
+      $('xferYes').onclick=()=>res(true);$('xferNo').onclick=()=>res(false)});
+    if(!ok){this.status('Nothing changed.');return}
+    try{const old=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&/^mk[-_]/.test(k)&&k!=='mk-net-name')old.push(k)}old.forEach(k=>localStorage.removeItem(k));
+      for(const k in j.data){if(/^mk[-_]/.test(k)&&typeof j.data[k]==='string')localStorage.setItem(k,j.data[k])}}
+    catch(e){return this.status('This browser would not save the data. Try another browser.',true)}
+    if(SAVE.db&&SAVE.uid){for(let i=0;i<3;i++){const v=j.data['mk-save-slot'+(i+1)];try{if(v)await SAVE.db.collection('data/users/'+SAVE.uid).doc(slotKey(i)).set(JSON.parse(v))}catch(e){}}}
+    this.status('Saves moved. Reloading...');setTimeout(()=>location.reload(),700)}};
+$('xferX').onclick=()=>{$('xferDlg').hidden=true};
 $('diffTop').onclick=toggleDiff;$('autoTop').onclick=toggleAutosave;setTimeout(()=>{$('diffTop').textContent=diffLabel();$('autoTop').textContent=`Autosave: ${AUTOSAVE?'On':'Off'}`},0);
 $('netBtn').onclick=()=>NET.open();$('netX').onclick=()=>NET.close();$('netTabPlay').onclick=()=>NET.setTab('play');$('netTabTips').onclick=()=>NET.setTab('tips');
 // ---- Co-op walking: each friend walks their own kid around town and dungeons on the host's screen ----
@@ -6091,10 +6135,10 @@ function titlePress(re){
   if(!SAVE.ready){$('menu').innerHTML=`<h2>Main Menu</h2><p class="tip">Loading your saves...</p>`;return}
   const r=mostRecentSlot(),cont=SAVE.active!=null&&SAVE.slots[SAVE.active]?SAVE.active:r;
   $('menu').innerHTML=`<h2>Main Menu</h2>
-   <div class="row">${cont>=0?`<button class="primary" id="tCont">Continue<small>File ${cont+1} · ${SAVE.slots[cont].label}</small></button>`:''}<button ${cont>=0?'':'class="primary"'} id="tNew">New game</button>${r>=0?'<button id="tLoad">Load game</button>':''}${!STORY||part1Done()?`<button id="tTown">${STORY?'Extras':'Chapter list'}</button>`:''}<button class="autosaveBtn" id="tAuto">Autosave: ${AUTOSAVE?'On':'Off'}</button><button class="diffBtn" id="tDiff">${diffLabel()}</button></div>`;
+   <div class="row">${cont>=0?`<button class="primary" id="tCont">Continue<small>File ${cont+1} · ${SAVE.slots[cont].label}</small></button>`:''}<button ${cont>=0?'':'class="primary"'} id="tNew">New game</button>${r>=0?'<button id="tLoad">Load game</button>':''}${!STORY||part1Done()?`<button id="tTown">${STORY?'Extras':'Chapter list'}</button>`:''}<button id="tMove">Move saves<small>To or from another device</small></button></div>`;
   if($('tCont'))$('tCont').onclick=()=>{applySlot(SAVE.slots[cont]);SAVE.active=cont;TITLE.active=false;startGame()};
   $('tNew').onclick=()=>openSlots('new',()=>titlePress(true));if($('tLoad'))$('tLoad').onclick=()=>openSlots('load',()=>titlePress(true));
-  if($('tTown'))$('tTown').onclick=()=>{TITLE.active=false;showChapters()};$('tAuto').onclick=toggleAutosave;$('tDiff').onclick=toggleDiff;
+  if($('tTown'))$('tTown').onclick=()=>{TITLE.active=false;showChapters()};$('tMove').onclick=()=>XFER.open();
 }
 
 // ================= Save system =================
