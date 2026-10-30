@@ -1910,6 +1910,25 @@ const CH18={key:'ch18',num:18,title:'The Breaking',villain:'The Herald',bg:'void
   b.aegis=!b.aegis;log(b.aegis?'The Aegis of the Void rises around him.':'The Aegis of the Void falls away.');renderStatus()},
  after(){playCutscene(SCENES.whatsLeft).then(()=>{progress.whatsLeft=true;saveProgress();showResult(true)})}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH18A,CH18);
+// ================= Part 3 · Chapter 19: Founders' Day =================
+// A friendly exhibition match. Nobody can morph anymore: just human passives, items, and teamwork against Gale.
+function drawGale(b,x0,y0){const f=NPCS.gale.spr.armor[Math.floor(T/24)%2];ctx.save();ctx.translate(x0+46,y0+2+Math.round(Math.sin(T/14)*2));ctx.scale(-1.3,1.3);ctx.drawImage(f,0,0);ctx.restore();
+  if(b.show>0){ctx.save();ctx.globalAlpha=.6;ctx.fillStyle='#9ad8ff';for(let i=0;i<3;i++)ctx.fillRect(x0+18+i*9,y0-2-((T/3+i*7)%10),2,5);ctx.restore()}}
+const CH19={key:'ch19',num:19,title:"Founders' Day",villain:'Gale',bg:'town',hp:820,age:'adult',part:3,noMorph:true,music:'skirmish',
+ roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
+ intro:"Founders' Day at the fountain. The whole town cheers as Gale challenges the old Meteorite Kids to a friendly exhibition match.",
+ tip:'Nobody can morph anymore. When Gale Showboats for the crowd, she leaves herself open: hit her hard on the next turn.',
+ victory:'Gale drops her spear and laughs. "Okay, okay! The old-timers still have it!"',
+ init(b){b.cycle=0;b.show=0},draw:drawGale,
+ chips(b){return [b.show>0?{t:'Showboating: wide open',o:true}:{t:'Friendly match',o:true}]},
+ form(b){return b.show>0?'Waving to the crowd':'Having fun'},
+ onHit(b,k,dmg,m){if(b.show>0){b.show=0;floatText(BOSS_C[0],BOSS_C[1]-30,'Wide open!','#9ad8ff');return Math.round(dmg*1.6)}return dmg},
+ async turn(b){b.cycle++;
+  if(b.cycle%3===0){b.show=1;sfx('confirm');floatText(BOSS_C[0],BOSS_C[1]-30,'SHOWBOAT','#9ad8ff');log('Gale spins her spear and waves to the crowd. The town goes wild. She is wide open!');renderStatus();return}
+  if(b.cycle%4===0){log('Whirlwind! A gust knocks everyone off balance.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,5+rnd(3)))}
+  else{const t=pickTarget();if(t){log(`Gale's spear taps ${t.name}. "Too slow!"`);await lunge(b,-1);damageKid(t,9+rnd(3))}}renderStatus()}};
+CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH19);
+
 
 
 
@@ -2131,7 +2150,7 @@ function storyLevel(){const o=storyOrder();const i=o.findIndex(k=>!progress[k]);
 function expectedLevel(ch){const k=(ch.base&&ch.base.key)||ch.key;if(ch.E)return ch.E;const i=storyOrder().indexOf(k);return i<0?storyLevel():1+i}
 // Balance pass: bosses keep pace with how fast heroes grow (about 13% Attack and 12% HP per level at par),
 // a global damage bump keeps story fights tense, and the long gauntlets are trimmed so they don't drag.
-const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1,ch18a:1,ch18:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch18a:1.9,ch18:1.35,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
+const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1,ch18a:1,ch18:1,ch19:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch18a:1.9,ch18:1.35,ch19:1.75,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
 const tuneKey=ch=>(ch.base&&ch.base.key)||ch.key;
 
 // ---- difficulty, guide arrow, and boss telegraphs ----
@@ -2148,6 +2167,7 @@ let GUIDE=true;try{GUIDE=localStorage.getItem('mk-guide')!=='off'}catch(e){}
 function toggleGuide(){GUIDE=!GUIDE;try{localStorage.setItem('mk-guide',GUIDE?'on':'off')}catch(e){}sfx('cursor');document.querySelectorAll('.guideBtn').forEach(b=>b.textContent=`Guide arrow: ${GUIDE?'On':'Off'}`)}
 // what a boss will do on its next turn, when that turn is a big one (shown on its card and in the turn strip)
 const BOSS_WARN={
+ ch19:b=>(b.cycle+1)%3===0?'SHOWBOAT: she leaves herself open':(b.cycle+1)%4===0?'WHIRLWIND hits everyone':'Spear tap on one adult',
  ch18a:b=>b.cycle%3===2?'ROCKFALL hits everyone':'SHIELD BASH on one kid',
  ch18:b=>b.phase===2?'He lashes out at everyone':(b.cycle+1)%4===0?'TITHE: he heals, then takes extra damage':(b.cycle+1)%3===0?'PROCLAMATION hits everyone':'MACE OF JUDGMENT on one kid',
  ch17:b=>(b.cycle+1)%3===0?'PROCLAMATION hits everyone and Humbles the team':'MACE OF JUDGMENT: one kid, plus a cooldown turn',
@@ -2435,7 +2455,7 @@ function morphMeter(k){if(k.seraph||k.down||S.ch.noMorph)return '';if(k.stoneles
   if(S.ch.rusty&&!k.focused)return '<div class="mm" title="Rusty: Focus first, then morph"><span class="mm-lbl">Needs Focus</span><span class="mm-bar"><i style="width:50%"></i></span></div>';
   return '<div class="mm" title="Ready to morph"><span class="mm-lbl ready">Morph ready</span><span class="mm-bar ready"><i style="width:100%"></i></span></div>'}
 function kidCard(k,bench){
-  const form=k.seraph&&!k.down?'<span class="form pow">Seraph Form · five stones</span>':k.down?'<span class="form">Down</span>':k.powered?`<span class="form pow">Morphed · ${k.powered} turn${k.powered>1?'s':''}</span>`:k.cd?`<span class="form">Cooldown ${k.cd}${bench?' · resting':''}</span>`:`<span class="form">${bench?'Bench · ready':S.ch.noMorph?'Human · dreaming':'Human · ready to morph'}</span>`;
+  const form=k.seraph&&!k.down?'<span class="form pow">Seraph Form · five stones</span>':k.down?'<span class="form">Down</span>':k.powered?`<span class="form pow">Morphed · ${k.powered} turn${k.powered>1?'s':''}</span>`:k.cd?`<span class="form">Cooldown ${k.cd}${bench?' · resting':''}</span>`:`<span class="form">${bench?'Bench · ready':S.ch.noMorph?(S.ch.age==='adult'?'Human · no stone power':'Human · dreaming'):'Human · ready to morph'}</span>`;
   const ch=[`<span class="chip">${k.seraph?'All five stones':k.powered?k.ppassive:k.passive}</span>`];
   if(k.barrier)ch.push('<span class="chip ok">Barrier</span>');if(k.veil)ch.push('<span class="chip ok">Veil</span>');if(k.unbreak)ch.push('<span class="chip ok">Unbreakable</span>');
   if(k.burn)ch.push(`<span class="chip warn">Burnout ${k.burn}</span>`);if(k.caged)ch.push('<span class="chip warn">Caged</span>');if(k.stoneless)ch.push('<span class="chip warn">No stone</span>');
@@ -3809,6 +3829,7 @@ function makeHumanDirs(pal,o){
   return {side:mk(BODY,o.sideLayers,o.sideFront,o.sideBack),down:mk(D.FRONT,o.frontLayers,o.hf),up:mk(D.BACK,o.backLayers,o.hb)};
 }
 const N=NPCDATA;
+AGES.tall={...AGES.adult,dups:[...AGES.adult.dups,22,25].sort((a,b)=>a-b)};
 const NPC_SPR={
   shop:makeHumanDirs({hair:'#3a2a1a',skin:'#d8a070',top:'#e8e8e8',pants:'#4a4a5a',shoes:'#2a2018',cape:'#c83a3a'},{age:'adult',sideLayers:[APRON],sideFront:HAIR.lightheart.front,frontLayers:[N.apron_f],hf:N.swept_f,backLayers:[N.apron_b],hb:N.swept_b}),
   elder:makeHumanDirs({hair:'#b8b8c0',skin:'#f0c8a8',top:'#3a5a8a',pants:'#5a5a62',shoes:'#3a2a20'},{age:'adult',sideFront:GRAY_SIDES,hf:N.bald_f,hb:N.bald_b}),
@@ -3825,6 +3846,14 @@ const NPC_SPR={
     frontLayers:[AGEDATA.lash_f,[".......XX.....XX........",".......XX.....XX........"]],hf:DIRDATA.HF.kaytahn,hb:DIRDATA.HB.kaytahn,backLayers:[[".......XX.....XX........",".......XX.....XX........"]]}),
   // Kylee: Jake's wife (Part 3). Brown hair, long and loose.
   kylee:makeHumanDirs({hair:'#6b4428',skin:'#f0c4a0',top:'#c8607a',pants:'#3a4a6a',shoes:'#5a3a2a',trim:'#6b4428'},{age:'adult',sideLayers:[LASH],sideFront:NS_SIDE_ORIG.front,sideBack:NS_SIDE_ORIG.back,frontLayers:[AGEDATA.lash_f],hf:NS_ORIG.hf,hb:NS_ORIG.hb}),
+  // Jake's friends (adult era): Reed and Dee, Jared, Andrew and Megan
+  reed:makeHumanDirs({hair:'#8a3a22',skin:'#f0c4a0',top:'#3a6a8a',pants:'#3a3a48',shoes:'#2a2018'},{age:'adult',sideFront:HAIR.lightheart.front,hf:N.swept_f,hb:N.swept_b}),
+  dee:makeHumanDirs({hair:'#c8482a',skin:'#f6d0b0',top:'#3aa08a',pants:'#3a4a6a',shoes:'#e8e0d0',trim:'#c8482a'},{age:'adult',sideLayers:[LASH],sideFront:NS_SIDE_ORIG.front,sideBack:NS_SIDE_ORIG.back,frontLayers:[AGEDATA.lash_f],hf:NS_ORIG.hf,hb:NS_ORIG.hb}),
+  jared:makeHumanDirs({hair:'#e8c860',skin:'#f0c39c',top:'#e8a03a',pants:'#3a4a6a',shoes:'#e8e8ee'},{age:'teen',sideFront:HAIR.lightheart.front,hf:N.swept_f,hb:N.swept_b}),
+  andrew:makeHumanDirs({hair:'#5a3a22',skin:'#e6b48e',top:'#6a4a8a',pants:'#2c3442',shoes:'#1c1d22'},{age:'tall',sideFront:HAIR.lightheart.front,hf:N.swept_f,hb:N.swept_b}),
+  megan:makeHumanDirs({hair:'#5a3a22',skin:'#f0c4a0',top:'#4a9a5a',pants:'#3a3a48',shoes:'#5a3a2a',trim:'#5a3a22'},{age:'adult',sideLayers:[LASH],sideFront:NS_SIDE_ORIG.front,sideBack:NS_SIDE_ORIG.back,frontLayers:[AGEDATA.lash_f],hf:NS_ORIG.hf,hb:NS_ORIG.hb}),
+  brianAdult:makeHumanDirs({hair:'#3a2418',skin:'#d8a070',top:'#e8e8e8',pants:'#2c3442',shoes:'#1c1d22',cape:'#2a6a4a'},{age:'adult',sideLayers:[APRON],sideFront:HAIR.thornforge.front,frontLayers:[N.apron_f],hf:N.spiky_f,backLayers:[N.apron_b],hb:N.spiky_b}),
+  shopOld:makeHumanDirs({hair:'#c8c8d0',skin:'#d8a070',top:'#e8e8e8',pants:'#4a4a5a',shoes:'#2a2018',cape:'#c83a3a'},{age:'adult',sideLayers:[APRON],sideFront:HAIR.lightheart.front,frontLayers:[N.apron_f],hf:N.swept_f,backLayers:[N.apron_b],hb:N.swept_b}),
   bully:makeHumanDirs({hair:'#3a2418',skin:'#d8a070',top:'#5a5a62',pants:'#2c3442',shoes:'#1c1d22',acc:'#2a2420'},{age:'teen',sideLayers:[OPEN_JACKET],sideFront:HAIR.thornforge.front,frontLayers:[N.jacket_f],hf:N.spiky_f,backLayers:[N.jacket_b],hb:N.spiky_b})};
 // ---- the map ----
 const BUILDINGS=[
@@ -3839,7 +3868,8 @@ const BUILDINGS=[
   {id:'obs',x:3,y:2,w:6,h:5,door:5,wall:'#7a7a8a',roof:'#a8b0c0',kind:'obs',name:'The Old Observatory',teenName:'Hometown Observatory',ch:'ch9'},
   {id:'high',x:13,y:20,w:6,h:3,door:15,wall:'#d8c8a8',roof:'#24386a',kind:'high',name:'Hometown High',eras:['teen','adult'],ch:'ch13'}];
 const townBuildings=()=>BUILDINGS.filter(b=>!b.eras||b.eras.includes(HUB.age||'kid'));
-const bName=b=>(HUB.age==='teen'&&b.teenName)||b.name;
+const ADULT_NAMES={home:"Mom's House",house2:"Jake and Kylee's House",forge:'Forge and Fix (HQ)',obs:'Library and Observatory'};
+const bName=b=>(HUB.age==='teen'&&b.teenName)||(HUB.age==='adult'&&ADULT_NAMES[b.id])||b.name;
 const FALL=()=>HUB.age==='teen'&&!HUB.area;
 const REVEALED=()=>!!progress.reveal;
 const LEAF=['#d86a2a','#e8a030','#b8401e'];
@@ -3866,8 +3896,15 @@ const OBJS=[];
 function buildObjs(){
   OBJS.length=0;
   townBuildings().forEach(b=>OBJS.push({type:'door',tx:b.door,ty:b.y+b.h,b,name:bName(b)}));
-  OBJS.push({type:'npc',id:'shop',tx:21,ty:19,spr:'shop',name:'Rocco',solid:true});
-  OBJS.push({type:'npc',id:'elder',tx:16,ty:12,spr:'elder',name:'Mr. Hollis',solid:true,bench:true,cane:true});
+  OBJS.push({type:'npc',id:'shop',tx:21,ty:19,spr:HUB.age==='adult'?'shopOld':'shop',name:'Rocco',solid:true});
+  if(HUB.age!=='adult')OBJS.push({type:'npc',id:'elder',tx:16,ty:12,spr:'elder',name:'Mr. Hollis',solid:true,bench:true,cane:true});
+  else{OBJS.push({type:'lore',id:'hollis',tx:16,ty:12,name:"Mr. Hollis's Bench",solid:true});
+    OBJS.push({type:'npc',id:'brian',tx:26,ty:19,spr:'brianAdult',name:'Brian',solid:true});
+    OBJS.push({type:'npc',id:'reed',tx:35,ty:15,spr:'reed',name:'Reed',solid:true,face:1});OBJS.push({type:'npc',id:'dee',tx:36,ty:15,spr:'dee',name:'Dee',solid:true,face:-1});
+    OBJS.push({type:'npc',id:'jared',tx:9,ty:14,spr:'jared',name:'Jared',solid:true});
+    OBJS.push({type:'npc',id:'andrew',tx:29,ty:10,spr:'andrew',name:'Andrew',solid:true,face:1});OBJS.push({type:'npc',id:'megan',tx:30,ty:10,spr:'megan',name:'Megan',solid:true,face:-1});
+    if(progress.part3&&!progress.ch19){if(!HUB.state.dino_found&&HUB.state.dino_ask)OBJS.push({type:'lore',id:'dino',tx:20,ty:24,name:'Toy T. rex'});
+      if(ch19Ready())OBJS.push({type:'guardian',id:'gale19',g:'gale',tx:18,ty:14,name:'Gale',solid:true})}}
   OBJS.push({type:'npc',id:'ballkid',tx:11,ty:13,spr:HUB.age==='teen'?'ballteen':'ballkid',name:HUB.age==='teen'?'Neighbor Kid':'Kid',solid:true,needs:'lightheart'});
   if(HUB.age==='teen')OBJS.push({type:'npc',id:'fan',tx:23,ty:12,spr:'fan',name:'Little Kid',solid:true});
   if(HUB.age==='kid'){if(!HUB.state.bully)OBJS.push({type:'npc',id:'bully',tx:31,ty:21,spr:'bully',name:'Brian',solid:true,needs:'scareth'});
@@ -3985,6 +4022,9 @@ function drawObj(o){
   else if(o.type==='gate'){if(HUB.state.gate){px(x,y+2,2,12,'#6a5a4a');return}for(let i=0;i<16;i+=3)px(x+i,y-4,2,18,'#8a5a3a');px(x,y,16,2,'#7a4a2a');px(x,y+8,16,2,'#7a4a2a');px(x+6,y+3,4,4,'#c86a3a')}
   else if(o.type==='rune'){blob(x+8,y+6,6,9,'#8a8a96');const on=HUB.state.hedge||T%40<20;[[5,2],[9,5],[6,8],[10,10]].forEach(([a,b2])=>px(x+a,y+b2,2,2,on?'#c88aff':'#5a4a6a'))}
   else if(o.type==='chest'){if(HUB.state['chest_'+o.id])return;if(o.id==='crater'){px(x+5,y+6,6,6,'#3a2e28');px(x+7,y+7,3,3,'#e8f0ff');glow(x+8,y+8,8,'#bfe0ff',.4)}else{box(x+2,y+4,12,9,'#8a5a2a');px(x+2,y+7,12,1,'#c89a3a');px(x+7,y+7,2,3,'#ffd04a')}}
+  else if(o.type==='lore'&&o.id==='hollis'){px(x-4,y+4,24,4,'#7a5a3a');px(x-4,y+8,2,6,'#5a3a22');px(x+18,y+8,2,6,'#5a3a22');px(x+5,y+5,6,2,'#d8c070');px(x+3,y,3,4,'#e84a6a');px(x+4,y-1,1,1,'#ffd04a')}
+  else if(o.type==='lore'&&o.id==='dino'){px(x+4,y+8,8,4,'#3aa04a');px(x+10,y+5,4,4,'#3aa04a');px(x+12,y+6,1,1,'#1a1a1a');px(x+5,y+12,2,2,'#2a7a3a');px(x+9,y+12,2,2,'#2a7a3a');px(x+1,y+9,3,2,'#3aa04a');if(T%60<30)px(x+7,y+2,2,2,'#ffffff')}
+  else if(o.type==='guardian'){const G=NPCS[o.g];ctx.globalAlpha=.3;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+8,y+14,7,2,0,0,7);ctx.fill();ctx.globalAlpha=1;ctx.drawImage(G.spr.armor[Math.floor((T+o.tx*7)/30)%2],x-4,y+16-G.spr.armor[0].height)}
   else if(o.type==='lore'&&o.id==='mural'){px(x+1,y-6,14,18,'#6a4a2a');px(x+2,y-5,12,16,HUB.age==='adult'?'#3a5a8a':'#4a5a7a');px(x+2,y+6,12,5,'#3a6a3a');
     px(x+6,y-3,4,4,'#c8282a');px(x+5,y+1,6,6,'#c8282a');px(x+7,y-2,2,1,'#ffb03a');px(x+4,y+2,1,4,'#a01a1a');px(x+11,y+2,1,4,'#a01a1a');px(x+10,y-4,1,10,'#d8d8e0');
     if(HUB.age==='teen'){px(x+3,y+11,2,2,'#ff7aa0');px(x+6,y+11,2,2,'#ffe07a');px(x+9,y+11,2,2,'#ff7aa0')}px(x+7,y+12,2,4,'#6a4a2a')}
@@ -4117,6 +4157,9 @@ BANTER.push(
  {id:'a_sh_bridge',area:'sh_bridge',lines:[['kaytahn','Whatever happens up there, we do it together.'],['lightheart','Always.']]},
  {id:'t_ch18a',town:true,era:'teen',when:()=>progress.ch18a&&!progress.ch18,lines:[['scareth','Grounded AND saving the world. Busy week.'],['nightshade','You love it.']]},
  {id:'t_ch18',town:true,era:'teen',when:()=>progress.ch18,lines:[['lightheart','It is so quiet.'],['kaytahn','Quiet is good. Quiet is earned.']]});
+BANTER.push(
+ {id:'t_p3a',town:true,era:'adult',when:()=>progress.part3&&!progress.ch19,lines:[['thornforge','When did Founders\' Day get this big?'],['kaytahn','When we stopped being the ones running around on it.']]},
+ {id:'t_ch19',town:true,era:'adult',when:()=>progress.ch19,lines:[['scareth','My back hurts from one exhibition match.'],['nightshade','You are thirty, Joseph. Not ninety.']]});
 // Party banter: short lines that drift by in the corner while you explore. They never stop you, and each plays once.
 const BQ={q:[],cur:null,t:0,walk:0,next:2400,hold:0,townDone:false};
 function banterOK(b){if(b.town&&b.era&&(HUB.age||'kid')!==b.era)return false;if(HUB.state['bt_'+b.id])return false;if(b.era&&(HUB.age||'kid')!==b.era)return false;if(b.when&&!b.when())return false;return b.lines.every(([w])=>heroUnlocked(w))}
@@ -4195,7 +4238,8 @@ function bTarget(id){const b=BUILDINGS.find(x=>x.id===id);return {tx:b.door,ty:b
 function nextGoal(){
   if(HUB.area){const A=AREAS[HUB.area];return A&&A.goal?A.goal():null}
   if(!STORY)return null;const k=chapterOrder().find(k=>!progress[k]&&k!=='ch27');
-  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
+  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch19?{text:'Chapter 20 is on the way. Replay chapters and scenes from Extras.'}:progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
+  if(CHAPTERS.find(c=>c.key===k&&c.part===3)&&HUB.age!=='adult')return {text:'Part 3 happens fifteen years later. Press the Era button to switch to the adults.'};
   if(CHAPTERS.find(c=>c.key===k&&c.part===2)&&HUB.age!=='teen')return {text:'Part 2 happens five years later. Press the Era button to switch to the teens.'};
   const gate=HUB.state.gate,hedge=HUB.state.hedge,fixGate=["The crater is past the rusted gate in the southwest corner of town. Someone handy with tools could fix it.",{tx:12,ty:23}];
   const G={ch1:['Head to the School on the west side of town.',bTarget('school')],
@@ -4207,6 +4251,10 @@ function nextGoal(){
     ch7:gate?['Something feels wrong at the crater where it all began. Go see.',{tx:6,ty:26}]:fixGate,
     ch8:gate?["Follow the echo of Jake's stone into the Hollow, past the crater.",{tx:3,ty:21}]:fixGate,
     ch13:["Captain Cinder's Ashlings took over Hometown High. Head to the high school on the south side of town.",bTarget('high')],
+    ch19:(()=>{const S2=HUB.state;if(ch19Ready())return ["Everyone's at the fountain for the Founders' Day exhibition match. Gale is waiting.",{tx:18,ty:14}];
+      if(!S2.e_cake)return ["Founders' Day errands: pick up the cake at Rocco's Corner Store. (Also: find Corran's dinosaur, and open Tricia's exhibit.)",{tx:26,ty:19}];
+      if(!S2.e_dino)return S2.dino_ask?(S2.dino_found?['You found the T. rex. Bring it back to Corran.',{tx:11,ty:7}]:["Corran's toy T. rex is lost. Baxter caught the scent near the south side of town.",{tx:20,ty:24}]):["Corran looks upset. Go see what's wrong.",{tx:11,ty:7}];
+      return ["Tricia's new exhibit opens today. Head to the Town Museum.",bTarget('museum')]})(),
     ch18a:['The morning after. The whole world knows your names, and Mom wants everyone home. Head to the house.',bTarget('home')],
     ch18:["The Herald's ship hangs over the crater. The Earth Guardians are waiting there. Head to the crater past the old gate.",{tx:6,ty:26}],
     ch17:['A black spire is rising out of the crater where the stones first fell. Head to the crater past the old gate.',{tx:6,ty:26}],
@@ -4265,6 +4313,7 @@ async function hubInteract(o){
     if(b.id==='high'&&HUB.age==='teen'){if(progress.ch13)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch13'),b.name)}
     if(b.id==='home'&&HUB.age==='teen'&&progress.ch17&&!progress.ch18a)return exitHubTo(CHAPTERS.find(c=>c.key==='ch18a'));
     if(HUB.age==='teen'){const t=teenDoor(b,L,me);if(t){await hubSay(t.lines);if(t.then)t.then();return}}
+    if(HUB.age==='adult'){const t=adultDoor(b,L,me);if(t){await hubSay(t.lines);if(t.then)t.then();return}}
     if(b.id==='high'){await hubSay([['','Hometown High. It looks a lot smaller than it used to.']]);return}
     if(b.id==='forge'&&progress.ch4){await hubSay([['','The Old Forge. The furnace is already warm.'],[KIDS.thornforge.kid,L==='thornforge'?'Home sweet home. What are we making today?':'Come on in. Let\'s see what you brought me.',kidCol('thornforge')]]);openForge(L);return}
     if(b.ch){const c=CHAPTERS.find(k=>k.key===b.ch);if(!isUnlocked(c.key))return hubSay(lockedLines(c.key,me));if(DUNGEONS[c.key])return enterDungeon(c,b.name);if(STORY)return enterChapter(c,b.name);await hubSay([['',`${b.name}. Chapter ${c.num}: ${c.title}.`]]);exitHubTo(c)}
@@ -4304,6 +4353,10 @@ async function hubInteract(o){
       thornforge:[['Kristy',"Oh, you're Josh! Jake says you can fix anything. My alarm clock only goes off on Saturdays. At six. Every Saturday."],me("That's not broken. That's evil."),['Kristy','Can you fix it or not?']],
       nightshade:[['Kristy','I love your hair clip! Where did you get it?'],me('I made it.'),['Kristy','Okay, you have to make me one. Please?']]}[L];
       return hubSay(K||[['Kristy','Hi!']])}
+    if(o.id==='corran'&&progress.part3&&!progress.ch19&&!HUB.state.e_dino){const S2=HUB.state;
+      if(S2.dino_found){await hubSay(sayLines([['','You hand Corran the toy T. rex.'],['Corran','REX! You found him! Did you know a real T. rex had teeth as big as bananas?'],['Kaylen','Baxter found him. Baxter is a hero.'],['me','Baxter is definitely a hero.'],['','(Corran has his dinosaur back!)']]));S2.e_dino=true;saveHub();buildObjs();updateHubHud();return}
+      if(!S2.dino_ask){await hubSay(sayLines([['Corran','I lost Rex. He was right here and now he is GONE.'],['Kaylen','Baxter can find him! Baxter has the best nose.'],['','Baxter sniffs the ground, wags, and trots off toward the south side of town.'],['me','Okay, Rex. We are coming.']]));S2.dino_ask=true;saveHub();buildObjs();updateHubHud();return}
+      return hubSay([['Corran','Is Rex okay? Rex gets scared without me.']])}
     if(o.id==='corran'){const K={
       thornforge:[['Corran','Daddy! Daddy! Triceratops had THREE horns. Tri means three!'],me("That's right, buddy."),['Corran',"When I grow up I'm gonna be a pal... a pale-on... a dinosaur scientist."]],
       kaytahn:[['Corran','Mommy, can we go to the museum again? I want to say hi to the big skeleton.'],me('We went yesterday, sweetie.'),['Corran','He misses me.']],
@@ -4318,6 +4371,15 @@ async function hubInteract(o){
       scareth:[['Kaylen',"Uncle Joseph, I'm a cat today. Meow."],me('Hello, cat.'),['Kaylen',"Cats don't say hello. Meow."],me('...Meow.')],
       nightshade:[['Kaylen','Aunt Tricia, your ring is SO sparkly. Can a unicorn have it?'],me('Maybe after the wedding.'),['Kaylen','I\'ll tell the unicorn.']]}[L];
       return hubSay(K||[['Kaylen','Meow!']])}
+    if(HUB.age==='adult'&&o.id==='shop')return hubSay([['Rocco',{lightheart:'Jake! Founders\' Day. Brian has your cake. Check it twice. He drops things when Joseph walks by.',scareth:'Joseph, please stop smiling at Brian. He has a heart condition. Of fear.',kaytahn:'Lindsey! Tell Corran his dinosaur book is a week overdue. He told me to tell you that. He turned himself in.',thornforge:'Josh, my freezer is making the noise again.',nightshade:'Tricia, I still have that Red Hero clipping. Want it for the museum?'}[L]||'Happy Founders\' Day!']]);
+    if(o.id==='brian'){if(progress.part3&&!progress.ch19&&!HUB.state.e_cake){await hubSay(sayLines([['Brian','One Founders\' Day cake. Chocolate. With five little stars on top. That will be...'],['','Brian looks out the window. Joseph is walking past.'],['Brian','...free. It is free. Have a great day. Please go.'],['me:scareth','Hi, Brian.'],['Brian','HI JOSEPH.'],['','(You got the cake!)']]));HUB.state.e_cake=true;saveHub();buildObjs();updateHubHud();return}
+      return hubSay(L==='scareth'?[['Brian','...Hi, Joseph. Nice day. Please do not do the stare.'],me('What stare?'),['Brian','THAT one.']]:[['Brian','Welcome to Rocco\'s. Ten percent off for heroes. I do not make the rules.']])}
+    if(['reed','dee','jared','andrew','megan'].includes(o.id)){const J=L==='lightheart',F={
+      reed:J?[['Reed',"Jake! Cookout at our place Saturday. Bring Kylee. And Baxter, obviously."],me("Baxter's already packing.")]:[['Reed','Big day! Dee made me wear the matching shirt.']],
+      dee:J?[['Dee','Tell Kylee I saved her a seat for the parade. Front row.'],me('She will be thrilled. She already brought snacks.')]:[['Dee',"Reed swears he can grill a burger without setting off the smoke alarm. I'll believe it when I see it."]],
+      jared:J?[['Jared','Pickup game at the park later? I\'m short, but I\'m sneaky.'],me('Still the best point guard on the block.')]:[['Jared','Have you seen the funnel cake stand? Asking for me. It is for me.']],
+      andrew:J?[['Andrew','Jake, buddy. Megan wants to know if you\'re still bringing the folding chairs.'],me('...I am now.')]:[['Andrew','Watch your head on the parade banner. Trust me. I found it the hard way.']],
+      megan:J?[['Megan',"Don't let Andrew carry the cake. He trips on air."],['Andrew','One time!'],['Megan','Four times.']]:[['Megan',"Isn't this the best? The whole town out together."]]}[o.id];return hubSay(F)}
     if(o.id==='kylee'){const K={
       lightheart:[['Kylee',"There you are. Dinner's at six. Don't you dare save the world and be late."],me('No promises. Love you.'),['Kylee','Love you too. Six o\'clock, Jake.'],['Kylee','And Baxter already had two treats today, no matter what he tells you.']],
       kaytahn:[['Kylee','Tell Josh he left his tools in our garage again. Third time this month.'],me("I'll tell him. He'll forget. That's my husband.")],
@@ -4334,6 +4396,9 @@ async function hubInteract(o){
       if(L!=='scareth')return hubSay([['Brian','Beat it, kid. This dock is mine.'],['','(Maybe Joseph could stare him down.)']]);
       await hubSay([me('...'),['Brian','What are you looking at?'],me('...'),['Brian','Okay, okay! Jeez! Take the dock. And take this weird rock I found, it gives me the creeps.']]);
       HUB.state.bully=true;saveHub();buildObjs();return shardLines('bully')}}
+  if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],['me','He would have loved Founders\' Day.']]));
+  if(o.type==='lore'&&o.id==='dino'){HUB.state.dino_found=true;saveHub();buildObjs();updateHubHud();sfx('heal');return hubSay([['','A small green toy T. rex, face down in the grass. Baxter must have tracked him all the way here.'],['','(You found Rex! Take him back to Corran.)']])}
+  if(o.type==='guardian'&&o.id==='gale19')return exitHubTo(CHAPTERS.find(c=>c.key==='ch19'));
   if(o.type==='lore'&&o.id==='mural'){
     if(HUB.age==='adult')return hubSay([['','The Red Hero mural, freshly repainted. Someone added five small figures standing beside him.'],me('Six lights. He finally has his team.')]);
     if(HUB.age==='teen')return hubSay([['','The Red Hero mural. Fresh flowers sit at the bottom, like always.'],me("I wonder who keeps leaving these."),['','A little card is tucked in the flowers. It says: "Thank you, Aldric."']]);
@@ -4360,6 +4425,18 @@ async function hubInteract(o){
 // ================= The teen-era town (Part 2): fall of senior year, five years after the Knight =================
 // The kids' identities stay secret until the end of the Herald fight (progress.reveal). Before that, the town
 // talks about the Earth Guardians. After it, everyone has something to say.
+function adultDoor(b,L,me){const sib=['lightheart','kaytahn','scareth'].includes(L);
+  if(b.id==='museum'&&progress.part3&&!progress.ch19&&!HUB.state.e_exhibit)return {lines:sayLines([['','A new room opens today: THE METEORITE KIDS. Five suits of replica armor stand in a row under soft lights.'],
+    ['me:nightshade','The armor is a little off. Joseph\'s helmet was never that shiny.'],['me:scareth','It was exactly that shiny.'],
+    ['','Tricia cuts the ribbon. A small crowd claps. Joseph clears his throat.'],[KIDS.scareth.kid,'So. Um. A toast. To Tricia. Who is... great. At museums. And everything. ...Cheers?'],
+    [KIDS.nightshade.kid,'That was terrible.'],[KIDS.scareth.kid,'I have two weeks to fix it.'],['','(The exhibit is open!)']]),then:()=>{HUB.state.e_exhibit=true;saveHub();buildObjs();updateHubHud();}};
+  if(b.id==='home')return {lines:sib?[['',"Mom's house. Some things never change."],me('She still keeps our old rooms exactly how we left them.'),['Mom (from the kitchen)',"And yes, I know two of you work at the library now. Five years of \"we were at the library,\" and look at you."]]:[['','The house Jake, Lindsey, and Joseph grew up in. Their mom waves from the kitchen window.']]};
+  if(b.id==='house2')return {lines:L==='lightheart'?[['',"Home. Baxter's nose prints are all over the front window."],me('Kylee is going to make me clean those.')]:[['',"Jake and Kylee's house. A dog toy shaped like a meteor sits on the porch."]]};
+  if(b.id==='obs')return {lines:[['','The Hometown Library and Observatory. Books downstairs, stars upstairs.'],L==='kaytahn'?me('My library. Quiet, calm, and only one overdue dinosaur book. Corran.'):L==='scareth'?me('I work here too. Mostly I carry the heavy boxes. And read the comics first.'):['','A sign: "Star night every Friday. Ask Lindsey or Joseph."']]};
+  if(b.id==='museum')return {lines:[['','The Town Museum. The new room, THE METEORITE KIDS, is packed with school groups.'],L==='nightshade'?me('Mr. Hollis started all this. I just keep it going.'):['','A small card by the Red Hero exhibit: "Collected by Mr. Hollis. Kept by Tricia."']]};
+  if(b.id==='forge'&&progress.ch4)return {lines:[['','Forge and Fix. Corran\'s dinosaur drawings cover every wall.'],[KIDS.thornforge.kid,L==='thornforge'?"Twenty years at this anvil. Still smells like Grandpa's coffee.":"Come on in. Mind the stegosaurus."]],then:()=>openForge(L)};
+  if(b.id==='store')return {lines:[['Rocco','Ten percent off for heroes. Still. Forever. Do not tell my accountant.']],then:()=>openShop()};
+  return null}
 function teenDoor(b,L,me){const R=REVEALED(),sib=['lightheart','kaytahn','scareth'].includes(L);
   const tip=()=>{if(HUB.state.teenTip)return [];HUB.state.teenTip=true;saveHub();return [['','(To replay a Part 1 chapter, switch the era back to kids.)']]};
   if(b.id==='school')return {lines:[['','Hometown Elementary. The water fountains are a lot shorter than you remember.'],me(L==='scareth'?'My name is still carved under a desk in there. Do not tell anyone.':'Five years. Feels like a hundred.'),...tip()]};
@@ -4410,6 +4487,7 @@ function enterHub(){
   CUT.active=false;HUB.active=true;S=newState(CHAPTERS[0]);S.over=true;$('battleUI').hidden=true;$('menu').hidden=false;$('chLabel').textContent='Hometown';
   if(!HUB.map||HUB.mapArea){HUB.map=townMap();HUB.x=19*TS+16;HUB.y=17*TS+8}buildObjs();HUB.trail=Array.from({length:80},(_,i)=>({x:HUB.x-i*1.3,y:HUB.y+(i>40?1:0),f:HUB.face,d:'down'}));HUB.dir='down';
   if(STORY&&!part1Done())HUB.age='kid';const eraOK=!STORY||part1Done();
+  if(STORY&&progress.ch18&&HUB.age==='adult'&&!progress.part3&&!HUB.p3pending){HUB.p3pending=true;setTimeout(()=>{HUB.p3pending=false;if(HUB.active&&!HUB.area&&!progress.part3)startPart3()},600)}
   if(STORY&&part1Done()&&!progress.part2&&!HUB.p2pending){HUB.p2pending=true;setTimeout(()=>{HUB.p2pending=false;if(HUB.active&&!HUB.area&&!progress.part2)startPart2()},600)}
   $('menu').innerHTML=`<h2>Hometown</h2><p class="goal" id="hubGoal" hidden></p><p class="tip" id="hubLeader"></p><p class="tip" id="hubShards"></p><p id="hubPrompt">Walk around town. Look for people to help and places to visit.</p>
    <div class="row"><button id="hubTalk">Talk / use</button><button id="hubSwitch">Change hero</button>${eraOK?'<button id="hubEra">Era: kids</button>':''}<button id="hubParty">Party</button>${STORY?(part1Done()?'<button id="hubChapters">Extras</button>':''):'<button id="hubChapters">Chapters</button>'}</div>
@@ -5700,6 +5778,47 @@ SCENES.whatsLeft={label:"Part 2 Epilogue · What's Left",steps:[
   {cap:'Or so they think.',top:true},
   {cap:'END OF PART 2. Part 3, The Last Light, is coming.',top:true},
   {fade:'out',ms:1600}]};
+
+const P3_KIDS=[L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'})];
+SCENES.part3={label:'Part 3 · The Last Light',steps:[
+  {fx:'reset'},{bg:'town',music:'town'},...P3_KIDS,{fade:'in',ms:1400},
+  {cap:'PART 3: THE LAST LIGHT. Fifteen years later.',top:true},
+  {cap:"Founders' Day morning, in Mom's kitchen.",top:true},
+  {say:'corran',name:'Corran',col:'#9ae07a',text:'Uncle Joseph, Velociraptors were only as big as a turkey. The movies are wrong.'},
+  {say:'scareth',text:'A turkey with knives for feet, though.'},
+  {say:'corran',name:'Corran',col:'#9ae07a',text:'...Okay, that part is true.'},
+  {say:'mom',name:'Mom',text:'Who is picking up the Founders\' Day cake?'},
+  {say:'lightheart',text:"I've got it."},
+  {say:'mom',name:'Mom',text:'And Tricia, your exhibit opens at noon. I want a front-row spot.'},
+  {say:'nightshade',text:'You will have one.'},
+  {say:'kaytahn',text:"Same as always. Everybody's got a job."},
+  {say:'thornforge',text:'Feels good. Feels normal.'},
+  {cap:'The stones sit on a shelf by the door. Cracked, and barely glowing.',top:true},
+  {fade:'out',ms:1200}]};
+const P3_G=[L('bastion',150,58,{form:'armor',flip:true}),L('tidewarden',184,74,{form:'armor',flip:true}),L('emberwright',206,52,{form:'armor',flip:true}),L('verdance',170,92,{form:'armor',flip:true}),L('gale',216,86,{form:'armor',flip:true})];
+SCENES.ch19={pre:{label:"Chapter 19 · Founders' Day",steps:[
+  {fx:'reset'},{bg:'town',music:'town'},...P3_KIDS,L('gale',170,70,{form:'armor',flip:true}),{fade:'in',ms:900},
+  {cap:"The fountain. Half of Hometown has turned out to watch.",top:true},
+  {say:'gale',text:'Ladies and gentlemen! The legendary Meteorite Kids! Now slightly less kids!'},
+  {say:'thornforge',text:'Rude.'},
+  {say:'gale',text:'Friendly match. No powers, no armor. Just you five and me. Ready?'},
+  {say:'lightheart',text:'Ready as we will ever be.'},
+  {cap:'Nobody can morph anymore. When Gale Showboats for the crowd, hit her hard.',top:true},{fx:'flash'}]},
+ post:{label:"Chapter 19 · Founders' Day",steps:[
+  {fx:'reset'},{bg:'town',music:'town'},...P3_KIDS,...P3_G,{fade:'in',ms:1000},
+  {cap:'That night. The festival winds down under the stars.',top:true},
+  {say:'gale',text:'You let a forty-year-old librarian hit me with a folding chair.'},
+  {say:'kaytahn',text:"I'm thirty-two."},
+  {say:'bastion',text:'Hometown. Thank you for having us.'},
+  {cap:'On the stage, the five Earth Guardians stand together. Their relics glow brighter than the stars.',top:true},
+  {say:'nightshade',text:'...Did anyone else feel that? Like something just looked at us.'},
+  {fade:'out',ms:1000},{fx:'reset'},{bg:'void',music:'vorath'},{boss:'vorath',ms:1400},{fade:'in',ms:1400},
+  {cap:'Far away, the eye that went blind fifteen years ago finds a new light.',top:true},
+  {cap:'It turns toward Earth.',top:true},
+  {fade:'out',ms:1600}]}};
+async function startPart3(){if(progress.part3)return;HUB.active=false;await playCutscene(SCENES.part3);progress.part3=true;saveProgress();
+  HUB.age='adult';HUB.area=null;HUB.map=townMap();HUB.x=12*TS+8;HUB.y=8*TS+12;HUB.fromHub=true;HUB.pendingBeat={text:"Part 3: The Last Light. Fifteen years later. It's Founders' Day, and everyone has a job to do."};enterHub()}
+function ch19Ready(){const S2=HUB.state;return !!(S2.e_cake&&S2.e_dino&&S2.e_exhibit)}
 async function startPart2(){if(progress.part2)return;HUB.active=false;await playCutscene(SCENES.part2);progress.part2=true;saveProgress();
   HUB.age='teen';HUB.area=null;HUB.map=townMap();HUB.x=19*TS+16;HUB.y=17*TS+8;HUB.fromHub=true;HUB.pendingBeat={text:'Part 2: Called Back. Five years later, the stones are back in action. Sort of.'};enterHub()}
 async function playFarewell(){await playCutscene(SCENES.farewell);progress.ch12=true;saveProgress();await playCutscene(SCENES.interlude);progress.interlude=true;saveProgress();if(STORY){HUB.fromHub=true;HUB.pendingBeat={text:'The Black Knight is gone, Aldric is at peace, and Hometown is safe. For now, the Meteorite Kids get to just be kids.'};await startPart2();return}if(HUB.fromHub)enterHub();else showChapters()}
