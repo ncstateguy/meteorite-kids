@@ -790,6 +790,44 @@ for(const k in KIDS){KIDS[k].ages={teen:buildAgeSprites(k,'teen'),adult:buildAge
   const {g:g2}=stretchRows(g,[14,23,23,23,26,27,28,28,29,29],false);
   const f=[toCanvas(g2,pal),toCanvas(sflap(g2),pal)];KIDS.lightheart.spr.seraphAdult=f;KIDS.lightheart.spr.seraphAdultW=f.map(whiteOf);
 })();
+// ---- Last Light Forms (Part 3 finale): each hero's own armor, grown up, with a full cape and gold detail ----
+const FINAL_GOLD=[
+"........................",
+"..........O.............",
+"..........o.............",
+"........................",
+"........................",
+"........................",
+"........................",
+"........OOOOOOOOo.......",
+"........................",
+"........................",
+"........................",
+"........................",
+"........................",
+"..OOOOo........OOOOo....",
+"..oOOo..........oOOo....",
+"..........O.............",
+".........O...O..........",
+"........................",
+"........O.....O.........",
+"..........O.............",
+"..........OO............"];
+const FINAL_PAL={
+ scareth:{cape:'#1e1f26',edge:'#8a8e9a',glow:'#d8dce4'},
+ lightheart:{cape:'#2d58c8',edge:'#e8c050',glow:'#9fd8ff'},
+ kaytahn:{cape:'#e8f8f4',edge:'#2ec4b6',glow:'#7ff0e4'},
+ thornforge:{cape:'#8a3a1c',edge:'#c8963a',glow:'#ffb060'},
+ nightshade:{cape:'#3a1f5c',edge:'#d8d0f0',glow:'#c890ff'}};
+function buildFinalForms(){for(const id in KIDS){const K=KIDS[id],F=FINAL_PAL[id],gear=GEAR[id]||{};
+  const ap=Object.assign({},K.armorP);ap.armor=hiOf(ap.armor);
+  const pal=buildPalette(ap);Object.assign(pal,{R:F.cape,r:shadeOf(F.cape),Q:F.edge,q:shadeOf(F.edge),O:'#f0c858',o:'#b88a30'});
+  if(id==='thornforge'||id==='scareth'||id==='nightshade')pal.Y=hiOf(F.cape);
+  const g=sgrid();sstamp(g,CAPE,0,0);sstamp(g,gear.back||[],SOX,SOY);sstamp(g,ARMORT,SOX,SOY);sstamp(g,gear.front||[],SOX,SOY);sstamp(g,FINAL_GOLD,SOX,SOY);
+  const {g:g2}=stretchRows(g,[14,23,23,23,26,27,28,28,29,29],false);
+  const f=[toCanvas(g2,pal),toCanvas(sflap(g2),pal)];K.spr.final=f;K.spr.finalW=f.map(whiteOf);K.finalGlow=F.glow}}
+buildFinalForms();
+
 // ================= Aldric: the Red Hero, and the old man he becomes =================
 const NPCS={};
 const CHR=id=>KIDS[id]||NPCS[id];
@@ -1733,9 +1771,9 @@ function bgVoid(){
   for(let x=10;x<256;x+=37){lineP(x,96,x+8,104,VOID);lineP(x+8,104,x+5,112,'#2a8a78')}
   for(let i=0;i<5;i++){const fx=20+i*52,fy=74+Math.round(Math.sin(T/30+i)*2);px(fx,fy,10,4,'#2a2042');px(fx+1,fy,8,1,'#4a3a6a')}
 }
-const CH27={key:'ch27',num:24,after(){if(progress.ep)showResult(true);else startEpilogue()},title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:820,final:true,solo:true,party3:true,noMorph:true,age:'adult',roster:['lightheart','kaytahn','scareth','thornforge','nightshade'],
- intro:'Part 3 finale. Carrying all five stones, with his four friends at his side, Lightheart crosses the rift to the place where Lumora\'s ghost still hangs in the sky. Vorath is waiting.',
- tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Hexfire) hurt it. Lightheart takes every hit meant for his friends, and each friend has one Stone Echo per phase.',
+const CH27={key:'ch27',num:24,after(){if(progress.ep)showResult(true);else startEpilogue()},title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:820,final:true,noMorph:true,lastLight:true,age:'adult',roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
+ intro:'Part 3 finale. Together one last time, the five cross the rift to the place where Lumora\'s ghost still hangs in the sky. Vorath is waiting.',
+ tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Lindsey and Tricia) hurt it, so let Joseph and Josh protect the team. Everyone is in their Last Light Form for the whole fight.',
  victory:'Vorath is gone. The lights of Lumora live on in Earth\'s guardians, and five friends finally finished what a lost world started.',
  init(b){b.phase=1;b.shards=2;b.cycle=0;b.name='Vorath the Unmaker'},
  draw(b,x0,y0){if(b.phase===1)drawVorath(b,x0,y0)},
@@ -1750,19 +1788,19 @@ const CH27={key:'ch27',num:24,after(){if(progress.ep)showResult(true);else start
   if(b.phase===2){if(m.light)return Math.round(dmg*1.3);if(m.magic)return Math.round(dmg*.8);floatText(BOSS_C[0],BOSS_C[1]-30,'Passes through','#9fc8bc');return Math.round(dmg*.35)}
   return dmg},
  async turn(b){
-  const k=S.roster.find(x=>x.seraph&&!x.down)||S.slots.find(x=>x&&!x.down);if(!k)return;b.cycle++;
+  if(b.phase===3)return;const k=pickTarget();if(!k)return;b.cycle++;
   if(b.phase===1){
    b.shards=Math.min(5,b.shards+1);
-   if(b.shards>=4&&b.cycle%2===0){log(`CROWN BARRAGE! ${b.shards} stolen stones fire at once.`);await bossDash(b);damageKid(k,5*b.shards);b.shards=1}
-   else if(b.cycle%3===0){log('VOID DECREE. Your protection is stripped away.');sfx('drain');k.barrier=false;k.guard=0;await lunge(b,-1);damageKid(k,10)}
-   else{log('Unmaking Ray!');await lunge(b,-1);damageKid(k,14+rnd(4))}
+   if(b.shards>=4&&b.cycle%2===0){log(`CROWN BARRAGE! ${b.shards} stolen stones fire at once.`);await bossDash(b);activeAlive().forEach(p=>damageKid(p,2*b.shards+2));b.shards=1}
+   else if(b.cycle%3===0){log('VOID DECREE. Every shield is stripped away.');sfx('drain');activeAlive().forEach(p=>{p.barrier=false;p.veil=false});await lunge(b,-1);damageKid(k,10)}
+   else{log(`Unmaking Ray at ${k.name}!`);await lunge(b,-1);damageKid(k,14+rnd(4))}
   }else{
    const c=b.cycle%3;
-   if(c===1){log('WAIL OF THE UNMADE. Your friends\' voices go quiet.');sfx('wail');S.silence=2;damageKid(k,12+rnd(3))}
-   else if(c===2){log('The Unmade devours your light!');sfx('drain');await lunge(b,-1);const before=k.hp;damageKid(k,14+rnd(4));const got=before-k.hp;const hl=Math.round(got/2);b.hp=Math.min(b.hpMax,b.hp+hl);floatText(BOSS_C[0],BOSS_C[1]-20,'+'+hl,'#9fc8bc')}
-   else{if(k.barrier){k.barrier=false;log('Spectral claws grab for you, and Crest Barrier holds them off.');sfx('shield')}else{log('Spectral claws seize you. You lose your next turn.');k.held=1;await lunge(b,-1);damageKid(k,10)}}
+   if(c===1){log('WAIL OF THE UNMADE. It hits everyone.');sfx('wail');await bossDash(b);activeAlive().forEach(p=>damageKid(p,7+rnd(3)))}
+   else if(c===2){log(`The Unmade devours ${k.name}'s light!`);sfx('drain');await lunge(b,-1);const before=k.hp;damageKid(k,14+rnd(4));const got=before-k.hp;const hl=Math.round(got/2);b.hp=Math.min(b.hpMax,b.hp+hl);floatText(BOSS_C[0],BOSS_C[1]-20,'+'+hl,'#9fc8bc')}
+   else{if(k.barrier){k.barrier=false;log(`Spectral claws grab for ${k.name}, and Crest Barrier holds them off.`);sfx('shield')}else{log(`Spectral claws seize ${k.name}. They lose their next turn.`);k.held=1;await lunge(b,-1);damageKid(k,10)}}
   }
-  if(S.silence>0)S.silence--;if(k.guard>0)k.guard--;
+  renderStatus();
  }};
 CHAPTERS.push(CH27);
 // ================= Part 2 · Chapter 13: Five Years Later. Captain Cinder is back, older and much louder =================
@@ -1961,10 +1999,10 @@ const CH20={key:'ch20',num:20,title:'The Fall of the Guardians',villain:'Void Wi
  init(b){b.ash=3;b.n0=3},draw:VWISP.draw,turn:VWISP.turn,stunText:'The wisps flicker and drift apart.',
  chips(b){return [{t:`Wisps left: ${b.ash}`}]},form(){return 'Drifting closer'},
  onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg}};
-const CH21={key:'ch21',num:21,title:'Five Into One',villain:'Void Wisps',bg:'woods',hp:650,part:3,age:'adult',solo:true,party3:true,noMorph:true,roster:['lightheart','kaytahn','scareth','thornforge','nightshade'],warn:VWISP.warn,
- intro:"Five cracked stones, the crater's edge, and the last spark of the Warden's Light.",
- tip:'Lightheart takes every hit meant for his friends. If he falls, the fight is lost. Each friend has one Stone Echo, a last flicker of their old power.',
- victory:'The last wisp unravels. Five friends stand together in the dark, carrying one light.',
+const CH21={key:'ch21',num:21,title:'One Last Time',villain:'Void Wisps',bg:'woods',hp:560,part:3,age:'adult',noMorph:true,echoes:true,roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],warn:VWISP.warn,
+ intro:"Five cracked stones, the crater's edge, and a crimson spark that will not stay.",
+ tip:'Nobody can morph, but the stones still flicker: each hero has one Stone Echo per fight. Every third turn the wisps drain everyone, so heal before it lands.',
+ victory:'The last wisp unravels. Five friends stand together in the dark.',
  init(b){b.ash=3;b.n0=3},draw:VWISP.draw,turn:VWISP.turn,stunText:'The wisps flicker and drift apart.',
  chips(b){return [{t:`Wisps left: ${b.ash}`}]},form(){return 'Drawn to the light'},
  onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg}};
@@ -1974,9 +2012,9 @@ function drawEchoes(b,x0,y0){['bastion','tidewarden','emberwright','verdance'].f
   ctx.globalAlpha=(g==='bastion'&&b.shield?.95:.55)+.12*Math.sin(T/15+i);ctx.translate(x0+30+(i%2)*24+(i>1?8:0),y0-6+(i>1?16:0));ctx.scale(-1,1);ctx.drawImage(f,0,0);ctx.restore()});
   if(b.shield){ctx.save();ctx.globalAlpha=.3+.1*Math.sin(T/9);ctx.fillStyle='#ffc860';ctx.fillRect(x0+2,y0+6,4,46);ctx.restore()}}
 const P3ROSTER=['lightheart','kaytahn','scareth','thornforge','nightshade'];
-const CH22={key:'ch22',num:22,title:'The Relic Sites',villain:'Guardian Echoes',bg:'grove',hp:1150,part:3,age:'adult',solo:true,party3:true,noMorph:true,roster:P3ROSTER,
- intro:'Beyond the last gate on the Relic Road, four echoes of the Earth Guardians wait together to test what Lightheart has learned.',
- tip:"The echoes take turns. Bastion's echo raises a shield that blocks the next hit, and Verdance's arrow leaves Lightheart hexed. Use your new moves.",
+const CH22={key:'ch22',num:22,title:'The Relic Sites',villain:'Guardian Echoes',bg:'grove',hp:900,part:3,age:'adult',noMorph:true,echoes:true,roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
+ intro:'Beyond the last gate on the Relic Road, four echoes of the Earth Guardians wait together to test what the team got back.',
+ tip:"The echoes take turns. Bastion's echo raises a shield that blocks the next hit, and Verdance's arrow leaves the team hexed. Each friend has their relic power back now.",
  victory:'The four echoes lower their weapons, nod, and fade into the light.',
  init(b){b.cycle=0;b.shield=false},draw:drawEchoes,
  chips(b){return [b.shield?{t:'Shield up: next hit blocked',w:true}:{t:`Next: ${['Bastion','Tidewarden','Emberwright','Verdance'][b.cycle%4]}`,o:true},...(S.humbled>0?[{t:`Hexed ${S.humbled}`,w:true}]:[])]},
@@ -1985,11 +2023,11 @@ const CH22={key:'ch22',num:22,title:'The Relic Sites',villain:'Guardian Echoes',
  async turn(b){const who=b.cycle%4;b.cycle++;const J=pickTarget();if(!J)return;if(S.humbled>0)S.humbled--;
   if(who===0){b.shield=true;sfx('shield');log("Bastion's echo raises a tower shield.")}
   else if(who===1){log("Tidewarden's echo sends a wave crashing over everyone!");await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)))}
-  else if(who===2){log("Emberwright's echo brings his hammer down!");await lunge(b,-1);damageKid(J,18+rnd(5))}
-  else{log("Verdance's echo looses a living arrow. Lightheart is hexed and takes more damage for 2 turns.");await lunge(b,-1);damageKid(J,10+rnd(3));S.humbled=2}
+  else if(who===2){log(`Emberwright's echo brings his hammer down on ${J.name}!`);await lunge(b,-1);damageKid(J,18+rnd(5))}
+  else{log("Verdance's echo looses a living arrow. The team is hexed and takes more damage for 2 turns.");await lunge(b,-1);damageKid(J,10+rnd(3));S.humbled=2}
   renderStatus()}};
 function drawSentinel(b,x0,y0){const f=NPCS.aldric.spr.armor[Math.floor(T/36)%2];glow(x0+30,y0+24,30,'#ff3a2a',.16+.06*Math.sin(T/20));ctx.save();ctx.globalAlpha=b.kneel?.55:.95;ctx.translate(x0+46,y0+(b.kneel?10:0));ctx.scale(-1.3,1.3);ctx.drawImage(f,0,0);ctx.restore()}
-const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',bg:'woods',hp:999,part:3,age:'adult',solo:true,party3:true,noMorph:true,allEchoWin:true,roster:P3ROSTER,
+const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',bg:'woods',hp:999,part:3,age:'adult',noMorph:true,echoes:true,allEchoWin:true,roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:"Deep in the crater, Aldric's empty armor rises to test the team.",
  tip:'The Sentinel turns aside every blow. It is testing something else. Every friend must use their Stone Echo, so swap the bench friends in.',
  victory:'The Sentinel lowers its sword and kneels.',
@@ -1997,9 +2035,9 @@ const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',
  chips(b){const n=['scareth','kaytahn','thornforge','nightshade'].filter(id=>(S.friendUsed||{})[id]).length;return [{t:`Stone Echoes: ${n} of 4`,o:true},{t:'Blows do nothing',w:true}]},
  form(){return 'Testing you'},stunText:'The Sentinel stands perfectly still, waiting.',
  onHit(b,k,dmg){floatText(BOSS_C[0],BOSS_C[1]-30,'Turned aside','#ff8a6a');return 0},
- async turn(b){b.cycle++;const J=pickTarget();if(!J)return;
+ async turn(b){b.cycle++;const J=activeAlive().find(k=>k.id==='lightheart')||pickTarget();if(!J)return;
   if(b.cycle%3===0){log('The Sentinel sweeps its greatsword in a wide arc.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,4+rnd(2)))}
-  else{log('The Sentinel strikes at Lightheart. A hollow voice: "...Alone?"');await lunge(b,-1);damageKid(J,8+rnd(3))}renderStatus()}};
+  else{log(`The Sentinel strikes at ${J.name}. A hollow voice: "...Alone?"`);await lunge(b,-1);damageKid(J,8+rnd(3))}renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH22,CH23);
 async function startEpilogue(){showBattleUI(false);HUB.active=false;await playCutscene(SCENES.ch25open);progress.ep=true;saveProgress();
   HUB.age='adult';HUB.area=null;HUB.map=townMap();HUB.x=18*TS+8;HUB.y=17*TS+8;HUB.fromHub=true;HUB.pendingBeat={text:"Chapter 25: A Brighter Future. One year later. The wedding is at the fountain."};enterHub()}
@@ -2064,11 +2102,11 @@ async function finalPhase(){
   const b=S.boss;S.skipBoss=true;
   if(b.phase===1){
     await sleep(600);await playCutscene(SCENES.ch27.p2);
-    Object.assign(b,{phase:2,hp:760,hpMax:760,name:'The Unmade',cycle:0,shards:0,stun:0,hex:0,fade:1});S.friendUsed={};
+    {const h2=Math.round(760*(S.ch.lastLight?bossScale(S.ch):1));Object.assign(b,{phase:2,hp:h2,hpMax:h2,name:'The Unmade',cycle:0,shards:0,stun:0,hex:0,fade:1})}S.friendUsed={};
     playSong('wraith');
   }else{
     await sleep(600);await playCutscene(SCENES.ch27.p3);
-    Object.assign(b,{phase:3,hp:1,hpMax:1000,name:'The Unmade',stun:0});S.pillars=true;playSong('seraph');
+    Object.assign(b,{phase:3,hp:1,hpMax:1000,name:'The Unmade',stun:0});S.letGo=new Set();S.pillars=true;playSong('seraph');
   }
   showBattleUI(true);S.over=false;renderStatus();
 }
@@ -2167,6 +2205,11 @@ function render(now){
   ctx.restore();y0+=BOSS_DY;
   // kids, top row first so lower kids overlap
   S.slots.forEach((k,i)=>{if(!k)return;const [x,y]=SLOT[i];
+    if(k.lastLight){const f=k.down?0:Math.floor((T+i*19)/26)%2,K=KIDS[k.id],sp=K.spr.final,sw=K.spr.finalW;ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+12+k.ox,y+38,12,2,0,0,7);ctx.fill();
+      ctx.globalAlpha=k.down?.35:1;ctx.drawImage(sp[f],x-SOX+k.ox,y-SOY-10);if(k.flash>0){ctx.globalAlpha=.85;ctx.drawImage(sw[f],x-SOX+k.ox,y-SOY-10);k.flash--}ctx.globalAlpha=1;
+      if(k.veil&&!k.down){ctx.globalAlpha=.3;ctx.drawImage(k.spr.veil,x+k.ox+2,y-11);ctx.globalAlpha=1}
+      if(k.barrier&&!k.down){ctx.strokeStyle='rgba(79,224,208,.8)';ctx.strokeRect(x+.5,y-12.5,23,52)}
+      if(k.held&&!k.down)px(x+20,y-10,3,3,'#9fc8bc');return}
     if(k.seraph){const f=Math.floor(T/26)%2,sp=k.spr.seraphAdult,sw=k.spr.seraphAdultW;ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+12+k.ox,y+38,12,2,0,0,7);ctx.fill();
       ctx.globalAlpha=k.down?.35:1;ctx.drawImage(sp[f],x-SOX+k.ox,y-SOY);if(k.flash>0){ctx.globalAlpha=.85;ctx.drawImage(sw[f],x-SOX+k.ox,y-SOY);k.flash--}ctx.globalAlpha=1;
       if(k.barrier&&!k.down){ctx.strokeStyle='rgba(79,224,208,.8)';ctx.strokeRect(x+.5,y-2.5,23,42)}return}
@@ -2185,7 +2228,7 @@ function render(now){
   lightPass(C.bg);
   if(S.pillars)drawPillars(1);
   // light sources that sit above the grade: meteorite stones, ambient motes
-  S.slots.forEach((k,i)=>{if(!k||k.down)return;const [x,y]=SLOT[i];if(k.seraph){glow(x+11+k.ox,y+17,18,'#cfe0ff',.4+.2*Math.sin(T/10));if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-9+o,4,2,'#ffcc33');px(x+11,y-7+o,2,1,'#ffcc33')}return}if(k.stoneless){if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-5+o,4,2,'#ffcc33');px(x+11,y-3+o,2,1,'#ffcc33')}return}const f=Math.floor((T+i*19)/30)%2;
+  S.slots.forEach((k,i)=>{if(!k||k.down)return;const [x,y]=SLOT[i];if(k.lastLight){glow(x+11+k.ox,y+8,20,KIDS[k.id].finalGlow,.3+.15*Math.sin(T/10+i));if(Math.random()<.05)S.parts.push({x:x+4+Math.random()*16,y:y-6+Math.random()*30,vx:(Math.random()-.5)*.2,vy:-.25,c:KIDS[k.id].finalGlow,s:1,l:50});if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-19+o,4,2,'#ffcc33');px(x+11,y-17+o,2,1,'#ffcc33')}return}if(k.seraph){glow(x+11+k.ox,y+17,18,'#cfe0ff',.4+.2*Math.sin(T/10));if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-9+o,4,2,'#ffcc33');px(x+11,y-7+o,2,1,'#ffcc33')}return}if(k.stoneless){if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-5+o,4,2,'#ffcc33');px(x+11,y-3+o,2,1,'#ffcc33')}return}const f=Math.floor((T+i*19)/30)%2;
     const tl=(k.powered?k.tallArmor:k.tall)||0;stoneGlow(x+11+k.ox,y-tl+(k.powered?16:18)+f,k.powered?16:9,k.id,.3+.2*Math.sin(T/12+i));
     if(S.active===k){const o=Math.round(Math.sin(T/6));px(x+10,y-tl-5+o,4,2,'#ffcc33');px(x+11,y-tl-3+o,2,1,'#ffcc33')}});
   if(showBoss&&b.stun>0){for(let i=0;i<3;i++){const a=T/10+i*2.1;px(x0+26+Math.cos(a)*16,y0-6+Math.sin(a)*3,2,2,'#ffcc33')}}
@@ -2263,7 +2306,7 @@ let GUIDE=true;try{GUIDE=localStorage.getItem('mk-guide')!=='off'}catch(e){}
 function toggleGuide(){GUIDE=!GUIDE;try{localStorage.setItem('mk-guide',GUIDE?'on':'off')}catch(e){}sfx('cursor');document.querySelectorAll('.guideBtn').forEach(b=>b.textContent=`Guide arrow: ${GUIDE?'On':'Off'}`)}
 // what a boss will do on its next turn, when that turn is a big one (shown on its card and in the turn strip)
 const BOSS_WARN={
- ch22:b=>[null,'TIDAL WAVE hits everyone','EMBER HAMMER: a heavy hit on Lightheart','LIVING ARROW: Lightheart takes more damage for 2 turns'][b.cycle%4],
+ ch22:b=>[null,'TIDAL WAVE hits everyone','EMBER HAMMER: a heavy hit on one hero','LIVING ARROW: the team takes more damage for 2 turns'][b.cycle%4],
  ch23:b=>(b.cycle+1)%3===0?'GREATSWORD ARC hits everyone':null,
  ch19:b=>(b.cycle+1)%3===0?'SHOWBOAT: she leaves herself open':(b.cycle+1)%4===0?'WHIRLWIND hits everyone':'Spear tap on one adult',
  ch18a:b=>b.cycle%3===2?'ROCKFALL hits everyone':'SHIELD BASH on one kid',
@@ -2286,12 +2329,12 @@ const BOSS_WARN={
  ch11:b=>{const n=b.cycle+1;if(b.phase===1){if(activeAlive().some(k=>k.powered)&&n%2)return 'Stone Drain rips the armor off a morphed kid';if(n%3===0)return 'Crimson Cleave hits everyone';return null}
    if(b.phase===2)return ['Stolen Shadow Rend: three strikes on one kid',null,'Stolen Void Hold: a kid loses a turn','Stolen Starfall Blade: one heavy hit'][n%4];return 'Crimson Rage hits everyone, then strikes again'},
  ch27:b=>{const n=b.cycle+1;if(b.phase===1){if(Math.min(5,b.shards+1)>=4&&n%2===0)return 'CROWN BARRAGE: every stolen stone fires';if(n%3===0)return 'Void Decree strips your protection';return null}
-   return ['Spectral claws: you lose a turn unless shielded','Wail: your friends go silent','The Unmade devours your light and heals'][n%3]},
+   return b.phase===3?null:['Spectral claws: a hero loses a turn unless shielded','WAIL hits everyone','The Unmade devours a hero\'s light and heals'][n%3]},
  dream:b=>S.round===2?'The shadow lashes out at everyone':null};
 function bossWarn(){if(!S||S.over||!S.boss||S.ch.scripted)return null;const f=S.ch.warn||BOSS_WARN[S.ch.key];try{return f?f(S.boss):null}catch(e){return null}}
 function bossScale(ch){const D=ch.key==='dream'?1:DIFF_MULT[DIFF].hp;if(ch.solo)return D;return (1+.13*(expectedLevel(ch)-1))*(TUNE.hp[tuneKey(ch)]||1)*D}
 // Per-chapter boss damage tuning. Story mode targets about half the party's health left at the end of a boss fight.
-const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.35,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.5,ch14:1.25,ch15:1,ch16:1.3,ch17:1.25,ch18a:1.35,ch18:1.2,ch19:1.4,ch20:1.4,ch21:1.7,ch22:2.1,ch27:1.4};
+const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.35,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.5,ch14:1.25,ch15:1,ch16:1.3,ch17:1.25,ch18a:1.35,ch18:1.2,ch19:1.4,ch20:1.4,ch21:1.5,ch22:2.6,ch23:1.4,ch27:2.25};
 function dmgScale(ch){const D=(ch.key==='dream'?1:DIFF_MULT[DIFF].dmg)*(DMG_TUNE[ch.key]||1);if(ch.solo)return D;return (1+.12*(expectedLevel(ch)-1))*(ch.key==='dream'?1:TUNE.dmg*(TUNE.dmgCh[tuneKey(ch)]||1))*D}
 function lvStats(id){const p=P(),lv=p.party.lv[id],b=p.party.bonus[id];return {lv,hp:(lv-1)*6+b.hp,atk:Math.floor((lv-1)*.8)+b.atk,mag:Math.floor((lv-1)*.8)+b.mag}}
 // Passive upgrades at levels 4 and 8
@@ -2427,7 +2470,7 @@ function startPatrol(p,ambush,opt){
     zone:p.z.id,after(){HUB.patrols=[];(HUB.down=HUB.down||new Set()).add(p.z.id);if(opt&&opt.onWin)opt.onWin();enterHub();HUB.grace=90}};
   const F=FOES[p.z.kind||'ashling'];Object.assign(C,{warn:F.warn,villain:F.villain,hp:F.hp,tip:F.tip,victory:F.victory,stunText:F.stunText,draw:F.draw,turn:F.turn,chips(b){return [{t:`Left: ${b.ash}`}]}});
   if(p.z.kind==='void'&&HUB.age==='adult'){Object.assign(C,{villain:'Void Wisps',age:'adult',part:3,noMorph:true,victory:'The wisps fold up into nothing.',tip:'Nobody can morph. Every third turn the wisps drain everyone, so heal before it lands.'});
-    if(progress.ch21)Object.assign(C,{solo:true,party3:true,roster:P3ROSTER,hp:Math.round(F.hp*1.6),tip:'Lightheart takes every hit meant for his friends. Every third turn the wisps drain him, so heal before it lands.'})}
+}
   if(opt){C.hp=Math.round(C.hp*(opt.hp||1));if(opt.villain)C.villain=opt.villain;if(opt.victory)C.victory=opt.victory}
   if(ambush)C.ambushMsg=`Ambush! You caught them from behind. The ${C.villain==='Living Pins'?'pins':C.villain==='Void Wisps'?'wisps':'Ashlings'} lose their first turn.`;
   startBattle(C,true)
@@ -2547,6 +2590,7 @@ function newState(ch){
   if(ch.tired)roster.forEach(k=>{k.hp=Math.round(k.hpMax*.7)});
   if(ch.age&&ch.age!=='kid')roster.forEach(k=>{const sp=agedBattleSpr(k.id,ch.age);k.spr=sp;k.tall=sp.human[0].height-30;k.tallArmor=sp.armor[0].height-30});
   roster.forEach(k=>{if(k.charm==='mirror')k.veil=true;if(k.charm==='hammer')k.hammer=true});
+  if(ch.lastLight)roster.forEach(k=>{k.lastLight=true;k.powered=999;k.hpMax=Math.round(k.hpMax*1.3);k.hp=k.hpMax});
   if(ch.solo){const k=roster[0];Object.assign(k,{seraph:true,age:'adult',hpMax:320,hp:320,atk:26,mag:24,guard:0,held:0});
     if(ch.party3){const f=roster.slice(1);return {ch,roster,slots:[f[0]||null,k,f[1]||null],bench:f.slice(2),boss,round:0,over:false,inspireUsed:false,active:null,fx:[],parts:[],log:[],dmgK:2.4*dmgScale(ch),humbled:0}}
     return {ch,roster,slots:[null,k,null],bench:[],boss,round:0,over:false,inspireUsed:false,active:null,fx:[],parts:[],log:[],dmgK:dmgScale(ch)}}
@@ -2565,7 +2609,7 @@ function morphMeter(k){if(k.seraph||k.down||S.ch.noMorph)return '';if(k.stoneles
   if(S.ch.rusty&&!k.focused)return '<div class="mm" title="Rusty: Focus first, then morph"><span class="mm-lbl">Needs Focus</span><span class="mm-bar"><i style="width:50%"></i></span></div>';
   return '<div class="mm" title="Ready to morph"><span class="mm-lbl ready">Morph ready</span><span class="mm-bar ready"><i style="width:100%"></i></span></div>'}
 function kidCard(k,bench){
-  const form=k.seraph&&!k.down?'<span class="form pow">Seraph Form · five stones</span>':k.down?'<span class="form">Down</span>':k.powered?`<span class="form pow">Morphed · ${k.powered} turn${k.powered>1?'s':''}</span>`:k.cd?`<span class="form">Cooldown ${k.cd}${bench?' · resting':''}</span>`:`<span class="form">${bench?'Bench · ready':S.ch.noMorph?(S.ch.party3?'Human · shielded by Jake':S.ch.age==='adult'?'Human · no stone power':'Human · dreaming'):'Human · ready to morph'}</span>`;
+  const form=k.lastLight&&!k.down?'<span class="form pow">Last Light Form</span>':k.seraph&&!k.down?'<span class="form pow">Seraph Form · five stones</span>':k.down?'<span class="form">Down</span>':k.powered?`<span class="form pow">Morphed · ${k.powered} turn${k.powered>1?'s':''}</span>`:k.cd?`<span class="form">Cooldown ${k.cd}${bench?' · resting':''}</span>`:`<span class="form">${bench?'Bench · ready':S.ch.noMorph?(S.ch.party3?'Human · shielded by Jake':S.ch.age==='adult'?'Human · no stone power':'Human · dreaming'):'Human · ready to morph'}</span>`;
   const ch=[`<span class="chip">${k.seraph?'All five stones':k.powered?k.ppassive:k.passive}</span>`];
   if(k.barrier)ch.push('<span class="chip ok">Barrier</span>');if(k.veil)ch.push('<span class="chip ok">Veil</span>');if(k.unbreak)ch.push('<span class="chip ok">Unbreakable</span>');
   if(k.burn)ch.push(`<span class="chip warn">Burnout ${k.burn}</span>`);if(k.caged)ch.push('<span class="chip warn">Caged</span>');if(k.stoneless)ch.push('<span class="chip warn">No stone</span>');
@@ -2657,6 +2701,25 @@ const EVO={scareth:{ch:'ch2',skill:'Quick Jab',name:'Phantom Jab',desc:'it knock
   lightheart:{ch:'ch5',skill:'Focus Strike',name:"Leader's Focus",desc:"it also cuts a friend's morph cooldown"},
   nightshade:{ch:'ch9',skill:'Shadow Bolt',name:'Binding Bolt',desc:'it also slows the boss'}};
 const evo=id=>!!(EVO[id]&&progress[EVO[id].ch]);
+
+// ---- Part 3: each hero's Stone Echo (once per phase) and the power each relic gives back ----
+const ECHO={
+ lightheart:['Rally everyone: heal the team 15% and they act sooner',async k=>{activeAlive().forEach(p=>{heal(p,Math.round(p.hpMax*.15));p.haste=Math.max(p.haste|0,1)});log("Jake's stone flickers. Everyone stands a little taller.")}],
+ scareth:['The boss loses its next turn',async k=>{S.boss.stun=Math.max(S.boss.stun,1);burst(BOSS_C[0],BOSS_C[1],'#c8d0dc',20);log("Joseph's cracked stone flickers. The foe hesitates.")}],
+ kaytahn:['Heal the whole team 25%',async k=>{activeAlive().forEach(p=>{heal(p,Math.round(p.hpMax*.25));burst(...kidCenter(p),'#7ff0e0',8)});log("Lindsey's stone flickers, and calm washes over everyone.")}],
+ thornforge:["Everyone's next attack hits 60% harder",async k=>{activeAlive().forEach(p=>{p.temper=true;p.disarmed=false});burst(...kidCenter(k),'#ff9a3a',20);log("Josh's stone flickers. Every weapon glows forge-hot.")}],
+ nightshade:['Hex the boss for 3 turns (+20% damage)',async k=>{S.boss.hex=3;burst(BOSS_C[0],BOSS_C[1],'#d080ff',20);log("Tricia's stone flickers. She reads the weak spots out loud.")}]};
+function echoAction(k){const used=S.friendUsed||(S.friendUsed={}),E=ECHO[k.id];if(!E)return null;
+  return {label:'Stone Echo',desc:used[k.id]?'Used this phase':`The last flicker of your stone. ${E[0]}`,disabled:!!used[k.id],special:true,rank:.9,run:async()=>{used[k.id]=true;sfx('heal');if(kidPos(k))burst(...kidCenter(k),k.glint,16);await E[1](k);renderStatus();
+    if(S.ch.allEchoWin&&!S.over&&['scareth','kaytahn','thornforge','nightshade'].every(id=>used[id])){S.boss.hp=0;S.boss.kneel=true;log('Four stones flicker at once. The Sentinel lowers its sword.');renderStatus();win()}}}}
+const RELIC_MV={
+ scareth:{label:'Shadow Rend',desc:'From the canyon relic: three quick strikes',run:async k=>{for(let i=0;i<3&&!S.over&&!S.transition;i++)await hitBoss(k,k.atk*1.3,{label:'rends'})}},
+ kaytahn:{label:'Crest Barrier',desc:'From the temple relic: shield the whole team',run:async k=>{sfx('shield');activeAlive().forEach(p=>{p.barrier=true;burst(...kidCenter(p),'#4fe0d0',8)});log('Crest Barrier shields the team.')}},
+ thornforge:{label:'Anvil Guard',desc:'From the forge relic: draw every attack and take half damage for 2 turns',run:async k=>{S.boss.taunt=2;k.guard=2;sfx('shield');burst(...kidCenter(k),'#ff9a3a',16);log('Anvil Guard! Josh plants his feet and draws every attack.')}},
+ nightshade:{label:'Hexfire',desc:'From the grove relic: dark magic that hexes',run:async k=>{await hitBoss(k,k.mag*3,{magic:true,label:'engulfs'});if(!S.over&&!S.transition)S.boss.hex=Math.max(S.boss.hex,2)}},
+ lightheart:{label:'Starfall Blade',desc:"From Aldric's spark: a heavy strike of light",run:k=>hitBoss(k,k.atk*3.5,{light:true,label:'brings down Starfall Blade on'})}};
+function relicAction(k){const M=RELIC_MV[k.id];if(!M)return null;const has=k.id==='lightheart'?progress.ch23:progress['mv_'+k.id];if(!has)return null;
+  return {label:M.label,desc:k.rcd?`Recharging: ${k.rcd} turn${k.rcd>1?'s':''}`:M.desc,disabled:k.rcd>0,run:async()=>{k.rcd=2;await M.run(k);renderStatus()}}}
 function actionsFor(k){
   if(k.seraph){let SA=seraphActions(k);if(S.ch.party3)SA=SA.filter(a=>a.label!=='Call a friend');
     const MV={'Shadow Rend':'scareth','Crest Barrier':'kaytahn','Anvil Guard':'thornforge','Hexfire':'nightshade'};
@@ -2667,11 +2730,15 @@ function actionsFor(k){
     if(echo){const A2=[];A2.push({label:'Stone Echo',desc:echo.disabled?'Used this phase':S.silence>0?'Silenced by the Wail':`The last flicker of your stone. ${echo.desc.replace('Hex the boss','Hex him').replace('your HP',"Jake's HP").replace('Your next attack',"Jake's next attack")}`,disabled:echo.disabled||S.silence>0,special:true,rank:.9,run:async()=>{await echo.run();if(S.ch.allEchoWin&&!S.over&&['scareth','kaytahn','thornforge','nightshade'].every(id=>(S.friendUsed||{})[id])){S.boss.hp=0;S.boss.kneel=true;log('Four stones flicker at once. The Sentinel lowers its sword.');renderStatus();win()}}});
       S._echo=A2}else S._echo=[]}
   const b=S.boss,C=S.ch,A=[];
-  const allPow=activeAlive().length===3&&activeAlive().every(p=>p.powered>0);
+  if(C.lastLight&&b.phase===3)return [{label:'Let it all go',desc:'Pour the last of your stone into the light. When everyone has, it ends.',special:true,run:async()=>{const L=S.letGo||(S.letGo=new Set());L.add(k.id);sfx('heal');burst(...kidCenter(k),KIDS[k.id].finalGlow,24);log(`${k.kid} lets go. Their stone pours out its last light.`);k.flash=12;renderStatus();
+    if(activeAlive().every(p=>L.has(p.id)))await finisher()}}];
+  const allPow=!C.lastLight&&activeAlive().length===3&&activeAlive().every(p=>p.powered>0);
   const atk=k.powered?k.atk*2:k.atk;
   A.push({label:'Attack',desc:k.disarmed?'Hit the boss (disarmed: half damage)':'Hit the boss',run:()=>hitBoss(k,atk*2,{label:'attacks'})});
   if(C.extra)A.push(...C.extra(k));
   if(C.party3&&S._echo)A.push(...S._echo);
+  if(C.echoes){const e=echoAction(k);if(e)A.push(e)}
+  if(C.age==='adult'&&!k.powered){const r=relicAction(k);if(r)A.push(r)}
   if(!k.powered){
     if(k.id==='scareth')A.push({label:'Quick Jab',desc:(evo('scareth')?'Phantom Jab: ':'')+(C.key==='ch2'?'Fast strike that knocks down 3 pins. Comes back quick.':evo('scareth')?'Fast strike that knocks the boss far back in line. Comes back quick.':'Fast strike that knocks the boss back in line. Comes back quick.'),run:async()=>{await hitBoss(k,k.atk*1.4,{pins:3,label:'jabs'});if(!S.over){if(C.key!=='ch2')scarePassive(k);if(S.boss.ct!=null&&!S.transition&&!S.boss.jabbed){S.boss.ct+=evo('scareth')?20:10;S.boss.jabbed=true;floatText(BOSS_C[0],BOSS_C[1]-30,'Delayed','#c8d0dc')}}}});
     if(k.id==='kaytahn')A.push({label:'Mend',desc:evo('kaytahn')?'Tidal Mend: heal or revive the most hurt ally, and they act sooner':'Heal or revive the most hurt ally',run:async()=>{
@@ -2692,7 +2759,7 @@ function actionsFor(k){
       A.push({label:'Crest Barrier',desc:'Shield the whole party',run:async()=>{sfx('shield');activeAlive().forEach(p=>{p.barrier=true;burst(...kidCenter(p),'#4fe0d0',8)});log('Crest Barrier shields the team.');renderStatus()}});
     }
     if(k.id==='lightheart'){
-      A.push({label:'Starfall Blade',desc:'Heavy single strike',run:()=>hitBoss(k,k.atk*5,{label:'brings down Starfall Blade on'})});
+      A.push({label:'Starfall Blade',desc:C.lastLight?'Heavy strike of light':'Heavy single strike',run:()=>hitBoss(k,k.atk*5,{light:true,label:'brings down Starfall Blade on'})});
       A.push({label:'Rally Cry',desc:'All cooldowns -1, small team heal, and Haste for 2 turns',run:async()=>{S.roster.forEach(p=>{if(p!==k&&p.cd>0)p.cd--;heal(p,10)});activeAlive().forEach(p=>{p.haste=2});log('Rally Cry! The team surges and speeds up.');renderStatus()}});
     }
     if(k.id==='thornforge'){
@@ -2753,6 +2820,7 @@ async function slotTurn(i){
   }
   if(k.powered){k.powered--;if(!k.powered){k.cd=cdFor(k);k.unbreak=false;log(`${k.name}'s armor fades. Cooldown: ${k.cd} turns.`)}}
   else if(k.cd>0)k.cd--;
+  if(k.rcd>0)k.rcd--;if(k.guard>0)k.guard--;
   S.active=null;renderStatus();
 }
 async function bossTurn(){
@@ -3227,7 +3295,7 @@ function cutWait(){return new Promise(r=>{CUT.wait=r})}
 function cutAdvance(){if(!CUT.active)return;if(CUT.typing){CUT.typing=false;return}const w=CUT.wait;CUT.wait=null;if(w)w()}
 function cutSkip(){if(!CUT.active)return;CUT.skip=true;CUT.typing=false;const w=CUT.wait;CUT.wait=null;if(w)w()}
 const csleep=ms=>CUT.skip?Promise.resolve():sleep(ms);
-function actorName(id){if(id==='boss')return CUT.boss?CUT.boss.C.villain:'???';const a=CUT.actors[id],K=CHR(id);return a&&(a.form==='armor'||a.form==='seraph')?K.name:K.kid}
+function actorName(id){if(id==='boss')return CUT.boss?CUT.boss.C.villain:'???';const a=CUT.actors[id],K=CHR(id);return a&&(a.form==='armor'||a.form==='seraph'||a.form==='final')?K.name:K.kid}
 async function typeLine(name,color,text){
   const box=$('dlg'),nm=$('dlgName'),tx=$('dlgText');box.hidden=false;$('cap').hidden=true;
   nm.textContent=name||'';nm.hidden=!name;nm.style.color=color||'var(--accent)';tx.textContent='';$('dlgNext').hidden=true;
@@ -3255,8 +3323,9 @@ async function runStep(s){
     await typeLine(nm,col,s.text);CUT.speaker=null}
   if(s.cap){$('dlg').hidden=true;const c=$('cap');c.textContent=s.cap;c.style.top=s.top?'16%':'';c.hidden=false;if(!CUT.skip){await sleep(350);if(s.auto)await csleep(s.auto);else await cutWait()}c.hidden=true}
   if(s.morph){const ids=[].concat(s.morph);for(const id of ids){const a=CUT.actors[id];a.flash=16;sfx('morph');rumble(.3,200);for(let i=0;i<3;i++)burst(a.x+12,a.y+12,i?CHR(id).glint:'#fff',18);await csleep(220);a.form='armor';await csleep(380)}}
-  if(s.ascend){const a=CUT.actors[s.ascend];a.flash=30;F0=CUT.fx;F0.flash=1;F0.shake=20;sfx('meteor');rumble(1,700);
-    for(let i=0;i<4;i++)burst(a.x+12,a.y+12,['#ffffff','#fff2c0','#9fd8ff','#e8c050'][i],24);await csleep(400);a.form='seraph';await csleep(900)}
+  if(s.ascend){const ids=[].concat(s.ascend);F0=CUT.fx;F0.flash=1;F0.shake=20;sfx('meteor');rumble(1,700);
+    for(const id of ids){const a=CUT.actors[id];a.flash=30;for(let i=0;i<4;i++)burst(a.x+12,a.y+12,['#ffffff','#fff2c0',CHR(id).finalGlow||'#9fd8ff','#e8c050'][i],ids.length>1?14:24)}
+    await csleep(400);ids.forEach(id=>{CUT.actors[id].form=s.form||'seraph'});await csleep(900)}
   if(s.age!==undefined&&!s.actor){F0=CUT.fx;F0.flash=1;sfx('magic');Object.values(CUT.actors).forEach(a=>{a.age=s.age;if(s.ys&&s.ys[a.id]!=null)a.y=cutY(s.ys[a.id]);a.flash=10});await csleep(700)}
   if(s.tint!==undefined)CUT.tint=s.tint;
   if(s.fadeActor){const a=CUT.actors[s.fadeActor];const run=animate(s.ms||1200,p=>{a.alpha=1-p;if(s.dust&&Math.random()<.6)S.parts.push({x:a.x+6+Math.random()*12,y:a.y+8+Math.random()*28,vx:(Math.random()-.5)*.3,vy:-.4-Math.random()*.5,c:Math.random()<.5?'#ff4a3a':'#ffb08a',s:1,l:70})});if(s.dust)sfx('heal');if(!s.async)await run}
@@ -3317,6 +3386,11 @@ function renderCut(){
   ctx.restore();
   const acts=Object.values(CUT.actors).sort((a,b)=>a.y-b.y);
   acts.forEach((a,i)=>{const K=CHR(a.id);
+    if(a.form==='final'){const f=Math.floor((T+i*13)/26)%2,x=Math.round(a.x)-SOX,y=Math.round(a.y)-SOY-10,SP=K.spr.final,SPW=K.spr.finalW;
+      glow(x+22,y+24,24,K.finalGlow,.2+.06*Math.sin(T/15+i));ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+22,Math.round(a.y)+38,12,2,0,0,7);ctx.fill();ctx.globalAlpha=1;
+      const dr=img=>{if(a.flip){ctx.save();ctx.translate(x+44,y);ctx.scale(-1,1);ctx.drawImage(img,0,0);ctx.restore()}else ctx.drawImage(img,x,y)};
+      dr(SP[f]);if(a.flash>0){ctx.globalAlpha=.85;dr(SPW[f]);ctx.globalAlpha=1;a.flash--}
+      if(Math.random()<.05)S.parts.push({x:x+12+Math.random()*20,y:y+12+Math.random()*24,vx:(Math.random()-.5)*.2,vy:-.2,c:K.finalGlow,s:1,l:60});return}
     if(a.form==='seraph'){const f=Math.floor(T/26)%2,x=Math.round(a.x)-SOX,y=Math.round(a.y)-SOY;
       glow(x+22,y+20,30,'#fff2c0',.22+.06*Math.sin(T/15));ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+22,Math.round(a.y)+(a.age==='adult'?38:28),12,2,0,0,7);ctx.fill();ctx.globalAlpha=1;
       const SP=a.age==='adult'?K.spr.seraphAdult:K.spr.seraph,SPW=a.age==='adult'?K.spr.seraphAdultW:K.spr.seraphW;ctx.drawImage(SP[f],x,y);if(a.flash>0){ctx.globalAlpha=.85;ctx.drawImage(SPW[f],x,y);ctx.globalAlpha=1;a.flash--}
@@ -3331,7 +3405,7 @@ function renderCut(){
   if(CUT.fx.signal&&T%40<22){px(232,16,1,1,VOID);glow(232,16,7,VOID,.7)}
   if(CUT.fx.pillars)drawPillars(CUT.fx.pillars);
   if(CUT.fx.relic)drawRelicBeam(CUT.fx.relic);
-  acts.forEach((a,i)=>{if(a.stoneless||a.alpha<.3||(a.form==='human'&&CHR(a.id).guardian))return;if(a.form==='seraph'){glow(a.x+11,a.y+17,18,'#cfe0ff',.45+.2*Math.sin(T/10));return}const f=Math.floor((T+i*19)/30)%2;const AG=a.age&&a.form==='human'?CHR(a.id).ages[a.age]:null;stoneGlow(a.x+(a.flip?13:11),a.y-((a.form==='armor'?CHR(a.id).tallArmor:CHR(a.id).tall)||0)+(AG?AG.gemY:a.form==='armor'?(CHR(a.id).gemArmorY||16):18)+f,a.form==='armor'?16:9,a.id,(.3+.2*Math.sin(T/12+i))*(AG&&AG.dim?.35:1))});
+  acts.forEach((a,i)=>{if(a.stoneless||a.alpha<.3||(a.form==='human'&&CHR(a.id).guardian))return;if(a.form==='final'){glow(a.x+11,a.y+8,16,CHR(a.id).finalGlow,.4+.15*Math.sin(T/10+i));return}if(a.form==='seraph'){glow(a.x+11,a.y+17,18,'#cfe0ff',.45+.2*Math.sin(T/10));return}const f=Math.floor((T+i*19)/30)%2;const AG=a.age&&a.form==='human'?CHR(a.id).ages[a.age]:null;stoneGlow(a.x+(a.flip?13:11),a.y-((a.form==='armor'?CHR(a.id).tallArmor:CHR(a.id).tall)||0)+(AG?AG.gemY:a.form==='armor'?(CHR(a.id).gemArmorY||16):18)+f,a.form==='armor'?16:9,a.id,(.3+.2*Math.sin(T/12+i))*(AG&&AG.dim?.35:1))});
   F.stones.forEach(st=>{st.t=Math.min(1,st.t+.012);if(st.t<0)return;const e=st.t<.5?2*st.t*st.t:1-Math.pow(-2*st.t+2,2)/2;const x=st.x+(st.tx-st.x)*e,y=st.y+(st.ty-st.y)*e-Math.sin(st.t*Math.PI)*30;
     px(x-1,y-1,3,3,st.c);px(x,y,1,1,st.id==='scareth'?'#b8b8c8':'#ffffff');stoneGlow(x,y,10,st.id,.6)});
   const mk=CUT.mote||CUT.bg;if(MOTE[mk]&&Math.random()<.2){const [c,vy]=MOTE[mk];S.parts.push({x:Math.random()*256,y:vy<0?140:Math.random()*120,vx:(Math.random()-.5)*.25,vy:vy*(.5+Math.random()),c,s:1,l:90+rnd(80)})}
@@ -3522,6 +3596,8 @@ gallery:{label:'Character Gallery',steps:[
   {age:'adult',ys:{scareth:78,kaytahn:78,lightheart:78,thornforge:78,nightshade:78}},
   {cap:'Part 3. Their early thirties. The stones are cracked and barely glow.',top:true},
   {say:'thornforge',text:'Still got mine. Never could bring myself to take it off.'},
+  {ascend:['lightheart','scareth','kaytahn','thornforge','nightshade'],form:'final'},
+  {cap:'And one last time, together: the Last Light Forms.',top:true},
   {fade:'out',ms:900}]},
 herald:{label:'Part 2 Preview · The Herald',steps:[
   {bg:'town',music:null},{fade:'in',ms:1000},
@@ -3550,16 +3626,14 @@ vorath:{label:'Part 3 Preview · Vorath the Unmaker',steps:[
   {say:'scareth',text:'Then we stop feeling and start thinking. There has to be a way.'},
   {cap:'To be continued in Part 3: The Last Light.',top:true},
   {fade:'out',ms:1200}]},
-preview5:{label:'Part 3 Preview · Five Into One',steps:[
-  {bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'taken'},{fade:'in',ms:1200},
-  {cap:'Part 3 preview. Fifteen years later, the Earth Guardians have fallen.',top:true},
-  L('lightheart',106,62,{age:'adult'}),
-  {cap:'Too drained to fight, the other four pour what is left of their stones into one bearer.',top:true},
-  {fx:'pour',into:'lightheart'},
-  {say:'lightheart',text:'I can feel all of you. Every single one.'},
-  {music:'seraph'},{ascend:'lightheart'},
-  {cap:'Lightheart, Seraph Form. Five stones, one light.',top:true},
-  {say:'lightheart',text:"Hang on, everyone. I'm going to bring them back."},
+preview5:{label:'Part 3 Preview · The Last Light',steps:[
+  {bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'mystery'},{fade:'in',ms:1200},
+  {cap:'Part 3 preview. Fifteen years later, the stones are cracked and barely glow.',top:true},
+  L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),
+  {say:'thornforge',text:'Still got mine. Never could take it off.'},
+  {say:'nightshade',text:'They are waiting for something. I can feel it.'},
+  {music:'seraph'},{ascend:['lightheart','scareth','kaytahn','thornforge','nightshade'],form:'final'},
+  {cap:'The Last Light Forms. One last time, together.',top:true},
   {fade:'out',ms:1500}]},
 ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
   {bg:'woods',music:null,woods:{red:true,crater:true}},{fade:'in',ms:1200},
@@ -3592,41 +3666,48 @@ ch7:{pre:{label:'Chapter 7 · The Knight Arrives',steps:[
 SCENES.ch27={
  pre:{label:'Chapter 24 · Two Worlds, One Light',steps:[
   {bg:'void',music:'vorath'},{boss:'vorath'},{fade:'in',ms:1200},
-  L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'}),
+  L('lightheart',60,56,{age:'adult'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'}),
   {cap:"Beyond the rift, Lumora's cracked ghost still hangs in the sky.",top:true},
-  {say:'boss',text:'One light, carrying five. How thoughtful. You have saved me the trouble of looking.'},
-  {say:'lightheart',text:'Not willingly. On purpose.'},
-  {say:'boss',text:'Lumora had purpose too. I still remember the sound it made when it ended.'},
-  {say:'nightshade',text:"Jake, we're with you. Every one of us."},
+  {say:'boss',text:'Five little lights. Cracked, dim, and fifteen years too late.'},
+  {say:'kaytahn',text:"Our stones. They're shaking."},
+  {say:'nightshade',text:'They know him. He is the one who ended their world.'},
+  {say:'boss',text:'Lumora burned brightest at the very end, too. I still remember the sound it made.'},
+  {say:'lightheart',text:'Then let them burn. One last time. Together.'},
+  {music:'seraph'},{ascend:['lightheart','scareth','kaytahn','thornforge','nightshade'],form:'final'},
+  {cap:'The Last Light Forms. Every stone wakes at once, burning what is left of its light.',top:true},
+  {say:'scareth',text:'Oh, I missed this.'},
+  {say:'thornforge',text:'Capes. We have CAPES now.'},
+  {music:'vorath'},
   {cap:'Phase 1: his crown of stolen stones shields him. Starfall Blade shatters the shards.',top:true}]},
  p2:{label:'Chapter 24 · Phase 2',steps:[
   {bg:'void',music:null},{boss:'vorath'},
-  L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'}),
+  L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'boss',text:'You think you can end ME? I have outlived every world that thought so.'},
   {fx:'shake',n:24},{sfx:'drain'},{boss:null,ms:1400},
   {cap:'The robes fall empty. What pours out of them was never a king.',top:true},
   {music:'wraith'},{boss:'wraith',ms:1600},{fx:'shake',n:16},
   {say:'boss',text:'EVERY WORLD I ENDED IS STILL IN HERE. LISTEN. THEY ARE STILL SINGING.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
-  {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land.',top:true}]},
+  {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land, so Jake, Lindsey and Tricia lead while Joseph and Josh protect them.',top:true}]},
  p3:{label:'Chapter 24 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
-  L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'}),
+  L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'boss',text:'You cannot end what endings are made of. When every light is gone, I am what is left.'},
-  {say:'lightheart',text:"He's right. I can't destroy him. Not by holding on."},
-  {say:'nightshade',text:'Jake. The stones were never meant to last forever.'},
+  {say:'lightheart',text:"We can't destroy him by holding on to the light."},
+  {say:'nightshade',text:'The stones were never meant to last forever.'},
   {say:'kaytahn',text:'They were meant to be given. Aldric told us.'},
-  {say:'scareth',text:'So give them. All of it. We are right here.'},
-  {say:'thornforge',text:"Let go, Jake. We've got you."},
+  {say:'scareth',text:'Then we give it. All of it. Together.'},
+  {say:'thornforge',text:'On three?'},
+  {say:'lightheart',text:'On three.'},
   {music:'seraph'},{fx:'pillars'},
-  {cap:"The last light of Lumora pours into Earth's fallen guardians. Five pillars of light rise from the ground.",top:true},
-  {cap:'Final phase: Two Worlds, One Light.',top:true}]},
+  {cap:"Back on Earth, five pillars of light rise around the fallen Guardians. The stones are ready to give the last of it.",top:true},
+  {cap:'Final phase: Two Worlds, One Light. Each hero lets go.',top:true}]},
  post:{label:'Chapter 24 · Two Worlds, One Light',steps:[
   {bg:'void',music:'seraph'},{fx:'pillars'},{fade:'in'},
-  L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'}),
+  L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'lightheart',text:"It's over."},
-  {unmorph:'lightheart'},
-  {cap:"The lights of Lumora went dark. Their light lives on in Earth's guardians.",top:true},
+  {unmorph:['lightheart','scareth','kaytahn','thornforge','nightshade']},
+  {cap:"Five stones go gray. The last light of Lumora lives on in Earth's guardians, and far below, the Guardians open their eyes.",top:true},
   {fade:'out',ms:1200},{fx:'nopillars'}]}
 };
 EXTRA_BOSSES.wraith={key:'wraith',villain:'The Unmade',init(b){},draw(){},drawOver:(b,x0,y0)=>drawWraith(b,x0,y0-6)};
@@ -5448,7 +5529,7 @@ Object.assign(AREAS,{
 // ================= The Relic Road (Chapter 22) =================
 DUNGEONS.ch22={scene:'ch22open',start:'rr_hub',name:'the Relic Road',town:[37,15],enterText:'Josh pulls the truck up where the east road ends. Four old paths lead off from here.',againText:'The Relic Road. Four quiet paths, and a gate at the end.'};
 const SITE=["####################","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#########E##########"];
-const RELIC=(id,who,g,name,hint,learn,lines)=>({type:'relic',area:true,id,who,g,tx:9,ty:3,name,hint,learn,solid:true,lines:[...lines,['',"Light pours from the pedestal into Jake's stone."]]});
+const RELIC=(id,who,g,name,hint,learn,lines)=>({type:'relic',area:true,id,who,g,tx:9,ty:3,name,hint,learn,solid:true,lines:[...lines,['',`Light pours from the pedestal into ${KIDS[who].kid}'s stone. It glows again, just a little.`]]});
 const siteGoal=(id,hint)=>()=>aSt()[id]?goalTo('Head back to the Relic Road.',9,9):goalTo(hint,9,3);
 Object.assign(AREAS,{
  rr_hub:{name:'The Relic Road',short:'the Relic Road',ch:'ch22',theme:'trail',tf:{z:'rr_all'},
@@ -5614,7 +5695,7 @@ async function areaInteract0(o){const L=NET.actor||HUB.leader,S2=HUB.state;
   if(o.type==='relic'){if(S2[o.id])return hubSay([['',`${NPCS[o.g].name}'s echo is gone. Only a soft glow remains.`]]);if(L!==o.who)return hubSay([['',o.hint],['',`(${KIDS[o.who].kid} should lead here.)`]]);
     await hubSay(sayLines(o.lines));S2[o.id]=true;progress['mv_'+o.who]=true;saveProgress();if(['rr_c','rr_t','rr_f','rr_g'].every(k=>S2[k]))S2.rr_all=true;saveHub();AGROUND.key=null;buildAreaObjs();sfx('heal');
     for(let i=0;i<16;i++)HUB_PARTS.push({x:o.tx*TS+8,y:o.ty*TS+6,vx:(Math.random()-.5)*1.4,vy:-.4-Math.random(),c:NPCS[o.g].stone,l:40});
-    await hubSay([['',`Lightheart learned ${o.learn}!`]]);if(S2.rr_all)await hubSay([['','All four sites are done. Back on the Relic Road, the last gate opens.']]);return}
+    await hubSay([['',`${KIDS[o.who].kid} can use ${o.learn} again! (A relic power, usable every few turns.)`]]);if(S2.rr_all)await hubSay([['','All four sites are done. Back on the Relic Road, the last gate opens.']]);return}
   if(o.type==='relicarmor')return hubSay(sayLines([['',"Aldric's crimson armor rests in the void cradle, empty and still."],['me','Thank you.']]));
   if(o.type==='pair'){if(S2[o.id])return hubSay([['',`${NPCS[o.g].name} gives you a nod.`]]);if(L!==POWER_OWNER[o.power])return needPower(o);
     await castPower(o);S2[o.id]=true;const A=AREAS[HUB.area],all=OBJS.filter(p=>p.type==='pair'&&p.grp===o.grp).every(p=>S2[p.id]);if(all)S2[o.grp]=true;
@@ -6129,7 +6210,7 @@ SCENES.ch20={pre:{label:'Chapter 20 · The Fall of the Guardians',steps:[
   {say:'nightshade',text:'Our stones are the last of the seal.'},
   {say:'lightheart',text:'Then we figure out how to use them.'},
   {fade:'out',ms:1400}]}};
-SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
+SCENES.ch21={pre:{label:'Chapter 21 · One Last Time',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3_KIDS,{fade:'in',ms:1000},
   {cap:'Night. The edge of the crater.',top:true},
   {say:'lightheart',text:'Everybody ready?'},
@@ -6137,44 +6218,43 @@ SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
   {say:'scareth',text:'...Nothing.'},
   {say:'nightshade',text:'"Five lights, held as one by the Warden."'},
   {fx:'shake',n:16},{cap:'The ground hums. Far below, a crimson spark rises out of the crater.',top:true},{fx:'flash'},
-  {say:'aldric',name:'???',col:'#f4efe6',text:'Five. Finally.'},
+  {say:'aldric',name:'???',col:'#f4efe6',text:'Not... yet.'},
+  {cap:'The spark flickers, then sinks back into the dark.',top:true},
   {say:'kaytahn',text:'Was that...?'},
-  {say:'nightshade',text:'It was.'},
-  {cap:"The spark binds all five lights into Jake's stone. The other four go dark.",top:true},
-  {fx:'flash'},{fadeActor:'lightheart',ms:300},L('lightheart',56,70,{age:'adult',form:'seraph'}),{fx:'flash'},{sfx:'morph'},
-  {say:'lightheart',text:'Fifteen years. I forgot how this feels.'},
-  {say:'thornforge',text:'Uh. Jake. Company.'},
-  {say:'lightheart',text:"Stay back. I've got this."},
-  {say:'kaytahn',text:"No. You're not doing this alone. That's how Aldric broke."},
-  {say:'scareth',text:'No armor, no problem. We have been practicing.'},
-  {cap:"Vorath's wisps followed the light. Lightheart takes every hit meant for his friends. If he falls, the fight is lost. Each friend has one Stone Echo.",top:true},{fx:'flash'}]},
- post:{label:'Chapter 21 · Five Into One',steps:[
-  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult',form:'seraph'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
+  {say:'nightshade',text:"It was. It's down there. With his armor."},
+  {say:'thornforge',text:'Uh. Guys. Company.'},
+  {say:'lightheart',text:'Stay close. We do this the way we always did.'},
+  {cap:"Vorath's wisps followed the flicker. Nobody can morph, but each of you has one Stone Echo, a last spark of your old power.",top:true},{fx:'flash'}]},
+ post:{label:'Chapter 21 · One Last Time',steps:[
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
   {say:'kaytahn',text:"We can't morph anymore. Doesn't matter. Where you go, we go."},
+  {say:'nightshade',text:"The Guardians drew their power from four places. If any of it is left, it's there."},
+  {say:'thornforge',text:'Road trip.'},
   {say:'scareth',text:'I call the front seat.'},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Go. We'll be right here."},
   {say:'lightheart',text:"Six o'clock?"},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Six o'clock, Jake."},
-  {cap:"Earth's guardians drew their power from four places. The five set out to find them, together.",top:true},
+  {cap:'Four relic sites. Maybe enough to wake the stones, a little.',top:true},
   {fade:'out',ms:1400}]}};
 
-const P3S=[L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'})];
+const P3S=[L('lightheart',60,56,{age:'adult'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'})];
 SCENES.ch22open={label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'town',music:'friends'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:900},
   {say:'thornforge',text:"Truck's gassed up. Four stops. Who has snacks?"},
   {say:'kaytahn',text:'Me. Obviously.'},
   {say:'nightshade',text:'Canyon, temple, forge, grove. Each one held a relic.'},
-  {say:'lightheart',text:'Then each one has something to teach me.'},
+  {say:'lightheart',text:"Then let's go get your light back."},
   {say:'scareth',text:'Shotgun.'},
   {cap:'The Relic Road: visit the four sites in any order, each led by the friend who knows it.',top:true},{fade:'out',ms:900}]};
 SCENES.ch22={pre:{label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'grove',music:'dgn_ancient'},...P3S,{fade:'in',ms:900},
   {cap:'Beyond the last gate, four echoes of the Earth Guardians stand together.',top:true},
-  {say:'lightheart',text:'They are testing us. Everything we just learned.'},
-  {cap:"The echoes take turns. Bastion's shield blocks the next hit. Verdance's arrow leaves Jake hexed.",top:true},{fx:'flash'}]},
+  {say:'lightheart',text:'They are testing us. Everything we just got back.'},
+  {cap:"The echoes take turns. Bastion's shield blocks the next hit. Verdance's arrow leaves the team hexed.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'grove',music:'mystery'},...P3S,{fade:'in'},
-  {say:'lightheart',text:'Four moves. Four friends.'},
+  {say:'scareth',text:'Four stones, glowing again. Just a little.'},
+  {say:'lightheart',text:'Mine is the only one still dark.'},
   {say:'nightshade',text:'And the grove said to go home. To the crater.'},
   {cap:'Next: the crater, where it all began.',top:true},{fade:'out',ms:1000}]}};
 SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
@@ -6189,9 +6269,10 @@ SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
  post:{label:'Chapter 23 · The Crater',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},...P3S,{boss:'ch23',state:{kneel:true}},{fade:'in',ms:900},
   {cap:'The Sentinel kneels.',top:true},
-  {say:'aldric',voice:'aldric',text:"You let them carry it with you. That's all I ever needed to learn."},
+  {say:'aldric',voice:'aldric',text:'You stood together, even when only one of you was asked.'},
+  {say:'aldric',voice:'aldric',text:'You never needed me to carry it for you. You needed a bridge.'},
   {say:'lightheart',text:'Thank you, Aldric.'},
-  {boss:null,ms:1800},{cap:"The armor fades into crimson light. The Warden's spark settles into Jake's stone for good.",top:true},
+  {boss:null,ms:1800},{cap:"The armor fades into crimson light. The Warden's spark settles between the five stones and links them, one to the next. Jake's stone glows again.",top:true},
   {say:'nightshade',text:'Two worlds, one light. Now we know how.'},
   {fx:'shake',n:20,music:'vorath'},{cap:'Above the crater, the sky tears open.',top:true},
   {cap:'On the other side, Vorath is waiting.',top:true},{fade:'out',ms:1200}]}};
@@ -6268,7 +6349,7 @@ function showChapters(){
    bt.onclick=async()=>{await playCutscene(SCENES.herald);showChapters()};$('chlist').appendChild(bt)}
   {const bt=document.createElement('button');bt.id='ch-vorath';bt.innerHTML=`Preview · Vorath the Unmaker<small>Part 3 story scene · The Dark King arrives</small>`;
    bt.onclick=async()=>{await playCutscene(SCENES.vorath);showChapters()};$('chlist').appendChild(bt)}
-  {const bt=document.createElement('button');bt.id='ch-preview5';bt.innerHTML=`Preview · Five Into One<small>Part 3 story scene · Lightheart's Seraph Form</small>`;
+  {const bt=document.createElement('button');bt.id='ch-preview5';bt.innerHTML=`Preview · The Last Light<small>Part 3 story scene · the Last Light Forms</small>`;
    bt.onclick=async()=>{await playCutscene(SCENES.preview5);showChapters()};$('chlist').appendChild(bt)}
 }
 function showIntro(c){
