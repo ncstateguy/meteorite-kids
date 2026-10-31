@@ -3575,7 +3575,7 @@ farewell:{label:"Chapter 12 · Farewell",steps:[
   {say:'aldric',text:'This world has guardians of its own, sleeping deep in the ground. Guard it until they wake, then let them guard it.'},
   {say:'aldric',text:"These stones were never meant to last forever. They were meant to be given. When that day comes, don't hold on the way I did."},
   {say:'aldric',text:'If the light ever runs low, go back to where it fell.'},
-  {say:'aldric',text:'And you, Lightheart. Your stone remembers being taken. One day it will carry all of you.'},
+  {say:'aldric',text:'And you, Lightheart. One day they will look to you to carry it. Don\'t carry it alone.'},
   {move:'nightshade',x:132,ms:900},
   {say:'nightshade',text:"You don't have to carry it anymore. We've got it."},
   {say:'kaytahn',text:'Aldric?'},
@@ -4447,7 +4447,7 @@ BANTER.push(
  {id:'t_ch19',town:true,era:'adult',when:()=>progress.ch19,lines:[['scareth','My back hurts from one exhibition match.'],['nightshade','You are thirty, Joseph. Not ninety.']]});
 BANTER.push(
  {id:'t_ch20',town:true,era:'adult',when:()=>progress.ch20&&!progress.ch21,lines:[['kaytahn','The whole town is in my library basement.'],['scareth','Mom brought a casserole for forty people.']]},
- {id:'t_ch21',town:true,era:'adult',when:()=>progress.ch21,lines:[['thornforge','So Jake gets the armor and we get... moral support?'],['nightshade','Very important moral support.']]});
+ {id:'t_ch21',town:true,era:'adult',when:()=>progress.ch21,lines:[['thornforge','Four relic sites. One truck. Zero working powers.'],['nightshade','Not zero. Mine flickered at the crater.']]});
 BANTER.push(
  {id:'a_rr_hub',area:'rr_hub',lines:[['thornforge','Road trip. Finally.'],['kaytahn','We are thirty-two and still fighting about the radio.']]},
  {id:'t_ep',town:true,era:'adult',when:()=>progress.ch27&&!progress.ch25,lines:[['lightheart','It feels like nothing ever happened.'],['nightshade','Good. That was the point.']]});
@@ -6133,7 +6133,7 @@ SCENES.whatsLeft={label:"Part 2 Epilogue · What's Left",steps:[
   {say:'nightshade',text:'...Maybe.'},
   {say:'lightheart',text:'Our part is done.'},
   {cap:'Or so they think.',top:true},
-  {cap:'END OF PART 2. Part 3, The Last Light, is coming.',top:true},
+  {cap:'END OF PART 2.',top:true},
   {fade:'out',ms:1600}]};
 
 const P3_KIDS=[L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'})];
