@@ -1949,6 +1949,33 @@ const CH19={key:'ch19',num:19,title:"Founders' Day",villain:'Gale',bg:'town',hp:
   if(b.cycle%4===0){log('Whirlwind! A gust knocks everyone off balance.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,5+rnd(3)))}
   else{const t=pickTarget();if(t){log(`Gale's spear taps ${t.name}. "Too slow!"`);await lunge(b,-1);damageKid(t,9+rnd(3))}}renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH19);
+// ================= Part 3 · Chapter 20: The Fall of the Guardians · Chapter 21: Five Into One =================
+const VWISP={draw:(b,x,y)=>FOES.void.draw(b,x,y),turn:b=>FOES.void.turn(b),warn:b=>FOES.void.warn(b)};
+const CH20={key:'ch20',num:20,title:'The Fall of the Guardians',villain:'Void Wisps',bg:'town',hp:520,age:'adult',part:3,noMorph:true,
+ roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],warn:VWISP.warn,
+ intro:'The sky over Hometown has gone dark. Void wisps pour across the road to the crater, where the Earth Guardians are making their stand.',
+ tip:'Nobody can morph. Clear the wisps. Every third turn they drain everyone, so heal before it lands.',
+ victory:'The wisps fold up into nothing. Up ahead, above the crater, the light of the Guardians flickers.',
+ init(b){b.ash=3;b.n0=3},draw:VWISP.draw,turn:VWISP.turn,stunText:'The wisps flicker and drift apart.',
+ chips(b){return [{t:`Wisps left: ${b.ash}`}]},form(){return 'Drifting closer'},
+ onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg}};
+const CH21={key:'ch21',num:21,title:'Five Into One',villain:'Void Wisps',bg:'woods',hp:420,part:3,solo:true,roster:['lightheart'],warn:VWISP.warn,
+ intro:"Five cracked stones, the crater's edge, and the last spark of the Warden's Light.",
+ tip:'Seraph Form carries all five stones. Use your friends: Call a Friend lets each of the four help you once.',
+ victory:'The last wisp unravels. Lightheart stands alone in the dark, carrying five lights.',
+ init(b){b.ash=3;b.n0=3},draw:VWISP.draw,turn:VWISP.turn,stunText:'The wisps flicker and drift apart.',
+ chips(b){return [{t:`Wisps left: ${b.ash}`}]},form(){return 'Drawn to the light'},
+ onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg}};
+CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH20,CH21);
+const SHELTER={kylee:'kylee',baxter:'kylee',corran:'kids',kaylen:'kids',reed:'friends',dee:'friends',jared:'friends',andrew:'friends',megan:'friends'};
+const SHELTER_ON=()=>progress.ch19&&!progress.ch20&&HUB.state.c20_open;
+const sheltered=()=>['mom','kylee','kids','friends'].every(k=>HUB.state['sh_'+k]);
+const SHELTER_LINES={
+ mom:[['Mom (from the kitchen)','The sky is doing WHAT? ...Fine. Library basement. I am bringing the casserole.']],
+ kylee:[['Kylee','Library basement. Got it. Come on, Baxter.'],['','Baxter refuses to leave until he gets a treat. He gets a treat.'],['Kylee','Jake. Be careful. Please.']],
+ kids:[['Corran','Is it a meteor? Is it DINOSAUR extinction?'],['Kaylen','The birds all went quiet.'],['','Lindsey takes their hands and walks them to the library.'],['Kaylen','Can Baxter sit with us?']],
+ friends:[['Reed','Library basement? On it. Dee, grab Jared.'],['Andrew','I will carry the folding chairs. Apparently that is my job now.'],['Megan','Go. We will get everyone else.']]};
+
 
 
 
@@ -2171,7 +2198,7 @@ function storyLevel(){const o=storyOrder();const i=o.findIndex(k=>!progress[k]);
 function expectedLevel(ch){const k=(ch.base&&ch.base.key)||ch.key;if(ch.E)return ch.E;const i=storyOrder().indexOf(k);return i<0?storyLevel():1+i}
 // Balance pass: bosses keep pace with how fast heroes grow (about 13% Attack and 12% HP per level at par),
 // a global damage bump keeps story fights tense, and the long gauntlets are trimmed so they don't drag.
-const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1,ch18a:1,ch18:1,ch19:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch18a:1.9,ch18:1.35,ch19:1.75,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
+const TUNE={dmg:1.3,hp:{ch6:.85,ch10:.6,ch11:.7,ch13:1,ch14:1,ch15:1.1,ch16:1,ch17:1,ch18a:1,ch18:1,ch19:1,ch20:1},dmgCh:{ch13:1,ch14:1.6,ch15:2.0,ch16:1.5,ch17:1.5,ch18a:1.9,ch18:1.35,ch19:1.75,ch20:1.4,ch1:1.15,ch2:.95,ch3:1.7,ch4:1.45,ch6:.72,ch8:2.2,ch9:1.6,ch10:1.25,ch11:1}};
 const tuneKey=ch=>(ch.base&&ch.base.key)||ch.key;
 
 // ---- difficulty, guide arrow, and boss telegraphs ----
@@ -3417,25 +3444,25 @@ SCENES.ch27={
   {bg:'void',music:'vorath'},{boss:'vorath'},{fade:'in',ms:1200},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
   {cap:"Beyond the rift, Lumora's cracked ghost still hangs in the sky.",top:true},
-  {say:'boss',text:'So the last light of Lumora comes to me willingly.'},
+  {say:'boss',text:'One light, carrying five. How thoughtful. You have saved me the trouble of looking.'},
   {say:'lightheart',text:'Not willingly. On purpose.'},
-  {say:'boss',text:'Then I will unmake you the way I unmade them.'},
+  {say:'boss',text:'Lumora had purpose too. I still remember the sound it made when it ended.'},
   {say:'nightshade',text:"Jake, we're with you. Every one of us."},
   {cap:'Phase 1: his crown of stolen stones shields him. Starfall Blade shatters the shards.',top:true}]},
  p2:{label:'Chapter 24 · Phase 2',steps:[
   {bg:'void',music:null},{boss:'vorath'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
-  {say:'boss',text:'You would unmake ME? I am the hunger at the end of every world!'},
+  {say:'boss',text:'You think you can end ME? I have outlived every world that thought so.'},
   {fx:'shake',n:24},{sfx:'drain'},{boss:null,ms:1400},
   {cap:'The robes fall empty. What pours out of them was never a king.',top:true},
   {music:'wraith'},{boss:'wraith',ms:1600},{fx:'shake',n:16},
-  {say:'boss',text:'SO MANY WORLDS. SO MANY LIGHTS. ALL OF THEM INSIDE ME.'},
+  {say:'boss',text:'EVERY WORLD I ENDED IS STILL IN HERE. LISTEN. THEY ARE STILL SINGING.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
   {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land.',top:true}]},
  p3:{label:'Chapter 24 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
   L('lightheart',60,56,{age:'adult',form:'seraph'}),
-  {say:'boss',text:'I CANNOT BE UNMADE. I AM WHAT REMAINS WHEN EVERYTHING ENDS.'},
+  {say:'boss',text:'You cannot end what endings are made of. When every light is gone, I am what is left.'},
   {say:'lightheart',text:"He's right. I can't destroy him. Not by holding on."},
   {say:'nightshade',text:'Jake. The stones were never meant to last forever.'},
   {say:'kaytahn',text:'They were meant to be given. Aldric told us.'},
@@ -4181,6 +4208,9 @@ BANTER.push(
 BANTER.push(
  {id:'t_p3a',town:true,era:'adult',when:()=>progress.part3&&!progress.ch19,lines:[['thornforge','When did Founders\' Day get this big?'],['kaytahn','When we stopped being the ones running around on it.']]},
  {id:'t_ch19',town:true,era:'adult',when:()=>progress.ch19,lines:[['scareth','My back hurts from one exhibition match.'],['nightshade','You are thirty, Joseph. Not ninety.']]});
+BANTER.push(
+ {id:'t_ch20',town:true,era:'adult',when:()=>progress.ch20&&!progress.ch21,lines:[['kaytahn','The whole town is in my library basement.'],['scareth','Mom brought a casserole for forty people.']]},
+ {id:'t_ch21',town:true,era:'adult',when:()=>progress.ch21,lines:[['thornforge','So Jake gets the armor and we get... moral support?'],['nightshade','Very important moral support.']]});
 // Party banter: short lines that drift by in the corner while you explore. They never stop you, and each plays once.
 const BQ={q:[],cur:null,t:0,walk:0,next:2400,hold:0,townDone:false};
 function banterOK(b){if(b.town&&b.era&&(HUB.age||'kid')!==b.era)return false;if(HUB.state['bt_'+b.id])return false;if(b.era&&(HUB.age||'kid')!==b.era)return false;if(b.when&&!b.when())return false;return b.lines.every(([w])=>heroUnlocked(w))}
@@ -4259,7 +4289,7 @@ function bTarget(id){const b=BUILDINGS.find(x=>x.id===id);return {tx:b.door,ty:b
 function nextGoal(){
   if(HUB.area){const A=AREAS[HUB.area];return A&&A.goal?A.goal():null}
   if(!STORY)return null;const k=chapterOrder().find(k=>!progress[k]&&k!=='ch27');
-  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch19?{text:'Chapter 20 is on the way. Replay chapters and scenes from Extras.'}:progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
+  if(!k||(k==='ch12'&&!progress.ch11))return progress.ch21?{text:'Chapter 22 is on the way. Replay chapters and scenes from Extras.'}:progress.ch19?{text:'Chapter 20 is on the way. Replay chapters and scenes from Extras.'}:progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
   if(CHAPTERS.find(c=>c.key===k&&c.part===3)&&HUB.age!=='adult')return {text:'Part 3 happens fifteen years later. Press the Era button to switch to the adults.'};
   if(CHAPTERS.find(c=>c.key===k&&c.part===2)&&HUB.age!=='teen')return {text:'Part 2 happens five years later. Press the Era button to switch to the teens.'};
   const gate=HUB.state.gate,hedge=HUB.state.hedge,fixGate=["The crater is past the rusted gate in the southwest corner of town. Someone handy with tools could fix it.",{tx:12,ty:23}];
@@ -4272,6 +4302,10 @@ function nextGoal(){
     ch7:gate?['Something feels wrong at the crater where it all began. Go see.',{tx:6,ty:26}]:fixGate,
     ch8:gate?["Follow the echo of Jake's stone into the Hollow, past the crater.",{tx:3,ty:21}]:fixGate,
     ch13:["Captain Cinder's Ashlings took over Hometown High. Head to the high school on the south side of town.",bTarget('high')],
+    ch20:(()=>{const S2=HUB.state;if(!S2.c20_open)return ['The sky over Hometown is going dark. Get to the Library.',bTarget('obs')];
+      if(!sheltered()){const need=!S2.sh_mom?['Mom is still at her house. Get her to the library basement.',bTarget('home')]:!S2.sh_kylee?['Find Kylee and Baxter and send them to the library basement.',{tx:15,ty:7}]:!S2.sh_kids?['Find Corran and Kaylen and get them to safety.',{tx:11,ty:7}]:['Find your friends near the east houses and send them to the library.',{tx:35,ty:15}];return need}
+      return ['Everyone is safe. The Earth Guardians are fighting above the crater. Go.',{tx:6,ty:26}]})(),
+    ch21:HUB.state.clue?['Night. Take the five stones to the crater.',{tx:6,ty:26}]:["Tricia is digging through Mr. Hollis's collection at the Town Museum.",bTarget('museum')],
     ch19:(()=>{const S2=HUB.state;if(ch19Ready())return ["Everyone's at the fountain for the Founders' Day exhibition match. Gale is waiting.",{tx:18,ty:14}];
       if(!S2.e_cake)return ["Founders' Day errands: pick up the cake at Rocco's Corner Store. (Also: find Corran's dinosaur, and open Tricia's exhibit.)",{tx:26,ty:19}];
       if(!S2.e_dino)return S2.dino_ask?(S2.dino_found?['You found the T. rex. Bring it back to Corran.',{tx:11,ty:7}]:["Corran's toy T. rex is lost. Baxter caught the scent near the south side of town.",{tx:20,ty:24}]):["Corran looks upset. Go see what's wrong.",{tx:11,ty:7}];
@@ -4334,6 +4368,11 @@ async function hubInteract(o){
     if(b.id==='high'&&HUB.age==='teen'){if(progress.ch13)await hubSay(teenDoor(b,L,me).lines);return enterDungeon(CHAPTERS.find(c=>c.key==='ch13'),b.name)}
     if(b.id==='home'&&HUB.age==='teen'&&progress.ch17&&!progress.ch18a)return exitHubTo(CHAPTERS.find(c=>c.key==='ch18a'));
     if(HUB.age==='teen'){const t=teenDoor(b,L,me);if(t){await hubSay(t.lines);if(t.then)t.then();return}}
+    if(HUB.age==='adult'&&b.id==='obs'&&progress.ch19&&!progress.ch20&&!HUB.state.c20_open){HUB.active=false;await playCutscene(SCENES.ch20open);HUB.state.c20_open=true;saveHub();enterHub();return}
+    if(HUB.age==='adult'&&b.id==='home'&&SHELTER_ON()&&!HUB.state.sh_mom){await hubSay(SHELTER_LINES.mom);HUB.state.sh_mom=true;saveHub();updateHubHud();if(sheltered())await hubSay([['','Everyone is on their way to the library basement.']]);return}
+    if(HUB.age==='adult'&&b.id==='museum'&&progress.ch20&&!progress.ch21&&!HUB.state.clue){const T2=id=>KIDS[id].kid;await hubSay([['',"Tricia and Lindsey spread Mr. Hollis's whole collection across the museum floor."],[T2('nightshade'),'Clippings. Photos. A bus ticket... wait.'],
+      ['',"A yellowed page, folded small, covered in Lumoran script. The handwriting is Aldric's."],[T2('nightshade'),'"Five lights, held as one by the Warden."'],[T2('scareth'),'Mr. Hollis kept that for fifty years and never knew what it said.'],
+      [T2('kaytahn'),"He knew it mattered. That's why he kept it."],[T2('nightshade'),"The Warden's Light was Aldric's. If any of it is left, it is where his armor fell."],[T2('lightheart'),'The crater. Tonight.']]);HUB.state.clue=true;saveHub();updateHubHud();return}
     if(HUB.age==='adult'){const t=adultDoor(b,L,me);if(t){await hubSay(t.lines);if(t.then)t.then();return}}
     if(b.id==='high'){await hubSay([['','Hometown High. It looks a lot smaller than it used to.']]);return}
     if(b.id==='forge'&&progress.ch4){await hubSay([['','The Old Forge. The furnace is already warm.'],[KIDS.thornforge.kid,L==='thornforge'?'Home sweet home. What are we making today?':'Come on in. Let\'s see what you brought me.',kidCol('thornforge')]]);openForge(L);return}
@@ -4344,6 +4383,9 @@ async function hubInteract(o){
       const lines={lightheart:"Joseph left his shoes in the hallway again. Classic little brother.",kaytahn:"Jake's hogging the bathroom and Joseph ate the last of the cereal. Typical.",scareth:"Jake and Lindsey think I can't keep a secret. I'm keeping the biggest one in town."};
       await hubSay(sib?[['','Home. The house smells like dinner.'],me(lines[L]),me('One day we are going to tell Mom about the stones. Maybe.')]:[['',"Jake, Lindsey, and Joseph's house. It smells like dinner in there."],me('Their mom always makes too much food. Not complaining.')])}
     else await hubSay([['','Nobody seems to be home.']]);return}
+  if(o.type==='sign'&&HUB.age==='adult'&&o.ch==='ch7'&&progress.ch19&&!progress.ch21){
+    if(!progress.ch20){if(!HUB.state.c20_open)return hubSay([['','The crater park. The sky above it looks wrong somehow.']]);if(!sheltered())return hubSay([['','Not yet. Get everyone to the library basement first.']]);return exitHubTo(CHAPTERS.find(c=>c.key==='ch20'))}
+    if(!HUB.state.clue)return hubSay([['','The crater is quiet now. Too quiet.'],me("Tricia said she had an idea. She's at the museum.")]);return exitHubTo(CHAPTERS.find(c=>c.key==='ch21'))}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch7'&&progress.ch18a){const c=CHAPTERS.find(c=>c.key==='ch18');if(progress.ch18)await hubSay(TEEN_SIGNS.ch7(me));return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch7'&&progress.ch16){const c=CHAPTERS.find(c=>c.key==='ch17');if(progress.ch17)await hubSay(TEEN_SIGNS.ch7(me));return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='teen'&&o.ch==='ch10'&&progress.ch14){const c=CHAPTERS.find(c=>c.key==='ch15');if(progress.ch15)await hubSay(TEEN_SIGNS.ch10(me));return enterDungeon(c,o.name)}
@@ -4359,6 +4401,7 @@ async function hubInteract(o){
     o.happy=40;sfx('heal');for(let i=0;i<5;i++)HUB_PARTS.push({x:o.tx*TS+8+(Math.random()-.5)*10,y:o.ty*TS+2,vx:(Math.random()-.5)*.4,vy:-.5-Math.random()*.4,c:'#ff6a8a',l:40});
     return hubSay(K||[['','Woof!']])}
   if(o.type==='npc'){
+    if(HUB.age==='adult'&&SHELTER_ON()&&SHELTER[o.id]&&!HUB.state['sh_'+SHELTER[o.id]]){const g=SHELTER[o.id];await hubSay(SHELTER_LINES[g]);HUB.state['sh_'+g]=true;saveHub();updateHubHud();if(sheltered())await hubSay([['','Everyone is on their way to the library basement.'],['','Above the crater, light flashes. The Earth Guardians are fighting.']]);return}
     if(HUB.age==='teen'){const t=teenNpc(o,L,me);if(t)return hubSay(t)}
     if(o.id==='jeffrey'){const K={
       lightheart:[['Jeffrey',"Hey, Jake. Mom says you're on dish duty tonight. Don't make me cover for you again."],me('You covered for me ONE time.'),['Jeffrey',"And I will never let you forget it."]],
@@ -5837,6 +5880,84 @@ SCENES.ch19={pre:{label:"Chapter 19 · Founders' Day",steps:[
   {cap:'Far away, the eye that went blind fifteen years ago finds a new light.',top:true},
   {cap:'It turns toward Earth.',top:true},
   {fade:'out',ms:1600}]}};
+
+const LIB_KIDS=[L('kaytahn',60,70,{age:'adult'}),L('scareth',90,62,{age:'adult'})];
+const VORATH_C='#7ae8e0';
+SCENES.ch20open={label:'Chapter 20 · The Fall of the Guardians',steps:[
+  {fx:'reset'},{bg:'town',music:null},...LIB_KIDS,{fade:'in',ms:1000},
+  {cap:"The morning after Founders' Day. The Hometown Library.",top:true},
+  {say:'kaytahn',text:'Joseph. The comics go on the shelf. Not in your lap.'},
+  {say:'scareth',text:'I am checking them for quality.'},
+  {fx:'shake',n:14},{cap:'Outside, the sky goes dark in the middle of the day.',top:true},
+  {music:'vorath'},{boss:'vorath',ms:1600},
+  {cap:'A teal eye opens in the clouds over Hometown.',top:true},
+  {say:'boss',name:'???',col:VORATH_C,text:'Fifteen years of darkness. Then a light so bright it sang. Did your guardians think no one was listening?'},
+  {say:'boss',name:'???',col:VORATH_C,text:'Be still. I have done this many times. It is quieter than you would think.'},
+  {boss:null,ms:900},
+  {say:'scareth',text:'Lindsey. The basement.'},
+  {say:'kaytahn',text:'Everyone we can find. Go.'},
+  {cap:'Get everyone to the library basement: Mom, Kylee and Baxter, the kids, and your friends.',top:true},
+  {fade:'out',ms:900}]};
+const G20=[L('bastion',96,40,{form:'armor'}),L('tidewarden',60,62,{form:'armor'}),L('emberwright',132,62,{form:'armor'}),L('verdance',40,86,{form:'armor'}),L('gale',150,86,{form:'armor'})];
+SCENES.ch20={pre:{label:'Chapter 20 · The Fall of the Guardians',steps:[
+  {fx:'reset'},{bg:'town',music:'vorath'},...P3_KIDS,{fade:'in',ms:900},
+  {cap:'Void wisps pour across the road to the crater. Up ahead, the Guardians are already fighting.',top:true},
+  {say:'thornforge',text:'No armor. No powers. Just us.'},
+  {say:'lightheart',text:'Same as always. Together.'},
+  {cap:'Nobody can morph. Clear the wisps.',top:true},{fx:'flash'}]},
+ post:{label:'Chapter 20 · The Fall of the Guardians',steps:[
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'vorath'},...G20,{boss:'vorath',ms:1400},{fade:'in',ms:1000},
+  {cap:'Above the crater, the five Earth Guardians make their stand.',top:true},
+  {say:'boss',name:'???',col:VORATH_C,text:'You broke my Herald. I felt it the way you feel a tooth go missing. I have chewed very carefully since.'},
+  {say:'bastion',text:'Hold the line! All of you, with me!'},{fx:'flash'},
+  {say:'boss',name:'???',col:VORATH_C,text:'A shield. Every world builds a shield. I keep a collection.'},
+  {say:'tidewarden',text:'Then take the whole ocean!'},{fx:'shake',n:12},
+  {say:'boss',name:'???',col:VORATH_C,text:'The sea was here before you, little warden. I was here before the sea.'},
+  {say:'emberwright',text:'Burn, you overgrown shadow!'},{fx:'flash'},
+  {say:'boss',name:'???',col:VORATH_C,text:'Fire. How quaint. Stars are fire, and I have eaten stars.'},
+  {say:'verdance',text:"The forest remembers what you are. It won't let you in."},
+  {say:'boss',name:'???',col:VORATH_C,text:'Your forest remembers everything. Soon it will have nothing left to remember.'},
+  {say:'gale',text:"Too slow, big guy! Can't hit what you can't catch!"},
+  {say:'boss',name:'???',col:VORATH_C,text:'So fast. So proud. Wind is only air that has not been stopped yet.'},
+  {fx:'shake',n:24},{sfx:'drain'},
+  {say:'boss',name:'???',col:VORATH_C,text:'Lumora had keepers too. They sang while I ate their sky. You may sing, if it helps.'},
+  {cap:'The Unmaking.',top:true},{fx:'flash'},
+  {fadeActor:'gale',ms:500},{fadeActor:'verdance',ms:500},{fadeActor:'emberwright',ms:500},{fadeActor:'tidewarden',ms:500},{fadeActor:'bastion',ms:900},
+  {cap:'One by one, the relics go dark.',top:true},
+  {say:'boss',name:'Vorath',col:VORATH_C,text:'You may call me Vorath. Soon your sky will call me nothing at all. I unmake what is made. It is not cruelty. Every made thing ends. I am simply the one who ends them.'},
+  {say:'boss',name:'Vorath',col:VORATH_C,text:'Somewhere on this world, five embers are hiding from me. Cracked. Dim. Clever. They were the lock on my door, once. I would like them back.'},
+  {say:'boss',name:'Vorath',col:VORATH_C,text:'Sleep, guardians. I will finish the meal when I find the plate.'},
+  {boss:null,ms:1400},{fade:'out',ms:900},
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3_KIDS,{fade:'in',ms:1000},
+  {cap:'Later. The crater fence. The Guardians lie still in the grass behind them.',top:true},
+  {say:'nightshade',text:'Our stones are the last of the seal.'},
+  {say:'lightheart',text:'Then we figure out how to use them.'},
+  {fade:'out',ms:1400}]}};
+SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3_KIDS,{fade:'in',ms:1000},
+  {cap:'Night. The edge of the crater.',top:true},
+  {say:'lightheart',text:'Everybody ready?'},
+  {cap:'Five cracked stones, set together in the grass.',top:true},
+  {say:'scareth',text:'...Nothing.'},
+  {say:'nightshade',text:'"Five lights, held as one by the Warden."'},
+  {fx:'shake',n:16},{cap:'The ground hums. Far below, a crimson spark rises out of the crater.',top:true},{fx:'flash'},
+  {say:'aldric',name:'???',col:'#f4efe6',text:'Five. Finally.'},
+  {say:'kaytahn',text:'Was that...?'},
+  {say:'nightshade',text:'It was.'},
+  {cap:"The spark binds all five lights into Jake's stone. The other four go dark.",top:true},
+  {fx:'flash'},{fadeActor:'lightheart',ms:300},L('lightheart',56,70,{age:'adult',form:'seraph'}),{fx:'flash'},{sfx:'morph'},
+  {say:'lightheart',text:'Fifteen years. I forgot how this feels.'},
+  {say:'thornforge',text:'Uh. Jake. Company.'},
+  {cap:"Vorath's wisps followed the light. Seraph Form carries all five stones. Call a Friend lets each of the four help once.",top:true},{fx:'flash'}]},
+ post:{label:'Chapter 21 · Five Into One',steps:[
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult',form:'seraph'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
+  {say:'kaytahn',text:"We can't morph anymore. But we can still help. Call us."},
+  {say:'scareth',text:"Call me first. I'm the fun one."},
+  {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Go. We'll be right here."},
+  {say:'lightheart',text:"Six o'clock?"},
+  {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Six o'clock, Jake."},
+  {cap:"Earth's guardians drew their power from four places. Lightheart sets out to find them.",top:true},
+  {fade:'out',ms:1400}]}};
 async function startPart3(){if(progress.part3)return;HUB.active=false;await playCutscene(SCENES.part3);progress.part3=true;saveProgress();
   HUB.age='adult';HUB.area=null;HUB.map=townMap();HUB.x=12*TS+8;HUB.y=8*TS+12;HUB.fromHub=true;HUB.pendingBeat={text:"Part 3: The Last Light. Fifteen years later. It's Founders' Day, and everyone has a job to do."};enterHub()}
 function ch19Ready(){const S2=HUB.state;return !!(S2.e_cake&&S2.e_dino&&S2.e_exhibit)}
@@ -6202,7 +6323,7 @@ const TAUNTS={
   'Duke Embermaw':['Burned Out','Tired already? I could burn like this all night.'],
   'Ironclad Vane':['Outclassed','I need no one. You, it seems, needed more.'],
   'The Black Knight':['The Knight Stands','Those stones deserve stronger hands. Rest, children. I will be waiting.'],
-  'Vorath the Unmaker':['Unmade','Every light goes dark in the end. Even yours.'],
+  'Vorath the Unmaker':['Unmade','Rest now. Every made thing ends. Yours simply ended first.'],
   'Ashling Patrol':['Ashlinged!','(The Ashlings do a victory dance. It is not a very good dance.)'],
   'Living Pins':['Gutter Ball!','(The pins wobble back into a perfect triangle, very pleased with themselves.)']};
 function showResult(won){
