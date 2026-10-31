@@ -2401,7 +2401,14 @@ const PATROL_ZONES=[
   {id:'shore',name:'Lakeshore',bg:'lake',y:20,x0:28,x1:37,need:()=>progress.ch3},
   {id:'crater',name:'Crater Woods',bg:'woods',y:27,x0:4,x1:9,need:()=>HUB.state.gate},
   {id:'hill',name:'Observatory Hill',bg:'meadow',y:7,x0:2,x1:9,need:()=>HUB.state.hedge}];
-function buildPatrols(){HUB.down=HUB.down||new Set();if(HUB.area){HUB.patrols=(AREAS[HUB.area].enemies||[]).filter(z=>!HUB.down.has(z.id)).map(z=>({z,x:(z.x0+.5)*TS,y:(z.y+.7)*TS,dir:1}));return}HUB.patrols=HUB.age!=='kid'?[]:PATROL_ZONES.filter(z=>z.need()&&!HUB.down.has(z.id)).map(z=>({z,x:(z.x0+.5)*TS,y:(z.y+.7)*TS,dir:1}))}
+// Adult era: Vorath's void wisps drift along the edges of town from the day the sky goes dark until he is beaten.
+const WISP_ZONES=[
+  {id:'w_meadow',name:'South Meadow',bg:'meadow',kind:'void',y:27,x0:13,x1:18},
+  {id:'w_shore',name:'Lakeshore',bg:'lake',kind:'void',y:20,x0:28,x1:37},
+  {id:'w_crater',name:'Crater Road',bg:'woods',kind:'void',y:27,x0:4,x1:9},
+  {id:'w_hill',name:'Observatory Hill',bg:'meadow',kind:'void',y:7,x0:2,x1:9}];
+const wispsOn=()=>HUB.age==='adult'&&(HUB.state.c20_open||progress.ch20)&&!progress.ch27;
+function buildPatrols(){HUB.down=HUB.down||new Set();if(HUB.area){HUB.patrols=(AREAS[HUB.area].enemies||[]).filter(z=>!HUB.down.has(z.id)).map(z=>({z,x:(z.x0+.5)*TS,y:(z.y+.7)*TS,dir:1}));return}HUB.patrols=(HUB.age==='kid'?PATROL_ZONES.filter(z=>z.need()):wispsOn()?WISP_ZONES:[]).filter(z=>!HUB.down.has(z.id)).map(z=>({z,x:(z.x0+.5)*TS,y:(z.y+.7)*TS,dir:1}))}
 function updatePatrols(){if(!HUB.patrols)return;if(HUB.grace>0){HUB.grace--}
   for(const p of HUB.patrols){const sp=.35;p.x+=p.dir*sp;if(p.x>(p.z.x1+.5)*TS)p.dir=-1;if(p.x<(p.z.x0+.5)*TS)p.dir=1;
     if(!HUB.grace&&!HUB.talking&&!HUB.choosing&&!HUB.saving&&Math.hypot(p.x-HUB.x,p.y-HUB.y)<12){const behind=(HUB.x-p.x)*p.dir<0;startPatrol(p,behind);return}}}
@@ -2419,8 +2426,10 @@ function startPatrol(p,ambush,opt){
       else{const t=pickTarget();if(t){log(`An Ashling swipes at ${t.name}.`);await lunge(b,-1);damageKid(t,4+b.ash)}}},
     zone:p.z.id,after(){HUB.patrols=[];(HUB.down=HUB.down||new Set()).add(p.z.id);if(opt&&opt.onWin)opt.onWin();enterHub();HUB.grace=90}};
   const F=FOES[p.z.kind||'ashling'];Object.assign(C,{warn:F.warn,villain:F.villain,hp:F.hp,tip:F.tip,victory:F.victory,stunText:F.stunText,draw:F.draw,turn:F.turn,chips(b){return [{t:`Left: ${b.ash}`}]}});
+  if(p.z.kind==='void'&&HUB.age==='adult'){Object.assign(C,{villain:'Void Wisps',age:'adult',part:3,noMorph:true,victory:'The wisps fold up into nothing.',tip:'Nobody can morph. Every third turn the wisps drain everyone, so heal before it lands.'});
+    if(progress.ch21)Object.assign(C,{solo:true,party3:true,roster:P3ROSTER,hp:Math.round(F.hp*1.6),tip:'Lightheart takes every hit meant for his friends. Every third turn the wisps drain him, so heal before it lands.'})}
   if(opt){C.hp=Math.round(C.hp*(opt.hp||1));if(opt.villain)C.villain=opt.villain;if(opt.victory)C.victory=opt.victory}
-  if(ambush)C.ambushMsg=`Ambush! You caught them from behind. The ${F.villain==='Living Pins'?'pins':'Ashlings'} lose their first turn.`;
+  if(ambush)C.ambushMsg=`Ambush! You caught them from behind. The ${C.villain==='Living Pins'?'pins':C.villain==='Void Wisps'?'wisps':'Ashlings'} lose their first turn.`;
   startBattle(C,true)
 }
 // ================= Josh's forge: weapons, outfits, charms =================
@@ -2830,6 +2839,84 @@ const TRI={maj:[0,4,7],min:[0,3,7],dom:[0,4,7,10]};
 function seq(list){let s=0;const out=[];list.forEach(([n,l])=>{if(n!=='-')out.push([s,nm(n),l]);s+=l});return out}
 const HOMETOWN_MEL=seq([['E5',4],['G5',4],['C6',6],['B5',2],['A5',8],['E5',4],['G5',4],['F5',4],['A5',4],['C6',4],['A5',4],['G5',12],['-',4],['E5',4],['G5',4],['C6',4],['E6',4],['D6',6],['C6',2],['A5',8],['F5',4],['A5',4],['D6',4],['C6',4],['B5',8],['G5',4],['-',4],['A5',6],['G5',2],['F5',4],['A5',4],['B5',6],['A5',2],['G5',8],['G5',4],['B5',4],['E6',4],['D6',4],['C6',8],['A5',4],['-',4],['F5',4],['A5',4],['C6',4],['F6',4],['E6',4],['D6',4],['B5',8],['C6',4],['E6',4],['G6',4],['E6',4],['D6',8],['-',8]]);
 const SONGS={
+ // ---- story themes: each kind of scene gets its own mood instead of the town theme ----
+ // Spring in Hometown: the adult-era town. The Hometown melody, fingerpicked, slower and warmer.
+ spring:{bpm:80,bars:16,chords:[[48,'maj'],[45,'min'],[41,'maj'],[43,'maj'],[48,'maj'],[45,'min'],[50,'min'],[43,'dom'],[41,'maj'],[43,'maj'],[40,'min'],[45,'min'],[41,'maj'],[43,'maj'],[48,'maj'],[43,'dom']],
+  mel:HOMETOWN_MEL,
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0)tone(t,r-12,sd*7,{wave:'triangle',vol:.14,sus:.7,a:.03});if(s===8)tone(t,r-5,sd*7,{wave:'triangle',vol:.11,sus:.7,a:.03});
+   if(s%2===0){const p=[0,2,1,2,0,2,1,3][s/2];tone(t,r+12+tri[p%3]+(p>2?12:0),sd*3,{wave:'triangle',vol:.062,sus:.15,dec:.25,rel:.5,lp:1600})}
+   if(s===0)tri.slice(0,3).forEach(i=>tone(t,r+24+i,sd*15,{wave:'sine',vol:.016,a:.8,sus:.9,rel:1}));
+   if(s===4||s===12)noiseHit(t,.06,{f:3000,q:.5,vol:.02});
+   if(bar%4===3&&s===14)tone(t,r+24+tri[2],sd*4,{wave:'sine',vol:.03,sus:.1,dec:.4,rel:.8})},
+  lead:{waves:['sine','triangle'],det:.05,vol:.125,sus:.75,dec:.12,rel:.4,a:.03,vib:true}},
+ // Villain of the Week: a sneaky, bouncy theme for the goofy villains showing up.
+ mischief:{bpm:132,bars:8,chords:[[43,'min'],[43,'min'],[39,'maj'],[38,'dom'],[43,'min'],[43,'min'],[39,'maj'],[38,'dom']],
+  mel:seq([['G5',2],['-',2],['A#5',2],['-',2],['D6',2],['C#6',1],['D6',1],['-',2],['A#5',2],
+           ['G5',2],['-',2],['F#5',2],['G5',2],['A5',2],['A#5',2],['A5',2],['-',2],
+           ['G5',2],['-',2],['G5',2],['-',2],['D#6',4],['D6',2],['C6',2],
+           ['A5',2],['F#5',2],['D5',2],['-',2],['D5',1],['E5',1],['F#5',2],['A5',4],
+           ['G5',2],['-',2],['A#5',2],['-',2],['D6',2],['C#6',1],['D6',1],['-',2],['A#5',2],
+           ['G5',2],['-',2],['F#5',2],['G5',2],['A#5',2],['D6',2],['G6',4],
+           ['F6',2],['D#6',2],['D6',2],['C6',2],['A#5',2],['A5',2],['G5',4],
+           ['F#5',2],['A5',2],['D6',2],['-',2],['G5',2],['-',2],['G4',4]]),
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0||s===8)tone(t,r-12,sd*1.5,{wave:'triangle',vol:.22,sus:.3,rel:.05});if(s===4||s===12)tone(t,r-5,sd*1.5,{wave:'triangle',vol:.14,sus:.3,rel:.05});
+   if(s===2||s===6||s===10||s===14)tri.slice(0,3).forEach(i=>tone(t,r+12+i,sd*.8,{wave:'square',vol:.026,sus:.2,rel:.03,lp:1800}));
+   if(s===0||s===8)kick(t,.25);if(s===4||s===12)snare(t,.08);if(s%2===1)hat(t,.03);
+   if(bar===7&&s===12)tone(t,r+12,sd*3,{wave:'square',vol:.04,slide:-12,sus:.4,lp:1500})},
+  lead:{wave:'square',vol:.095,sus:.4,dec:.05,rel:.05,lp:2400}},
+ // Heart to Heart: quiet, piano-like. For thank-yous, apologies and goodbyes.
+ tender:{bpm:66,bars:8,chords:[[50,'maj'],[45,'maj'],[47,'min'],[42,'min'],[43,'maj'],[50,'maj'],[40,'min'],[45,'maj']],
+  mel:seq([['F#5',4],['A5',4],['D6',6],['C#6',2],['C#6',4],['B5',2],['A5',2],['E5',8],['D5',4],['F#5',4],['B5',6],['A5',2],['A5',6],['F#5',2],['C#5',8],
+           ['B5',4],['D6',4],['G6',6],['F#6',2],['F#6',4],['E6',2],['D6',2],['A5',8],['G5',4],['B5',4],['E6',4],['D6',2],['C#6',2],['C#6',6],['B5',2],['A5',8]]),
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0)tone(t,r-12,sd*15,{wave:'triangle',vol:.13,sus:.6,a:.05,rel:.6});
+   if(s%2===0)tone(t,r+12+tri[[0,1,2,1,2,1,0,1][s/2]]+(s===8?12:0),sd*4,{waves:['triangle','sine'],vol:.04,sus:.1,dec:.5,rel:.8,lp:1800});
+   if(s===0)tri.slice(0,3).forEach(i=>tone(t,r+24+i,sd*15,{wave:'sine',vol:.014,a:1,sus:.9,rel:1.2}))},
+  lead:{waves:['triangle','sine'],vol:.1,sus:.45,dec:.5,rel:.7,a:.02,vib:true,lp:2200}},
+ // Lumora's Secrets: a music box over a low drone. For runes, old stories and the crater walls.
+ mystery:{bpm:72,bars:8,chords:[[45,'min'],[41,'maj'],[38,'min'],[40,'maj'],[45,'min'],[43,'maj'],[41,'maj'],[40,'dom']],
+  mel:seq([['E5',4],['A5',4],['C6',4],['B5',4],['A5',8],['-',4],['F5',4],['D5',4],['F5',4],['A5',6],['G5',2],['G#5',12],['-',4],
+           ['E5',4],['A5',4],['E6',4],['D6',2],['C6',2],['B5',8],['G5',4],['D5',4],['C6',4],['A5',4],['F5',4],['A5',4],['G#5',6],['B5',2],['E5',8]]),
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0)tone(t,r-12,sd*16,{waves:['sine','triangle'],vol:.1,a:.4,sus:.9,rel:.6,lp:600});
+   if(s===0)tri.slice(0,3).forEach(i=>tone(t,r+12+i,sd*15,{wave:'sine',vol:.025,a:.8,sus:.9,rel:1}));
+   if(s===6||s===14)tone(t,r+24+tri[s===6?1:2],sd*2,{wave:'sine',vol:.025,sus:.1,dec:.3,rel:1});
+   if(bar%2===0&&s===0)tom(t,r-10);if(bar%2===1&&s===10)noiseHit(t,.4,{f:6000,q:2,vol:.012})},
+  lead:{waves:['sine','triangle'],det:.03,vol:.08,sus:.2,dec:.3,rel:.9,a:.005}},
+ // Together: the friendship theme. Upbeat and warm, for the team being a team.
+ friends:{bpm:112,bars:8,chords:[[43,'maj'],[38,'maj'],[40,'min'],[36,'maj'],[43,'maj'],[38,'maj'],[36,'maj'],[38,'dom']],
+  mel:seq([['B5',2],['D6',2],['G6',4],['F#6',2],['E6',2],['D6',4],['A5',2],['D6',2],['F#6',4],['E6',2],['D6',2],['A5',4],
+           ['G5',2],['B5',2],['E6',4],['D6',2],['B5',2],['G5',4],['E5',2],['G5',2],['C6',4],['B5',2],['A5',2],['G5',4],
+           ['B5',2],['D6',2],['G6',4],['A6',2],['B6',2],['G6',4],['F#6',4],['E6',2],['D6',2],['A6',8],
+           ['G6',2],['E6',2],['C6',2],['E6',2],['G6',4],['E6',4],['F#6',4],['A6',4],['D6',8]]),
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0||s===8)tone(t,r-12,sd*3,{wave:'triangle',vol:.16,sus:.5});if(s===6||s===14)tone(t,r-5,sd*2,{wave:'triangle',vol:.12,sus:.5});
+   if(s===4||s===12)tri.slice(0,3).forEach((i,j)=>tone(t+j*sd*.08,r+12+i,sd*2.5,{wave:'triangle',vol:.042,sus:.3,dec:.15,rel:.2,lp:2000}));
+   if(s%4===2)tone(t,r+24+tri[(s/2)%3],sd,{wave:'sine',vol:.02,sus:.2});
+   if(s===0||s===8||s===10)kick(t,.3);if(s===4||s===12)snare(t,.1);if(s%2===0)hat(t,.04)},
+  lead:{waves:['square','triangle'],det:.06,vol:.09,sus:.7,dec:.08,rel:.15,lp:2600,vib:true}},
+ // The Wedding: a bright processional with bells.
+ wedding:{bpm:76,bars:8,chords:[[41,'maj'],[48,'maj'],[50,'min'],[46,'maj'],[41,'maj'],[46,'maj'],[48,'maj'],[48,'dom']],
+  mel:seq([['A5',4],['C6',4],['F6',8],['E6',4],['D6',4],['C6',8],['D6',4],['F6',4],['A6',6],['G6',2],['F6',8],['D6',8],
+           ['C6',4],['F6',4],['A6',4],['C7',4],['A#6',4],['A6',4],['G6',4],['F6',4],['E6',4],['G6',4],['C7',4],['A#6',4],['G6',6],['E6',2],['C6',8]]),
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0)tone(t,r-12,sd*15,{wave:'triangle',vol:.13,sus:.8,a:.05,rel:.5});
+   if(s===0||s===8)tri.slice(0,3).forEach(i=>tone(t,r+12+i,sd*7.5,{waves:['triangle','sine'],vol:.022,a:.1,sus:.85,rel:.3,lp:1600}));
+   const b=[0,6,8,12].indexOf(s);if(b>=0)tone(t,r+24+tri[[0,1,2,1][b]],sd*6,{wave:'sine',vol:.035,sus:.1,dec:.6,rel:1.2});
+   if(bar%4===0&&s===0)tom(t,r-12);if(s===8)hat(t,.02)},
+  lead:{waves:['triangle','sine'],vol:.1,sus:.8,dec:.1,rel:.4,a:.03,vib:true}},
+ // The Ending: the Hometown melody one last time, slow and full, for the finale and the gallery.
+ ending:{bpm:76,bars:16,chords:[[48,'maj'],[45,'min'],[41,'maj'],[43,'maj'],[48,'maj'],[45,'min'],[50,'min'],[43,'dom'],[41,'maj'],[43,'maj'],[40,'min'],[45,'min'],[41,'maj'],[43,'maj'],[48,'maj'],[43,'dom']],
+  mel:HOMETOWN_MEL,
+  play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
+   if(s===0)tone(t,r-12,sd*15,{waves:['triangle','sawtooth'],vol:.1,sus:.8,a:.05,rel:.5,lp:700});
+   if(s===0)tri.slice(0,3).forEach(i=>tone(t,r+12+i,sd*15,{waves:['sawtooth','triangle'],det:.08,vol:.016,a:.5,sus:.9,rel:.8,lp:1400}));
+   if(s%2===0){const a=[0,1,2,3,2,1,0,1][s/2];tone(t,r+24+tri[a%3]+(a>2?12:0),sd*2,{wave:'sine',vol:.025,sus:.2,dec:.2,rel:.3})}
+   if(s===0)kick(t,.35);if(s===8)kick(t,.2);if(s===12)snare(t,.06);
+   if(bar%4===0&&s===0)noiseHit(t,1.2,{type:'highpass',f:5000,q:.3,vol:.04})},
+  lead:{waves:['square','triangle'],det:.05,vol:.075,sus:.8,dec:.1,rel:.3,lp:2600,vib:true}},
  // ---- more variety: dungeon moods, a lighter theme for small fights, and a fall version of the town theme ----
  dgn_water:{bpm:88,bars:8,chords:[[53,'maj'],[50,'min'],[46,'maj'],[48,'maj'],[53,'maj'],[45,'min'],[46,'maj'],[48,'maj']],
   mel:seq([['A5',4],['C6',4],['A5',2],['G5',2],['F5',4],['D5',6],['F5',2],['A5',8],['Bb5',4],['A5',2],['G5',2],['F5',4],['D5',4],['E5',8],['G5',4],['C5',4],
@@ -2990,7 +3077,7 @@ const SONGS={
   lead:{wave:'sine',waves:['sine','triangle'],vol:.12,sus:.85,vib:true,rel:.3}}
 };
 const DSONG={lake:'dgn_water',forge:'dgn_mech',tower:'dgn_mech',museum:'dgn_spooky',hollow:'dgn_spooky',obs:'dgn_ancient',keep:'dgn_ancient'};
-const townSong=()=>HUB.age==='teen'?'town_fall':'town';
+const townSong=()=>HUB.age==='teen'?'town_fall':HUB.age==='adult'?'spring':'town';
 function playSong(name){
   if(!AU.ctx){AU.pending=name;return}
   if(AU.song&&AU.song.name===name)return;
@@ -3152,7 +3239,7 @@ async function typeLine(name,color,text){
 async function animate(ms,fn){if(CUT.skip){fn(1);return}const t0=performance.now();return new Promise(r=>{const f=()=>{const p=Math.min(1,(performance.now()-t0)/ms);fn(p);if(p<1&&!CUT.skip)requestAnimationFrame(f);else{fn(1);r()}};f()})}
 async function runStep(s){
   if(s.bg){CUT.lay=CUT.battleScene?battleLayout(s.bg):null;CUT.bg=s.bg;CUT.light=s.light||null;CUT.mote=s.mote||null;CUT.woods=s.woods||{red:true,crater:true}}
-  if(s.music!==undefined&&!(s.music==='town'&&AU.song&&AU.song.name==='fanfare'))playSong(s.music);
+  if(s.music!==undefined){if(s.music&&AU.song&&AU.song.name==='fanfare')AU.song.once=s.music;else playSong(s.music)}
   if(s.actor){const K=KIDS[s.actor];const a=CUT.actors[s.actor]={id:s.actor,age:s.age||null,x:s.x,y:cutY(s.y),form:s.form||'human',flip:!!s.flip,alpha:1,flash:0,stoneless:!!s.stoneless,hop:0};
     if(s.enter){const tx=s.x;a.x=s.enter==='left'?-30:280;await animate(s.ms||900,p=>{a.x=a.x0==null?a.x:a.x;a.x=(s.enter==='left'?-30:280)+(tx-(s.enter==='left'?-30:280))*p})}}
   if(s.move){const a=CUT.actors[s.move];const x0=a.x,y0=a.y,x1=s.x==null?x0:s.x,y1=s.y==null?y0:cutY(s.y);await animate(s.ms||700,p=>{a.x=x0+(x1-x0)*p;a.y=y0+(y1-y0)*p})}
@@ -3283,7 +3370,7 @@ ch1:{label:'Chapter 1 · The Falling Star',steps:[
   {cap:'They never noticed the red light watching them from the trees.'},
   {fade:'out',ms:1200}]},
 ch2:{pre:{label:'Chapter 2 · Strike Out',steps:[
-  {bg:'alley',music:'town'},{boss:'ch2',state:{pins:6}},{fade:'in'},
+  {bg:'alley',music:'mischief'},{boss:'ch2',state:{pins:6}},{fade:'in'},
   L('scareth',30,60),L('lightheart',54,74),L('kaytahn',28,90),
   {say:'boss',text:"Welcome to my lane, kiddos! Rent's due, and you're payin' in shiny rocks!"},
   {say:'scareth',text:'I got this. Everybody stand back.'},
@@ -3292,7 +3379,7 @@ ch2:{pre:{label:'Chapter 2 · Strike Out',steps:[
   {say:'boss',text:"Ha! You're about to get SPARED... NOT!"},
   {say:'lightheart',text:'Together. Ready?'},{fx:'flash'}]},
  post:{label:'Chapter 2 · Strike Out',steps:[
-  {bg:'alley',music:'town'},{fade:'in'},
+  {bg:'alley',music:'friends'},{fade:'in'},
   L('scareth',70,62,{form:'armor'}),L('lightheart',44,72,{form:'armor'}),L('kaytahn',96,80,{form:'armor',flip:true}),
   {unmorph:['scareth','lightheart','kaytahn']},
   {say:'scareth',text:"...I couldn't have cleared those pins by myself."},
@@ -3300,7 +3387,7 @@ ch2:{pre:{label:'Chapter 2 · Strike Out',steps:[
   {say:'kaytahn',text:'Who sends a talking bowling ball after three kids, anyway?'},
   {cap:'Far away, a figure in black armor turned a cracked crimson shard over in his hand.'}]}},
 ch3:{pre:{label:'Chapter 3 · Captain Chomp',steps:[
-  {bg:'lake',music:'town'},{boss:'ch3'},{fade:'in'},
+  {bg:'lake',music:'mischief'},{boss:'ch3'},{fade:'in'},
   L('scareth',34,58),L('lightheart',58,72),L('kaytahn',30,92),
   {say:'boss',text:'Arr! This beach be MY ship now! And I smell... FEAR!'},
   {say:'kaytahn',text:"I'm not much of a fighter. What if I just slow you two down?"},
@@ -3309,14 +3396,14 @@ ch3:{pre:{label:'Chapter 3 · Captain Chomp',steps:[
   {face:'lightheart',flip:false},
   {say:'boss',text:'Blood in the water, mateys!'},{fx:'flash'}]},
  post:{label:'Chapter 3 · Captain Chomp',steps:[
-  {bg:'lake',music:'town'},{fade:'in'},
+  {bg:'lake',music:'tender'},{fade:'in'},
   L('scareth',60,60,{form:'armor'}),L('lightheart',36,74,{form:'armor'}),L('kaytahn',88,80,{form:'armor',flip:true}),
   {unmorph:['scareth','lightheart','kaytahn']},
   {say:'kaytahn',text:'Every time one of you got hurt, I just... knew what to do.'},
   {say:'scareth',text:'Remind me never to fight without you.'},
   {say:'lightheart',text:"Something's sending these guys after our stones. We need to be ready."}]}},
 ch4:{pre:{label:'Chapter 4 · The Forge',steps:[
-  {bg:'forge',music:'town'},{boss:'ch4'},{fade:'in'},
+  {bg:'forge',music:'mischief'},{boss:'ch4'},{fade:'in'},
   L('scareth',40,58),L('lightheart',64,72),L('kaytahn',40,88),
   {say:'boss',text:'Metal! Metal! Give me ALL the metal!'},
   {say:'lightheart',text:"He's been circling this old forge all week. Why here?"},
@@ -3330,7 +3417,7 @@ ch4:{pre:{label:'Chapter 4 · The Forge',steps:[
   {say:'boss',text:'Ooh, shiny! I will take THAT too!'},
   {say:'thornforge',text:'Not a chance. Guys, mind if I join in?'},{fx:'flash'}]},
  post:{label:'Chapter 4 · The Forge',steps:[
-  {bg:'forge',music:'town'},{fade:'in'},
+  {bg:'forge',music:'friends'},{fade:'in'},
   L('scareth',40,60,{form:'armor'}),L('lightheart',64,72,{form:'armor'}),L('kaytahn',40,88,{form:'armor'}),L('thornforge',100,70,{form:'armor',flip:true}),
   {unmorph:['scareth','lightheart','kaytahn','thornforge']},
   {say:'thornforge',text:"Next time, let me make you all some proper gear. That junk he stole wasn't fit for heroes."},
@@ -3338,7 +3425,7 @@ ch4:{pre:{label:'Chapter 4 · The Forge',steps:[
   {say:'thornforge',text:'With guys like that around? Definitely.'},
   {cap:'Four stones now. The forge became their secret headquarters.'}]}},
 ch5:{pre:{label:'Chapter 5 · The Clock Strikes',steps:[
-  {bg:'tower',music:'town'},{boss:'ch5'},{fade:'in'},
+  {bg:'tower',music:'mischief'},{boss:'ch5'},{fade:'in'},
   L('scareth',36,56),L('lightheart',62,72),L('kaytahn',34,90),L('thornforge',90,84),
   {say:'boss',text:'Tick, tock! Tick, tock! Your time is UP!'},
   {say:'lightheart',text:"Everyone's waiting for me to call it. What if I call it wrong?"},
@@ -3347,14 +3434,14 @@ ch5:{pre:{label:'Chapter 5 · The Clock Strikes',steps:[
   {say:'kaytahn',text:'Just tell us where you need us, Jake.'},
   {say:'lightheart',text:'Okay. Together, then.'},{fx:'flash'}]},
  post:{label:'Chapter 5 · The Clock Strikes',steps:[
-  {bg:'tower',music:'town'},{fade:'in'},
+  {bg:'tower',music:'tender'},{fade:'in'},
   L('scareth',36,58,{form:'armor'}),L('lightheart',62,72,{form:'armor'}),L('kaytahn',34,90,{form:'armor'}),L('thornforge',94,80,{form:'armor',flip:true}),
   {unmorph:['scareth','lightheart','kaytahn','thornforge']},
   {say:'lightheart',text:'I kept trying to do everything myself. You all made it easy.'},
   {say:'kaytahn',text:"That's what a team is for."},
   {cap:'The tower bells rang true again. Somewhere in the dark, a crimson shard pulsed, hungry.'}]}},
 ch6:{pre:{label:'Chapter 6 · Whispers in the Dark',steps:[
-  {bg:'museum',music:'town'},{fade:'in'},
+  {bg:'museum',music:'mystery'},{fade:'in'},
   {cap:'The museum, after closing. A thief in purple armor was seen leaving with the ancient rune tablets.'},
   L('scareth',40,58),L('lightheart',64,72),L('kaytahn',38,90),L('thornforge',88,82),
   {say:'scareth',text:"Purple armor. Same color as that girl who's been following us around."},
@@ -3367,7 +3454,7 @@ ch6:{pre:{label:'Chapter 6 · Whispers in the Dark',steps:[
   {cap:'The mirror grins. Five dark reflections stare back at them.'},
   {say:'nightshade',text:"There's your thief. Let me prove it."},{fx:'flash'}]},
  post:{label:'Chapter 6 · Whispers in the Dark',steps:[
-  {bg:'museum',music:'town'},{fade:'in'},
+  {bg:'museum',music:'tender'},{fade:'in'},
   L('scareth',36,58,{form:'armor'}),L('lightheart',60,72,{form:'armor'}),L('kaytahn',34,90,{form:'armor'}),L('thornforge',84,84,{form:'armor'}),L('nightshade',120,68,{form:'armor',flip:true}),
   {unmorph:['scareth','lightheart','kaytahn','thornforge','nightshade']},
   {say:'lightheart',text:'We were wrong about you, Tricia. Sorry.'},
@@ -3389,14 +3476,14 @@ redhero:{label:'Chapter 9 Preview · The Red Hero',steps:[
   {fadeActor:'aldric',ms:1600,async:true},{boss:'ch7',ms:1600},
   {cap:'The broken shard did not die. It hungered, and the armor never came off again.',top:true},
   {fade:'out',ms:1000},{tint:false},{boss:null},
-  {bg:'woods',woods:{red:true,crater:true},music:'taken'},
+  {bg:'woods',woods:{red:true,crater:true},music:'tender'},
   L('lightheart',64,70,{stoneless:true}),L('nightshade',100,64,{flip:true}),
   {fade:'in',ms:900},
   {say:'lightheart',text:'That knight... he was one of us. A hero, just like us.'},
   {say:'nightshade',text:'And his stone broke because he never let anyone help him.'},
   {fade:'out',ms:1200}]},
 farewell:{label:"Chapter 12 · Farewell",steps:[
-  {bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'taken'},
+  {bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'tender'},
   L('scareth',22,60),L('lightheart',48,70),L('kaytahn',20,88),L('thornforge',76,84),L('nightshade',84,58),
   L('aldric',150,52,{stoneless:true,flip:true}),
   {fade:'in',ms:1200},
@@ -3424,7 +3511,7 @@ farewell:{label:"Chapter 12 · Farewell",steps:[
   {cap:'Far out in space, a strange signal flickered once, then went quiet.',top:true},
   {fade:'out',ms:1500}]},
 gallery:{label:'Character Gallery',steps:[
-  {bg:'museum',music:'town'},
+  {bg:'museum',music:'ending'},
   L('scareth',28,88),L('kaytahn',74,88),L('lightheart',120,88),L('thornforge',166,88),L('nightshade',212,88),
   {fade:'in'},
   {cap:'Part 1. The Meteorite Kids, ages 10 to 13.',top:true},
@@ -3676,7 +3763,7 @@ SCENES.interlude={label:'Interlude · Earth Awakens',steps:[
   ...strike('volcano','emberwright','lavaGolem','NEWS: Emberwright shatters a Lava Golem at the edge of the city.',58),
   ...strike('grove','verdance','vineBeast','NEWS: Verdance untangles a Vine Beast from the national park.',58),
   ...strike('peak','gale','windWyrm','NEWS: Gale grounds a Wind Wyrm high above the mountains.',58),
-  {fx:'reset'},{bg:'living',music:'town'},
+  {fx:'reset'},{bg:'living',music:'friends'},
   L('lightheart',96,62,{flip:false}),L('kaytahn',70,70),L('scareth',122,72),L('thornforge',40,60),L('nightshade',146,62),
   {fade:'in',ms:700},
   {cap:'Meanwhile, back in town.',top:true,auto:1400},
@@ -3691,7 +3778,7 @@ SCENES.interlude={label:'Interlude · Earth Awakens',steps:[
   {cap:'The stones grew quiet. Five years went by.'},{fade:'out',ms:1000}]};
 
 SCENES.ch1={pre:{label:SCENES.ch1.label,steps:([
-  {fx:'reset'},{bg:'school',music:'town'},{boss:'ch1',state:{ash:2}},
+  {fx:'reset'},{bg:'school',music:'mischief'},{boss:'ch1',state:{ash:2}},
   L('scareth',38,28),L('lightheart',60,56),L('kaytahn',38,84),
   {fade:'in',ms:900},
   {cap:'The next morning. Recess.',top:true},
@@ -3742,7 +3829,7 @@ SCENES.shardborn={label:'Preview · The Shard-Born',steps:[
 
 const HIDE_KIDS=[L('scareth',38,28),L('lightheart',60,56,{stoneless:true}),L('kaytahn',38,84),L('thornforge',90,82),L('nightshade',96,40)];
 SCENES.ch9={pre:{label:'Chapter 9 · The Red Hero',steps:SCENES.redhero.steps.concat([
-  {fx:'reset'},{bg:'hideout',music:'taken'},...HIDE_KIDS,{fade:'in',ms:900},
+  {fx:'reset'},{bg:'hideout',music:'mystery'},...HIDE_KIDS,{fade:'in',ms:900},
   {cap:'The dreams lead them to a hidden room beneath the old observatory.',top:true},
   {say:'nightshade',text:"These runes are his. Aldric. He was the first one the meteorite ever chose."},
   {say:'lightheart',text:'The man from my dreams.'},
@@ -3777,7 +3864,7 @@ SCENES.ch10={pre:{label:"Chapter 10 · The Knight's Keep",steps:[
   {say:'scareth',text:'Then we hit him together. One after another.'},
   {cap:'Vane shrugs off repeated hits from the same kid. Take turns attacking.',top:true}]},
  post:{label:"Chapter 10 · The Knight's Keep",steps:[
-  {bg:'keep',music:'town'},...KEEP_KIDS,{fade:'in'},
+  {bg:'keep',music:'friends'},...KEEP_KIDS,{fade:'in'},
   {say:'lightheart',text:'There it is. On the throne.'},
   {fx:'returnStone',who:'lightheart'},
   {say:'lightheart',text:'I can feel it again. All the way.'},
@@ -3811,7 +3898,7 @@ SCENES.ch11={pre:{label:'Chapter 11 · Meteor Strike',steps:[
   {say:'lightheart',text:'That was Aldric. Everyone, all five stones. Meteor Strike!'},
   {cap:'Phase 3: the shard heals every normal hit. Morph three friends at once and unleash Meteor Strike. Moritania can Reach Him to hold the shard back.',top:true}]},
  post:{label:'Chapter 11 · Meteor Strike',steps:[
-  {bg:'keeptop',music:'taken'},...ROOF_KIDS.map(a=>Object.assign({},a,{form:'armor'})),{boss:'ch11',state:{cracked:true}},{fade:'in'},
+  {bg:'keeptop',music:'tender'},...ROOF_KIDS.map(a=>Object.assign({},a,{form:'armor'})),{boss:'ch11',state:{cracked:true}},{fade:'in'},
   {fx:'flash'},{fx:'shake',n:20},{boss:null,ms:900},
   L('aldric',190,48,{stoneless:true,flip:true}),
   {unmorph:['scareth','lightheart','kaytahn','thornforge','nightshade']},
@@ -5687,7 +5774,7 @@ SCENES.part2={label:'Part 2 · Called Back',steps:[
   {say:'kaytahn',text:'Smooth.'},
   {music:null},{sfx:'clang'},{fx:'shake',n:14},
   {cap:'Across town, a megaphone squeals. A very loud megaphone.',top:true},
-  {music:'battle'},{boss:'ch13',ms:1200,state:{ash:3}},
+  {music:'mischief'},{boss:'ch13',ms:1200,state:{ash:3}},
   {say:'boss',text:'HOMETOWN! Did you miss me? Because I did NOT miss you!'},
   {say:'boss',text:'Captain Cinder is BACK, with a fresh batch of Ashlings and a brand new megaphone!'},
   {say:'kaytahn',text:'Is that... Captain Cinder?'},
@@ -5711,7 +5798,7 @@ SCENES.ch13={pre:{label:'Chapter 13 · Five Years Later',steps:[
   {cap:'Five years off. Morphing takes Focus now: spend a turn concentrating, then morph on your next turn. Morphs last 2 turns.',top:true},
   {cap:'The MEGAPHONE breaks everyone\'s Focus. Focus right after he uses it.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 13 · Five Years Later',steps:[
-  {bg:'school',music:'town_fall'},L('scareth',40,53,{form:'armor',age:'teen'}),L('lightheart',66,65,{form:'armor',age:'teen'}),L('kaytahn',92,55,{form:'armor',flip:true,age:'teen'}),{fade:'in'},
+  {bg:'school',music:'friends'},L('scareth',40,53,{form:'armor',age:'teen'}),L('lightheart',66,65,{form:'armor',age:'teen'}),L('kaytahn',92,55,{form:'armor',flip:true,age:'teen'}),{fade:'in'},
   {unmorph:['scareth','lightheart','kaytahn']},
   {say:'lightheart',text:'Okay. I missed that. I really missed that.'},
   {say:'kaytahn',text:"Did anyone else feel it click at the end? Like it was never gone."},
@@ -5737,7 +5824,7 @@ SCENES.ch14={pre:{label:'Chapter 14 · The Hollow Returns',steps:[
   {say:'kaytahn',text:'It came back together. The shard, I mean. Something put it back.'},
   {cap:'Hart cages anyone who goes two turns without helping a friend. Heal, shield, Check In, break a cage, or tag a friend in to stay connected.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 14 · The Hollow Returns',steps:[
-  {bg:'hollow',music:'town_fall'},...HL_KIDS,{fade:'in'},
+  {bg:'hollow',music:'tender'},...HL_KIDS,{fade:'in'},
   {cap:"Hart's shard does not crumble this time. It blinks out, like someone reached in and took it.",top:true},
   {say:'kaytahn',text:'Did you see that? Something took it.'},
   {say:'scareth',text:'Who collects evil glowing rocks?'},
@@ -5774,7 +5861,7 @@ SCENES.ch15={pre:{label:'Chapter 15 · Burning Out',steps:[
   {say:'lightheart',text:"Lindsey. You're running on fumes. We all are."},
   {cap:'The team starts worn out. Rest trades your turn for a quarter of your HP and cools his flames. Every round nobody rests, his flames grow.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 15 · Burning Out',steps:[
-  {bg:'forge',music:'town_fall'},...MF_KIDS,{fade:'in'},
+  {bg:'forge',music:'tender'},...MF_KIDS,{fade:'in'},
   {cap:"The magma cools to black glass. Embermaw's shard blinks out, just like Hart's.",top:true},
   {say:'scareth',text:'What time is it?'},
   {say:'lightheart',text:'...Six fifteen.'},
@@ -5808,7 +5895,7 @@ SCENES.ch16={pre:{label:'Chapter 16 · Cracks in the Armor',steps:[
   {say:'boss',text:'Then my shield will be happy to show you.'},
   {cap:"Vane's mirror shield throws attacks back at anyone still hiding something. Spend a turn to Confide: your hits land in full, and every confession makes the team stronger.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 16 · Cracks in the Armor',steps:[
-  {bg:'museum',music:'town_fall'},...MM_KIDS,{fade:'in'},
+  {bg:'museum',music:'tender'},...MM_KIDS,{fade:'in'},
   {cap:"Vane's shard blinks out. That makes three.",top:true},
   {say:'kaytahn',text:"So we're all cracking."},
   {say:'lightheart',text:'Then we crack together. Same as always.'},
@@ -5850,7 +5937,7 @@ SCENES.ch17={pre:{label:'Chapter 17 · The Herald',steps:[
   {bg:'woods',woods:{red:false,crater:true},music:'herald'},{boss:'ch17'},...VS_KIDS,{fade:'in'},
   {say:'boss',text:'Enough. I have measured you.'},
   {say:'boss',text:'Three days, children. Then my master will speak to your world in person.'},
-  {boss:null,ms:1200},{music:'town_fall'},
+  {boss:null,ms:1200},{music:'friends'},
   {cap:'The spire crumbles into black sand. Below, every news camera in the state is pointed at the crater.',top:true},
   {say:'kaytahn',text:"Um. Guys? We're on TV."},
   {say:'lightheart',text:'...Hi, Mom.'},
@@ -5883,7 +5970,7 @@ SCENES.ch18a={pre:{label:'Chapter 18 · The Breaking',steps:[
   {say:'bastion',text:'Then prove you are not dead weight.'},
   {cap:"Bastion's Shield Wall blocks most of every hit. He fights alone. Jake can Call the Team.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 18 · The Breaking',steps:[
-  {bg:'town',music:'town_fall'},...P2_KIDS,...G18,{fade:'in'},
+  {bg:'town',music:'tender'},...P2_KIDS,...G18,{fade:'in'},
   {say:'bastion',text:'You asked them for help. Just like that.'},
   {say:'lightheart',text:'Every time. That is the whole trick.'},
   {say:'tidewarden',text:'He has carried us for three years. He never asks for anything.'},
@@ -5936,7 +6023,7 @@ SCENES.ch18={pre:{label:'Chapter 18 · The Breaking',steps:[
   {cap:'It searches for five bright lights. Where they used to burn, the sky is empty and dark.',top:true},
   {fade:'out',ms:1600}]}};
 SCENES.whatsLeft={label:"Part 2 Epilogue · What's Left",steps:[
-  {fx:'reset'},{bg:'town',music:'town_fall'},...P2_KIDS,{fade:'in',ms:1200},
+  {fx:'reset'},{bg:'town',music:'tender'},...P2_KIDS,{fade:'in',ms:1200},
   {cap:'Graduation day.',top:true},
   {say:'lightheart',text:'Feels weird. Normal day. Normal stone.'},
   {say:'kaytahn',text:'Mine still works if I concentrate really hard. For about ten seconds.'},
@@ -5954,7 +6041,7 @@ SCENES.whatsLeft={label:"Part 2 Epilogue · What's Left",steps:[
 
 const P3_KIDS=[L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'})];
 SCENES.part3={label:'Part 3 · The Last Light',steps:[
-  {fx:'reset'},{bg:'town',music:'town'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:1400},
+  {fx:'reset'},{bg:'town',music:'spring'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:1400},
   {cap:'PART 3: THE LAST LIGHT. Fifteen years later.',top:true},
   {cap:"Founders' Day morning, in Mom's kitchen.",top:true},
   {say:'corran',name:'Corran',col:'#9ae07a',text:'Uncle Joseph, Velociraptors were only as big as a turkey. The movies are wrong.'},
@@ -5970,7 +6057,7 @@ SCENES.part3={label:'Part 3 · The Last Light',steps:[
   {fade:'out',ms:1200}]};
 const P3_G=[L('bastion',150,58,{form:'armor',flip:true}),L('tidewarden',184,74,{form:'armor',flip:true}),L('emberwright',206,52,{form:'armor',flip:true}),L('verdance',170,92,{form:'armor',flip:true}),L('gale',216,86,{form:'armor',flip:true})];
 SCENES.ch19={pre:{label:"Chapter 19 · Founders' Day",steps:[
-  {fx:'reset'},{bg:'town',music:'town'},{fx:'norift'},...P3_KIDS,L('gale',170,70,{form:'armor',flip:true}),{fade:'in',ms:900},
+  {fx:'reset'},{bg:'town',music:'friends'},{fx:'norift'},...P3_KIDS,L('gale',170,70,{form:'armor',flip:true}),{fade:'in',ms:900},
   {cap:"The fountain. Half of Hometown has turned out to watch.",top:true},
   {say:'gale',text:'Ladies and gentlemen! The legendary Meteorite Kids! Now slightly less kids!'},
   {say:'thornforge',text:'Rude.'},
@@ -5978,7 +6065,7 @@ SCENES.ch19={pre:{label:"Chapter 19 · Founders' Day",steps:[
   {say:'lightheart',text:'Ready as we will ever be.'},
   {cap:'Nobody can morph anymore. When Gale Showboats for the crowd, hit her hard.',top:true},{fx:'flash'}]},
  post:{label:"Chapter 19 · Founders' Day",steps:[
-  {fx:'reset'},{bg:'town',music:'town'},{fx:'norift'},...P3_KIDS,...P3_G,{fade:'in',ms:1000},
+  {fx:'reset'},{bg:'town',music:'spring'},{fx:'norift'},...P3_KIDS,...P3_G,{fade:'in',ms:1000},
   {cap:'That night. The festival winds down under the stars.',top:true},
   {say:'gale',text:'You let a forty-year-old librarian hit me with a folding chair.'},
   {say:'kaytahn',text:"I'm thirty-two."},
@@ -6043,7 +6130,7 @@ SCENES.ch20={pre:{label:'Chapter 20 · The Fall of the Guardians',steps:[
   {say:'lightheart',text:'Then we figure out how to use them.'},
   {fade:'out',ms:1400}]}};
 SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
-  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3_KIDS,{fade:'in',ms:1000},
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3_KIDS,{fade:'in',ms:1000},
   {cap:'Night. The edge of the crater.',top:true},
   {say:'lightheart',text:'Everybody ready?'},
   {cap:'Five cracked stones, set together in the grass.',top:true},
@@ -6062,7 +6149,7 @@ SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
   {say:'scareth',text:'No armor, no problem. We have been practicing.'},
   {cap:"Vorath's wisps followed the light. Lightheart takes every hit meant for his friends. If he falls, the fight is lost. Each friend has one Stone Echo.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 21 · Five Into One',steps:[
-  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult',form:'seraph'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult',form:'seraph'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
   {say:'kaytahn',text:"We can't morph anymore. Doesn't matter. Where you go, we go."},
   {say:'scareth',text:'I call the front seat.'},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Go. We'll be right here."},
@@ -6073,7 +6160,7 @@ SCENES.ch21={pre:{label:'Chapter 21 · Five Into One',steps:[
 
 const P3S=[L('lightheart',60,56,{age:'adult',form:'seraph'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'})];
 SCENES.ch22open={label:'Chapter 22 · The Relic Sites',steps:[
-  {fx:'reset'},{bg:'town',music:'town'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:900},
+  {fx:'reset'},{bg:'town',music:'friends'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:900},
   {say:'thornforge',text:"Truck's gassed up. Four stops. Who has snacks?"},
   {say:'kaytahn',text:'Me. Obviously.'},
   {say:'nightshade',text:'Canyon, temple, forge, grove. Each one held a relic.'},
@@ -6081,17 +6168,17 @@ SCENES.ch22open={label:'Chapter 22 · The Relic Sites',steps:[
   {say:'scareth',text:'Shotgun.'},
   {cap:'The Relic Road: visit the four sites in any order, each led by the friend who knows it.',top:true},{fade:'out',ms:900}]};
 SCENES.ch22={pre:{label:'Chapter 22 · The Relic Sites',steps:[
-  {fx:'reset'},{bg:'grove',music:'herald'},...P3S,{fade:'in',ms:900},
+  {fx:'reset'},{bg:'grove',music:'dgn_ancient'},...P3S,{fade:'in',ms:900},
   {cap:'Beyond the last gate, four echoes of the Earth Guardians stand together.',top:true},
   {say:'lightheart',text:'They are testing us. Everything we just learned.'},
   {cap:"The echoes take turns. Bastion's shield blocks the next hit. Verdance's arrow leaves Jake hexed.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 22 · The Relic Sites',steps:[
-  {fx:'reset'},{bg:'grove',music:'taken'},...P3S,{fade:'in'},
+  {fx:'reset'},{bg:'grove',music:'mystery'},...P3S,{fade:'in'},
   {say:'lightheart',text:'Four moves. Four friends.'},
   {say:'nightshade',text:'And the grove said to go home. To the crater.'},
   {cap:'Next: the crater, where it all began.',top:true},{fade:'out',ms:1000}]}};
 SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
-  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3S,{fade:'in',ms:1000},
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3S,{fade:'in',ms:1000},
   {cap:'The crater. This time, they go down.',top:true},
   {say:'nightshade',text:'The walls are covered in Lumoran. "The lights were a bridge. Sent to guard this world until it could guard itself."'},
   {say:'kaytahn',text:'And then give their power away.'},
@@ -6100,16 +6187,16 @@ SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
   {say:'lightheart',text:'Not him. Just what he left behind.'},
   {cap:'It raises its sword at Jake, and only Jake. The Sentinel turns aside every blow. Every friend must use their Stone Echo.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 23 · The Crater',steps:[
-  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3S,{boss:'ch23',state:{kneel:true}},{fade:'in',ms:900},
+  {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},...P3S,{boss:'ch23',state:{kneel:true}},{fade:'in',ms:900},
   {cap:'The Sentinel kneels.',top:true},
   {say:'aldric',voice:'aldric',text:"You let them carry it with you. That's all I ever needed to learn."},
   {say:'lightheart',text:'Thank you, Aldric.'},
   {boss:null,ms:1800},{cap:"The armor fades into crimson light. The Warden's spark settles into Jake's stone for good.",top:true},
   {say:'nightshade',text:'Two worlds, one light. Now we know how.'},
-  {fx:'shake',n:20},{cap:'Above the crater, the sky tears open.',top:true},
+  {fx:'shake',n:20,music:'vorath'},{cap:'Above the crater, the sky tears open.',top:true},
   {cap:'On the other side, Vorath is waiting.',top:true},{fade:'out',ms:1200}]}};
 SCENES.ch25open={label:'Chapter 25 · A Brighter Future',steps:[
-  {fx:'reset'},{bg:'town',music:'town'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:1400},
+  {fx:'reset'},{bg:'town',music:'spring'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:1400},
   {cap:"One year later. Founders' Day again.",top:true},
   {say:'kaytahn',text:'Same fountain. Same town.'},
   {say:'thornforge',text:'Better cake.'},
@@ -6118,7 +6205,7 @@ SCENES.ch25open={label:'Chapter 25 · A Brighter Future',steps:[
   {say:'scareth',text:'I know. I just like saying it out loud.'},
   {cap:'Walk around and see everyone. The wedding is at the fountain.',top:true},{fade:'out',ms:900}]};
 SCENES.wedding={label:'Chapter 25 · The Wedding',steps:[
-  {fx:'reset'},{bg:'town',light:'calm',music:'town'},{fx:'norift'},L('scareth',80,60,{age:'adult'}),L('nightshade',110,60,{age:'adult',flip:true}),L('lightheart',40,84,{age:'adult'}),L('kaytahn',150,84,{age:'adult',flip:true}),L('thornforge',180,80,{age:'adult',flip:true}),{fade:'in',ms:1200},
+  {fx:'reset'},{bg:'town',light:'calm',music:'wedding'},{fx:'norift'},L('scareth',80,60,{age:'adult'}),L('nightshade',110,60,{age:'adult',flip:true}),L('lightheart',40,84,{age:'adult'}),L('kaytahn',150,84,{age:'adult',flip:true}),L('thornforge',180,80,{age:'adult',flip:true}),{fade:'in',ms:1200},
   {cap:'Evening at the fountain.',top:true},
   {say:'mom',name:'Mom',text:'I have cried four times and it has not even started.'},
   {say:'corran',name:'Corran',col:'#9ae07a',text:'I have the rings! I did not lose them! I lost Rex once, but not the rings.'},
@@ -6132,7 +6219,7 @@ SCENES.wedding={label:'Chapter 25 · The Wedding',steps:[
   {say:'nightshade',text:'...Best toast I have ever heard.'},
   {cap:'Tonight, one last stop. The crater.',top:true},{fade:'out',ms:1200}]};
 SCENES.finale={label:'Chapter 25 · A Brighter Future',steps:[
-  {fx:'reset'},{bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'town'},
+  {fx:'reset'},{bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'ending'},
   L('scareth',30,54,{age:'adult'}),L('lightheart',60,62,{age:'adult'}),L('kaytahn',96,60,{age:'adult',flip:true}),L('thornforge',128,56,{age:'adult',flip:true}),L('nightshade',156,62,{age:'adult',flip:true}),
   {fade:'in',ms:1200},
   {cap:'That night. The crater where it all began.',top:true},
