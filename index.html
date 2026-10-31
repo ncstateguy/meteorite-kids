@@ -2041,17 +2041,17 @@ const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',
   else{log(`The Sentinel strikes at ${J.name}. A hollow voice: "...Alone?"`);await lunge(b,-1);damageKid(J,8+rnd(3))}renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH22,CH23);
 async function startEpilogue(){showBattleUI(false);HUB.active=false;await playCutscene(SCENES.ch25open);progress.ep=true;saveProgress();
-  HUB.age='adult';HUB.area=null;HUB.map=townMap();HUB.x=18*TS+8;HUB.y=17*TS+8;HUB.fromHub=true;HUB.pendingBeat={text:"Chapter 25: A Brighter Future. One year later. The wedding is at the fountain."};enterHub()}
+  HUB.age='adult';HUB.area=null;HUB.map=townMap();HUB.x=18*TS+8;HUB.y=17*TS+8;HUB.fromHub=true;HUB.pendingBeat={text:"Chapter 25: A Brighter Future. One year later. Founders' Day at the fountain."};enterHub()}
 async function playFinale(){HUB.active=false;await playCutscene(SCENES.finale);await playCutscene(SCENES.gallery);progress.ch25=true;saveProgress();
   HUB.fromHub=true;HUB.pendingBeat={text:'THE END. Thank you for playing The Meteorite Kids. Keep exploring Hometown in any era, or replay chapters from Extras.'};enterHub()}
 const EP_LINES={
  corran:[['Corran','Did you know Stegosaurus lived closer in time to Tyrannosaurus than... no wait. Other way around. Further. It was further.'],['Kaylen','He practiced that one all week.']],
- kaylen:[['Kaylen','Baxter is the ring dog. That is a real job. I checked.']],
- brian:[['Brian','Morning, Joseph. See? Totally calm. Not scared at all.'],['','His hands are shaking a little.']],
- kylee:[['Kylee','I already cried at the rehearsal. I will cry again. Hand me tissues when it starts.']],
- shop:[['Rocco','Wedding cake. Five tiers. Brian carried it all by himself. I have never been prouder.']],
- reed:[['Reed','A wedding AND Founders\' Day. Dee says I can only cry at one of them.']],dee:[['Dee','He will cry at both.']],
- jared:[['Jared','I am on the dance floor first. Somebody has to break the ice.']],
+ kaylen:[['Kaylen','Baxter gets to wear a bandana today. He is very proud of it.']],
+ brian:[['Brian',"Founders' Day cake is done. Do not tell my dad I ate a corner."]],
+ kylee:[['Kylee','Your mom wants a picture of all five of you with the Guardians. Smile this time.']],
+ shop:[['Rocco',"Founders' Day cake. Five layers, one for each of you. Brian carried it all by himself. I have never been prouder."]],
+ reed:[['Reed',"Dee says I am not allowed to cry at the speech this year."]],dee:[['Dee','He will cry at the speech.']],
+ jared:[['Jared','I entered the pie contest. I have never baked a pie. How hard can it be?']],
  andrew:[['Andrew','I set up all the chairs. ALL the chairs. Megan counted.']],megan:[['Megan','He set up all but six. I did not tell him.']]};
 
 const SHELTER={kylee:'kylee',baxter:'kylee',corran:'kids',kaylen:'kids',reed:'friends',dee:'friends',jared:'friends',andrew:'friends',megan:'friends'};
@@ -2721,7 +2721,7 @@ const RELIC_MV={
  thornforge:{label:'Anvil Guard',desc:'From the forge relic: draw every attack and take half damage for 2 turns',run:async k=>{S.boss.taunt=2;k.guard=2;sfx('shield');burst(...kidCenter(k),'#ff9a3a',16);log('Anvil Guard! Josh plants his feet and draws every attack.')}},
  nightshade:{label:'Hexfire',desc:'From the grove relic: dark magic that hexes',run:async k=>{await hitBoss(k,k.mag*3,{magic:true,label:'engulfs'});if(!S.over&&!S.transition)S.boss.hex=Math.max(S.boss.hex,2)}},
  lightheart:{label:'Starfall Blade',desc:"From Aldric's spark: a heavy strike of light",run:k=>hitBoss(k,k.atk*3.5,{light:true,label:'brings down Starfall Blade on'})}};
-function relicAction(k){const M=RELIC_MV[k.id];if(!M)return null;const has=k.id==='lightheart'?progress.ch23:progress['mv_'+k.id];if(!has)return null;
+function relicAction(k){const M=RELIC_MV[k.id];if(!M||S.ch.gray)return null;const has=k.id==='lightheart'?progress.ch23:progress['mv_'+k.id];if(!has)return null;
   return {label:M.label,desc:k.rcd?`Recharging: ${k.rcd} turn${k.rcd>1?'s':''}`:M.desc,disabled:k.rcd>0,run:async()=>{k.rcd=2;await M.run(k);renderStatus()}}}
 function actionsFor(k){
   if(k.seraph){let SA=seraphActions(k);if(S.ch.party3)SA=SA.filter(a=>a.label!=='Call a friend');
@@ -2968,8 +2968,8 @@ const SONGS={
    if(s%4===2)tone(t,r+24+tri[(s/2)%3],sd,{wave:'sine',vol:.02,sus:.2});
    if(s===0||s===8||s===10)kick(t,.3);if(s===4||s===12)snare(t,.1);if(s%2===0)hat(t,.04)},
   lead:{waves:['square','triangle'],det:.06,vol:.09,sus:.7,dec:.08,rel:.15,lp:2600,vib:true}},
- // The Wedding: a bright processional with bells.
- wedding:{bpm:76,bars:8,chords:[[41,'maj'],[48,'maj'],[50,'min'],[46,'maj'],[41,'maj'],[46,'maj'],[48,'maj'],[48,'dom']],
+ // The Plaque: a bright processional with bells, for the Founders' Day thank-you.
+ ceremony:{bpm:76,bars:8,chords:[[41,'maj'],[48,'maj'],[50,'min'],[46,'maj'],[41,'maj'],[46,'maj'],[48,'maj'],[48,'dom']],
   mel:seq([['A5',4],['C6',4],['F6',8],['E6',4],['D6',4],['C6',8],['D6',4],['F6',4],['A6',6],['G6',2],['F6',8],['D6',8],
            ['C6',4],['F6',4],['A6',4],['C7',4],['A#6',4],['A6',4],['G6',4],['F6',4],['E6',4],['G6',4],['C7',4],['A#6',4],['G6',6],['E6',2],['C6',8]]),
   play(t,step,bar,ch,sd){const [r,q]=ch,tri=TRI[q],s=step%16;
@@ -3720,11 +3720,10 @@ SCENES.ch27={
   {say:'nightshade',text:"It was Lumora's. Now it's yours."},
   {say:'gale',text:'You gave up your powers for us? Jake. That is the most you thing you have ever done.'},
   {say:'emberwright',text:'Your stone is gray, smith.'},
-  {say:'thornforge',text:'Still warm, though.'},
+  {say:'thornforge',text:'Yeah. Worth it.'},
   {say:'bastion',text:'Fifteen years ago I told five children to go home. I was wrong. Earth will remember this. So will we.'},
-  {say:'lightheart',text:'Just keep an eye on the town for us. We have a wedding to plan.'},
-  {say:'scareth',text:'We do?'},
-  {say:'nightshade',text:'We do.'},
+  {say:'lightheart',text:'Just keep an eye on the town for us.'},
+  {say:'bastion',text:'Always.'},
   {fade:'out',ms:1200},{fx:'nopillars'}]}
 };
 EXTRA_BOSSES.wraith={key:'wraith',villain:'The Unmade',init(b){},draw(){},drawOver:(b,x0,y0)=>drawWraith(b,x0,y0-6)};
@@ -4189,7 +4188,7 @@ function buildObjs(){
     OBJS.push({type:'npc',id:'andrew',tx:29,ty:10,spr:'andrew',name:'Andrew',solid:true,face:1});OBJS.push({type:'npc',id:'megan',tx:30,ty:10,spr:'megan',name:'Megan',solid:true,face:-1});
     if(progress.part3&&!progress.ch19){if(!HUB.state.dino_found&&HUB.state.dino_ask)OBJS.push({type:'lore',id:'dino',tx:20,ty:24,name:'Toy T. rex'});
       if(ch19Ready())OBJS.push({type:'guardian',id:'gale19',g:'gale',tx:18,ty:14,name:'Gale',solid:true})}
-    if(progress.ch27){if(!HUB.state.ep_wed)OBJS.push({type:'lore',id:'arch',tx:20,ty:16,name:'Wedding Arch',solid:true});OBJS.push({type:'guardian',id:'gale25',g:'gale',tx:18,ty:14,name:'Gale',solid:true})}}
+    if(progress.ch27){OBJS.push({type:'guardian',id:'gale25',g:'gale',tx:18,ty:14,name:'Gale',solid:true})}}
   OBJS.push({type:'npc',id:'ballkid',tx:11,ty:13,spr:HUB.age==='teen'?'ballteen':'ballkid',name:HUB.age==='teen'?'Neighbor Kid':'Kid',solid:true,needs:'lightheart'});
   if(HUB.age==='teen')OBJS.push({type:'npc',id:'fan',tx:23,ty:12,spr:'fan',name:'Little Kid',solid:true});
   if(HUB.age==='kid'){if(!HUB.state.bully)OBJS.push({type:'npc',id:'bully',tx:31,ty:21,spr:'bully',name:'Brian',solid:true,needs:'scareth'});
@@ -4531,7 +4530,7 @@ function nextGoal(){
   if(HUB.area){const A=AREAS[HUB.area];return A&&A.goal?A.goal():null}
   if(!STORY)return null;
   if(HUB.age==='adult'&&progress.ch23&&!progress.ch27)return {key:'ch27',text:'The sky over the crater is torn open. Vorath is waiting on the other side.',t:{tx:6,ty:26}};
-  if(HUB.age==='adult'&&progress.ch27&&!progress.ch25)return HUB.state.ep_wed?{key:'ep',text:'Night. Meet everyone at the crater one last time.',t:{tx:6,ty:26}}:{key:'ep',text:"One year later. Joseph and Tricia's wedding is at the fountain. Say hello to everyone, then head there.",t:{tx:20,ty:16}};
+  if(HUB.age==='adult'&&progress.ch27&&!progress.ch25)return HUB.state.ep_cer?{key:'ep',text:'Night. Meet everyone at the crater one last time.',t:{tx:6,ty:26}}:{key:'ep',text:"One year later. Founders' Day. Say hello to everyone, then meet Gale at the fountain.",t:{tx:18,ty:14}};
   const k=chapterOrder().find(k=>!progress[k]&&k!=='ch27');
   if(!k||(k==='ch12'&&!progress.ch11))return progress.ch25?{text:'The End. Thanks for playing! Replay chapters and scenes from Extras.'}:progress.ch21?{text:'Part 3 continues fifteen years later. Press the Era button to switch to the adults.'}:progress.ch19?{text:'Chapter 20 is on the way. Replay chapters and scenes from Extras.'}:progress.ch18?{text:'Part 2 is complete. Part 3, The Last Light, is on the way. Replay chapters and scenes from Extras.'}:progress.ch17?{text:'Chapter 18 is on the way. The Herald gave Earth three days.'}:progress.ch16?{text:'Chapter 17 is on the way. Replay chapters and scenes from Extras.'}:progress.ch15?{text:'Chapter 16 is on the way. Replay chapters and scenes from Extras.'}:progress.ch14?{text:'Chapter 15 is on the way. Replay chapters and scenes from Extras.'}:progress.ch13?{text:'Chapter 14 is on the way. Replay chapters and scenes from Extras.'}:part1Done()?{text:'Part 1 is complete! Part 2 is on the way. Replay chapters and scenes from Extras.'}:null;
   if(CHAPTERS.find(c=>c.key===k&&c.part===3)&&HUB.age!=='adult')return {text:'Part 3 happens fifteen years later. Press the Era button to switch to the adults.'};
@@ -4635,7 +4634,7 @@ async function hubInteract(o){
     if(!progress.ch22)return hubSay([['','The crater is quiet.'],me('The relic sites first. Josh has the truck ready on the east road.')]);
     if(!progress.ch23)return exitHubTo(CHAPTERS.find(c=>c.key==='ch23'));
     if(!progress.ch27){const r=await hubChoice('The rift over the crater is open. Go through and face Vorath?',['Go','Not yet']);if(r===0)exitHubTo(CHAPTERS.find(c=>c.key==='ch27'));return}
-    if(!progress.ch25&&HUB.state.ep_wed)return playFinale();
+    if(!progress.ch25&&HUB.state.ep_cer)return playFinale();
     return hubSay([['','The crater park. Five small gray stones sit on the plaque, warm in the sun.']])}
   if(o.type==='sign'&&HUB.age==='adult'&&o.ch==='ch7'&&progress.ch19&&!progress.ch21){
     if(!progress.ch20){if(!HUB.state.c20_open)return hubSay([['','The crater park. The sky above it looks wrong somehow.']]);if(!sheltered())return hubSay([['','Not yet. Get everyone to the library basement first.']]);return exitHubTo(CHAPTERS.find(c=>c.key==='ch20'))}
@@ -4717,8 +4716,8 @@ async function hubInteract(o){
       HUB.state.bully=true;saveHub();buildObjs();return shardLines('bully')}}
   if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],['me','He would have loved Founders\' Day.']]));
   if(o.type==='lore'&&o.id==='dino'){HUB.state.dino_found=true;saveHub();buildObjs();updateHubHud();sfx('heal');return hubSay([['','A small green toy T. rex, face down in the grass. Baxter must have tracked him all the way here.'],['','(You found Rex! Take him back to Corran.)']])}
-  if(o.type==='lore'&&o.id==='arch'){HUB.active=false;await playCutscene(SCENES.wedding);HUB.state.ep_wed=true;saveHub();enterHub();return}
-  if(o.type==='guardian'&&o.id==='gale25')return hubSay([['Gale',"Corran's team won the exhibition this year. Do NOT tell anyone I let him."],['Gale','...Okay, I did not let him. He is really fast.']]);
+  if(o.type==='guardian'&&o.id==='gale25'){if(!HUB.state.ep_cer){await hubSay([['Gale','There you are! Bastion has a speech. Then you and I have unfinished business.']]);const r=await hubChoice("Chapter 25: A Brighter Future",["Let's go",'Not yet']);if(r===0)exitHubTo(CH25R);return}
+    return hubSay([['Gale','Two years in a row. Next year I am bringing Bastion.'],['Gale','...Okay, Bastion says no.']])}
   if(o.type==='guardian'&&o.id==='gale19')return exitHubTo(CHAPTERS.find(c=>c.key==='ch19'));
   if(o.type==='lore'&&o.id==='mural'){
     if(HUB.age==='adult')return hubSay([['','The Red Hero mural, freshly repainted. Someone added five small figures standing beside him.'],me('Six lights. He finally has his team.')]);
@@ -6311,24 +6310,35 @@ SCENES.ch25open={label:'Chapter 25 · A Brighter Future',steps:[
   {cap:"One year later. Founders' Day again.",top:true},
   {say:'kaytahn',text:'Same fountain. Same town.'},
   {say:'thornforge',text:'Better cake.'},
-  {say:'scareth',text:'And a wedding.'},
-  {say:'nightshade',text:'Our wedding, Joseph.'},
-  {say:'scareth',text:'I know. I just like saying it out loud.'},
-  {cap:'Walk around and see everyone. The wedding is at the fountain.',top:true},{fade:'out',ms:900}]};
-SCENES.wedding={label:'Chapter 25 · The Wedding',steps:[
-  {fx:'reset'},{bg:'town',light:'calm',music:'wedding'},{fx:'norift'},L('scareth',80,60,{age:'adult'}),L('nightshade',110,60,{age:'adult',flip:true}),L('lightheart',40,84,{age:'adult'}),L('kaytahn',150,84,{age:'adult',flip:true}),L('thornforge',180,80,{age:'adult',flip:true}),{fade:'in',ms:1200},
-  {cap:'Evening at the fountain.',top:true},
-  {say:'mom',name:'Mom',text:'I have cried four times and it has not even started.'},
-  {say:'corran',name:'Corran',col:'#9ae07a',text:'I have the rings! I did not lose them! I lost Rex once, but not the rings.'},
-  {fx:'flash'},{cap:'Joseph and Tricia are married.',top:true},
-  {say:'lightheart',text:'Joseph. Toast.'},
-  {say:'scareth',text:'When we were kids, I thought being brave meant not being scared.'},
-  {say:'scareth',text:'Tricia taught me it means being scared and staying anyway.'},
-  {say:'scareth',text:"So. I'm staying. Forever."},
-  {say:'kaytahn',text:'That was actually good.'},
-  {say:'thornforge',text:'He practiced for a YEAR.'},
-  {say:'nightshade',text:'...Best toast I have ever heard.'},
-  {cap:'Tonight, one last stop. The crater.',top:true},{fade:'out',ms:1200}]};
+  {say:'nightshade',text:'And the Guardians want to say something at noon.'},
+  {say:'scareth',text:'Is it a speech? Please tell me it is not a speech.'},
+  {say:'lightheart',text:"It's definitely a speech."},
+  {cap:'Walk around and see everyone, then meet Gale at the fountain.',top:true},{fade:'out',ms:900}]};
+SCENES.ch25r={pre:{label:'Chapter 25 · A Brighter Future',steps:[
+  {fx:'reset'},{bg:'town',music:'ceremony'},{fx:'norift'},L('scareth',40,58,{age:'adult'}),L('lightheart',64,72,{age:'adult'}),L('kaytahn',30,90,{age:'adult'}),L('thornforge',86,88,{age:'adult'}),L('nightshade',92,56,{age:'adult'}),...P3_G,{fade:'in',ms:1200},
+  {cap:'Noon at the fountain. Half of Hometown has turned out again.',top:true},
+  {say:'mom',name:'Mom',text:'I brought tissues. Nobody look at me.'},
+  {say:'bastion',text:'Hometown. A year ago, five of your own gave up the last of their light so that ours could come back.'},
+  {say:'bastion',text:'This stone stays here, next to the one at the crater.'},
+  {cap:'A new plaque on the fountain: "Where the stars came down, and where five friends gave their light back."',top:true},
+  {say:'scareth',text:'Okay. That one got me.'},
+  {say:'gale',text:'Enough speeches! Last year was a fluke.'},
+  {say:'thornforge',text:'Last year we won.'},
+  {say:'gale',text:'Like I said. Fluke. Rematch, right now. No powers, no armor. Just you five and me.'},
+  {say:'lightheart',text:"You're on."},
+  {cap:'Same rules as last year. When Gale Showboats for the crowd, hit her hard on the next turn.',top:true},{fx:'flash'}]},
+ post:{label:'Chapter 25 · A Brighter Future',steps:[
+  {fx:'reset'},{bg:'town',light:'calm',music:'friends'},{fx:'norift'},L('scareth',40,58,{age:'adult'}),L('lightheart',64,72,{age:'adult'}),L('kaytahn',30,90,{age:'adult'}),L('thornforge',86,88,{age:'adult'}),L('nightshade',92,56,{age:'adult'}),L('gale',170,70,{form:'armor',flip:true}),{fade:'in',ms:900},
+  {say:'gale',text:'Okay! Okay! Two years in a row. I am telling everyone I let you win.'},
+  {say:'kaytahn',text:'Nobody will believe you.'},
+  {say:'mom',name:'Mom',text:'Joseph. Tricia. Have you two set a date yet?'},
+  {say:'scareth',text:'...Look, a bird.'},
+  {say:'nightshade',text:'Soon. We promise.'},
+  {cap:'Tonight, one last stop. The crater.',top:true},{fade:'out',ms:1200}]}};
+const CH25R=Object.assign({},CH19,{key:'ch25r',num:25,title:'A Brighter Future',gray:true,
+  intro:"Founders' Day, one year later. Gale wants a rematch.",
+  victory:'Gale drops her spear and laughs. "Two years in a row!"',
+  after(){HUB.state.ep_cer=true;saveHub();HUB.fromHub=true;enterHub()}});
 SCENES.finale={label:'Chapter 25 · A Brighter Future',steps:[
   {fx:'reset'},{bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'ending'},
   L('scareth',30,54,{age:'adult'}),L('lightheart',60,62,{age:'adult'}),L('kaytahn',96,60,{age:'adult',flip:true}),L('thornforge',128,56,{age:'adult',flip:true}),L('nightshade',156,62,{age:'adult',flip:true}),
@@ -6340,7 +6350,13 @@ SCENES.finale={label:'Chapter 25 · A Brighter Future',steps:[
   {say:'nightshade',text:'Mine too.'},
   {say:'lightheart',text:"Gray isn't the same as gone."},
   {say:'scareth',text:'Good. Then we are still the Meteorite Kids.'},
-  {fx:'meteors'},
+  {cap:'Footsteps on the path. Kylee, with Corran, Kaylen, Baxter, and an armful of blankets.',top:true},
+  {say:'kylee',name:'Kylee',col:'#ff9ab8',text:'Room for a few more?'},
+  {say:'lightheart',text:'Always.'},
+  {fx:'meteors'},{cap:'Above the crater, a meteor shower begins.',top:true},
+  {say:'kaytahn',text:'There goes one! Quick, make a wish!'},
+  {say:'corran',name:'Corran',col:'#9ae07a',text:'I wish something cool would actually happen around here.'},
+  {say:'scareth',text:'Kid. You have no idea.'},
   {cap:'THE END',top:true},
   {fade:'out',ms:1800}]};
 async function startPart3(){if(progress.part3)return;HUB.active=false;await playCutscene(SCENES.part3);progress.part3=true;saveProgress();
