@@ -900,6 +900,7 @@ function sprite(rows,pal){
 }
 const pinSpr=sprite(PIN,{W:'#f4f1e8',R:'#d23040'});
 const SLOT=[[38,28],[60,56],[38,84]];
+const BENCH_SPOT=[[12,42],[12,74]];
 const BOSS_C=[214,60];
 
 // ---- battle ground lines: where the floor starts in each background (y, out of 144). The kids' formation and,
@@ -2106,7 +2107,7 @@ async function finalPhase(){
     playSong('wraith');
   }else{
     await sleep(600);await playCutscene(SCENES.ch27.p3);
-    Object.assign(b,{phase:3,hp:1,hpMax:1000,name:'The Unmade',stun:0});S.letGo=new Set();S.pillars=true;playSong('seraph');
+    Object.assign(b,{phase:3,hp:1,hpMax:1000,name:'The Unmade',stun:0});S.letGo=new Set();S.allIn=true;S.roster.forEach(k=>{if(k.down){k.down=false;k.hp=Math.round(k.hpMax*.5)}k.held=0});S.pillars=true;playSong('seraph');
   }
   showBattleUI(true);S.over=false;renderStatus();
 }
@@ -2225,6 +2226,8 @@ function render(now){
     if(k.caged){ctx.globalAlpha=.9;for(let bx=3;bx<=21;bx+=4)px(x+bx,y-2,1,31,'#ff4a3a');px(x+3,y-2,19,1,'#ff8a7a');px(x+3,y+28,19,1,'#ff8a7a');ctx.globalAlpha=1}
     if(k.disarmed&&!k.down)px(x+20,y,3,3,'#ff4d6d');
   });
+  if(S.allIn)S.bench.forEach((k,i)=>{if(i>1)return;const [x,y]=BENCH_SPOT[i],K=KIDS[k.id],f=Math.floor((T+i*23)/26)%2;ctx.globalAlpha=.35;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x+12,y+38,12,2,0,0,7);ctx.fill();ctx.globalAlpha=1;
+    ctx.drawImage(K.spr.final[f],x-SOX,y-SOY-10);if(k.flash>0){ctx.globalAlpha=.85;ctx.drawImage(K.spr.finalW[f],x-SOX,y-SOY-10);ctx.globalAlpha=1;k.flash--}glow(x+11,y+8,18,K.finalGlow,.3)});
   lightPass(C.bg);
   if(S.pillars)drawPillars(1);
   // light sources that sit above the grade: meteorite stones, ambient motes
@@ -2731,7 +2734,7 @@ function actionsFor(k){
       S._echo=A2}else S._echo=[]}
   const b=S.boss,C=S.ch,A=[];
   if(C.lastLight&&b.phase===3)return [{label:'Let it all go',desc:'Pour the last of your stone into the light. When everyone has, it ends.',special:true,run:async()=>{const L=S.letGo||(S.letGo=new Set());L.add(k.id);sfx('heal');burst(...kidCenter(k),KIDS[k.id].finalGlow,24);log(`${k.kid} lets go. Their stone pours out its last light.`);k.flash=12;renderStatus();
-    if(activeAlive().every(p=>L.has(p.id)))await finisher()}}];
+    if(activeAlive().every(p=>L.has(p.id))){const rest=S.bench.filter(p=>!L.has(p.id));if(rest.length){await sleep(300);rest.forEach((p,i)=>{L.add(p.id);const [x,y]=BENCH_SPOT[i];burst(x+11,y+8,KIDS[p.id].finalGlow,24);p.flash=12});sfx('heal');log(`${rest.map(p=>p.kid).join(' and ')} step in beside them and let go too. Five stones, all at once.`);await sleep(700)}await finisher()}}}];
   const allPow=!C.lastLight&&activeAlive().length===3&&activeAlive().every(p=>p.powered>0);
   const atk=k.powered?k.atk*2:k.atk;
   A.push({label:'Attack',desc:k.disarmed?'Hit the boss (disarmed: half damage)':'Hit the boss',run:()=>hitBoss(k,atk*2,{label:'attacks'})});
@@ -3701,13 +3704,27 @@ SCENES.ch27={
   {say:'lightheart',text:'On three.'},
   {music:'seraph'},{fx:'pillars'},
   {cap:"Back on Earth, five pillars of light rise around the fallen Guardians. The stones are ready to give the last of it.",top:true},
-  {cap:'Final phase: Two Worlds, One Light. Each hero lets go.',top:true}]},
+  {cap:'Final phase: Two Worlds, One Light. All five stand together. Each hero lets go.',top:true}]},
  post:{label:'Chapter 24 · Two Worlds, One Light',steps:[
   {bg:'void',music:'seraph'},{fx:'pillars'},{fade:'in'},
   L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'lightheart',text:"It's over."},
   {unmorph:['lightheart','scareth','kaytahn','thornforge','nightshade']},
-  {cap:"Five stones go gray. The last light of Lumora lives on in Earth's guardians, and far below, the Guardians open their eyes.",top:true},
+  {cap:"Five stones go gray. The last light of Lumora pours into Earth's guardians.",top:true},
+  {fade:'out',ms:1000},{fx:'nopillars'},{fx:'reset'},{bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'tender'},
+  L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),
+  {fade:'in',ms:1200},{cap:'Dawn. The crater.',top:true},
+  {fx:'flash'},L('bastion',150,58,{form:'armor',flip:true}),L('tidewarden',184,74,{form:'armor',flip:true}),L('emberwright',206,52,{form:'armor',flip:true}),L('verdance',170,92,{form:'armor',flip:true}),L('gale',216,86,{form:'armor',flip:true}),{sfx:'heal'},
+  {cap:'Five Earth Guardians stand up out of the grass, their relics glowing.',top:true},
+  {say:'bastion',text:'This light is not ours.'},
+  {say:'nightshade',text:"It was Lumora's. Now it's yours."},
+  {say:'gale',text:'You gave up your powers for us? Jake. That is the most you thing you have ever done.'},
+  {say:'emberwright',text:'Your stone is gray, smith.'},
+  {say:'thornforge',text:'Still warm, though.'},
+  {say:'bastion',text:'Fifteen years ago I told five children to go home. I was wrong. Earth will remember this. So will we.'},
+  {say:'lightheart',text:'Just keep an eye on the town for us. We have a wedding to plan.'},
+  {say:'scareth',text:'We do?'},
+  {say:'nightshade',text:'We do.'},
   {fade:'out',ms:1200},{fx:'nopillars'}]}
 };
 EXTRA_BOSSES.wraith={key:'wraith',villain:'The Unmade',init(b){},draw(){},drawOver:(b,x0,y0)=>drawWraith(b,x0,y0-6)};
@@ -6229,6 +6246,7 @@ SCENES.ch21={pre:{label:'Chapter 21 · One Last Time',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
   {say:'kaytahn',text:"We can't morph anymore. Doesn't matter. Where you go, we go."},
   {say:'nightshade',text:"The Guardians drew their power from four places. If any of it is left, it's there."},
+  {say:'nightshade',text:"That spark wanted to come up. Our stones are just too weak to hold it. The relics might wake them enough."},
   {say:'thornforge',text:'Road trip.'},
   {say:'scareth',text:'I call the front seat.'},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Go. We'll be right here."},
@@ -6256,6 +6274,18 @@ SCENES.ch22={pre:{label:'Chapter 22 · The Relic Sites',steps:[
   {say:'scareth',text:'Four stones, glowing again. Just a little.'},
   {say:'lightheart',text:'Mine is the only one still dark.'},
   {say:'nightshade',text:'And the grove said to go home. To the crater.'},
+  {cap:'That night, the others load the truck. Jake stays behind in the grove a moment longer.',top:true},
+  {fadeActor:'scareth',ms:300},{fadeActor:'nightshade',ms:300},{fadeActor:'kaytahn',ms:300},{fadeActor:'thornforge',ms:300},
+  {music:'vorath'},{boss:'vorath',ms:1600},
+  {say:'boss',text:'Little light. You are the one they follow.'},
+  {say:'lightheart',text:"They don't follow me. We walk together."},
+  {say:'boss',text:'Lumora said that too, near the end. Do you know what is left of a world when I am finished with it? Gray stones. Quiet rooms. People who remember being bright.'},
+  {say:'boss',text:'Your stones are already going gray, Jake. I am not your ending. I am only early.'},
+  {say:'lightheart',text:"Maybe. But gray isn't the same as gone."},
+  {say:'boss',text:'...We will see what you are willing to spend.'},
+  {boss:null,ms:1400},{music:'mystery'},
+  {say:'kaytahn',text:'Jake? You coming?'},
+  {say:'lightheart',text:'Yeah. Coming.'},
   {cap:'Next: the crater, where it all began.',top:true},{fade:'out',ms:1000}]}};
 SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3S,{fade:'in',ms:1000},
@@ -6308,6 +6338,7 @@ SCENES.finale={label:'Chapter 25 · A Brighter Future',steps:[
   {say:'lightheart',text:'I think they would say we finished what they started.'},
   {say:'thornforge',text:"My stone's just a gray rock now. Still warm, though. Barely."},
   {say:'nightshade',text:'Mine too.'},
+  {say:'lightheart',text:"Gray isn't the same as gone."},
   {say:'scareth',text:'Good. Then we are still the Meteorite Kids.'},
   {fx:'meteors'},
   {cap:'THE END',top:true},
