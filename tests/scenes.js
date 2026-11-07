@@ -8,5 +8,5 @@ console.log(r.join('\n'));
 // screenshot the transformation moment
 await p.evaluate(()=>{const iv=setInterval(()=>{if(CUT.active&&!CUT.typing)try{cutAdvance()}catch(e){}},900);window.__iv=iv;playCutscene(SCENES.ch27.pre)});
 for(let i=0;i<40;i++){await p.waitForTimeout(500);const done=await p.evaluate(()=>Object.values(CUT.actors||{}).some(a=>a.form==='final'));if(done)break}
-await p.waitForTimeout(2500);await p.screenshot({path:'ll_scene.png'});
+await p.waitForTimeout(2500);await p.screenshot({path:path.join(OUT,'ll_scene.png')});
 console.log(errs);await b.close()})();
