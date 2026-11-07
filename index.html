@@ -1392,10 +1392,10 @@ const CHAPTERS=[
  }},
 {key:'ch5',num:5,title:'The Clock Strikes',villain:'Overclock',bg:'tower',hp:900,roster:['scareth','lightheart','kaytahn','thornforge'],
  intro:'Overclock freezes the town clock tower and time starts slipping. Lightheart has been carrying the stress of being the leader by himself.',
- tip:'Overclock winds up every turn. Fully wound (3/3), he moves at double speed. Strike the Key to unwind him, and stun him if he is fully wound. Alarm Ring adds a turn to everyone\'s cooldown; Rally Cry and Inspire take it back.',
+ tip:'Overclock winds up every turn. Fully wound (3/3), he moves at double speed. Strike the Key to unwind him, and stun him if he is fully wound.',
  victory:'Overclock winds down for good and the tower bells ring true. Lightheart learned that leading means lifting the others up.',
- init(b){b.wind=0;b.ring=0},draw:drawClock,
- chips(b){return [{t:`Wind ${b.wind}/3`,w:b.wind>=3},{t:`Alarm in ${3-b.ring}`,w:b.ring>=2}]},
+ init(b){b.wind=0},draw:drawClock,
+ chips(b){return [{t:`Wind ${b.wind}/3`,w:b.wind>=3}]},
  form(b){return b.wind>=3?'Overwound: double speed':'Ticking'},spdMod(b){return b.wind>=3?2:1},
  stunText:'Overclock is stuck, gears grinding.',
  extra(k){return [{label:'Strike the Key',desc:'Unwind him by 2. Stuns if fully wound.',run:()=>hitBoss(k,(k.powered?k.atk*2:k.atk)*1.2,{label:'strikes the wind-up key on',key:true})}]},
@@ -1404,10 +1404,7 @@ const CHAPTERS=[
  async turn(b){
   const was=b.wind;b.wind=Math.min(3,b.wind+1);const n=1;if(b.wind>=3&&was<3)log('Overclock is overwound. He speeds up!');
   for(let i=0;i<n&&activeAlive().length;i++){
-    b.ring++;
-    if(b.ring>=3){b.ring=0;log('ALARM RING! Everyone\'s cooldowns lengthen.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,8+rnd(3)));
-      S.roster.forEach(k=>{if(!k.down&&k.cd>0)k.cd=Math.min(6,k.cd+1)})}
-    else{const t=pickTarget();if(t){log(`Second Hand slashes ${t.name}.`);await lunge(b,-1);damageKid(t,12+rnd(4))}}
+    {const t=pickTarget();if(t){log(`Second Hand slashes ${t.name}.`);await lunge(b,-1);damageKid(t,12+rnd(4))}}
     renderStatus();await sleep(250);
   }}},
 {key:'ch6',num:6,title:'Whispers in the Dark',villain:'Mirror Mime',bg:'museum',hp:950,roster:['scareth','lightheart','kaytahn','thornforge','nightshade'],
@@ -1648,20 +1645,19 @@ const CH9={key:'ch9',num:9,title:'The Red Hero',villain:"Aldric's Echo",bg:'hide
 // ---- Chapter 10: the Knight's Keep, a gauntlet of stages ----
 const EMBERMAW_DEF={key:'embermaw',villain:'Duke Embermaw',hp:720,
  init(b){b.heat=1},draw:drawEmbermaw,drawOver:embermawGlow,
- chips(b){return [{t:`Heat ${b.heat}/5`,w:b.heat>=4},{t:'Morphing builds burnout',w:false}]},
+ chips(b){return [{t:`Heat ${b.heat}/5`,w:b.heat>=4},{t:'Water cools him',o:true}]},
  form(b){return b.heat>=4?'Blazing':'Smoldering'},
  onHit(b,k,dmg,m){if(m.water){b.heat=Math.max(0,b.heat-2);log('Undertow douses his flames. Heat drops!')}return dmg},
  async turn(b){
-  activeAlive().forEach(k=>{if(k.powered&&k.burn){log(`${k.name} is burning out!`);damageKid(k,5*k.burn)}else if(k.burn)k.burn--});
   b.heat=Math.min(5,b.heat+1);
   if(b.heat>=5){log('CINDER WAVE! The whole hall goes up in flame.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,12+rnd(3)));b.heat=2}
   else{const t=pickTarget();if(t){log(`Flame Lash on ${t.name}!`);await lunge(b,-1);damageKid(t,9+b.heat*2+rnd(3))}}
  }};
 const VANE_DEF={key:'vane',villain:'Ironclad Vane',hp:760,
  init(b){b.last=null;b.cycle=0},draw:drawVane,drawOver:vaneGlow,
- chips(b){return [{t:b.last?`Braced against ${b.last.name}`:'Unbraced',w:!!b.last},{t:'Take turns attacking',o:true}]},
+ chips(b){return [{t:'Magic slips past his armor',o:true}]},
  form(b){return 'I need no one'},
- onHit(b,k,dmg,m){if(b.last===k){floatText(BOSS_C[0],BOSS_C[1]-30,'Shrugged off','#f4e8a8');sfx('clang');return Math.round(dmg*.2)}b.last=k;return Math.round(dmg*1.15)},
+ onHit(b,k,dmg,m){if(m.magic){floatText(BOSS_C[0],BOSS_C[1]-30,'Through the armor','#c8b8ff');return Math.round(dmg*1.4)}return dmg},
  async turn(b){
   b.cycle++;
   if(b.cycle%3===0){const t=activeAlive().sort((a,c)=>a.hp-c.hp)[0];if(t){log(`"I NEED NO ONE." Vane hunts down ${t.name}!`);await bossDash(b);damageKid(t,20+rnd(4))}}
@@ -1669,7 +1665,7 @@ const VANE_DEF={key:'vane',villain:'Ironclad Vane',hp:760,
  }};
 const CH10={key:'ch10',num:10,title:"The Knight's Keep",villain:"The Knight's Keep",bg:'keep',hp:1,stoneless:['lightheart'],roster:['scareth','lightheart','kaytahn','thornforge','nightshade'],
  intro:"The kids storm the Black Knight's fortress. Every villain they ever beat waits inside, rebuilt from crimson shard, with two of the Knight's lieutenants guarding the way to Lightheart's stone.",
- tip:'Five fights in a row: Strike Out, Overclock, and Mirror Mime rematches, then Duke Embermaw and Ironclad Vane. Embermaw: every morph builds burnout, so rest kids on the bench. Vane: he shrugs off repeat hits from the same kid, so take turns.',
+ tip:'Five fights in a row: Strike Out, Overclock, and Mirror Mime rematches, then Duke Embermaw and Ironclad Vane. Embermaw: his heat climbs every turn, and water cools him. Vane: magic slips past his armor.',
  victory:"Lightheart's stone is back where it belongs. Above the Keep, a crimson storm gathers.",
  init(b){},draw(){},chips(){return []},form(){return ''},async turn(){},
  stages:[{def:'ch2',hp:380,line:'Strike Out rolls out of the shadows for a rematch!'},{def:'ch5',hp:420,line:'Overclock winds himself back up!'},{def:'ch6',hp:460,line:'Mirror Mime grins from a cracked frame!'},{def:EMBERMAW_DEF,scene:'embermaw'},{def:VANE_DEF,scene:'vane'}]};
@@ -1856,18 +1852,18 @@ const CH14={key:'ch14',num:14,title:'The Hollow Returns',villain:'Hollow Hart',b
  }};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH14);
 // ================= Part 2 · Chapter 15: Burning Out. The team shows up already exhausted =================
-// They start the fight worn down. Rest trades a turn for a quarter of your HP and cools Embermaw.
+// They start the fight worn down. Check In trades a turn for a quarter of your HP and cools Embermaw.
 // Every boss turn that nobody rested, his flames grow. At 5 heat, Cinder Wave hits everyone.
 const CH15={key:'ch15',num:15,title:'Burning Out',villain:'Duke Embermaw',bg:'forge',hp:1000,age:'teen',tired:true,part:2,
  roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:'Duke Embermaw rises from his shard in the mines under the Mountain Forge, during the busiest week of the year. Everyone is running on empty.',
- tip:'The team starts worn out. Rest trades your turn for a quarter of your HP and cools his flames. Every round nobody rests, the flames grow, and at 5 heat Cinder Wave hits everyone. Water attacks cool him too.',
+ tip:'The team starts worn out. Check In trades your turn for a quarter of your HP and cools his flames. Every round nobody checks in, the flames grow, and at 5 heat Cinder Wave hits everyone. Water attacks cool him too.',
  victory:'The magma cools to black glass. Duke Embermaw\'s shard blinks out, just like Hart\'s.',
  init(b){b.heat=1},draw:drawEmbermaw,drawOver:embermawGlow,
  chips(b){return [{t:`Heat ${b.heat}/5`,w:b.heat>=4},{t:S.rested?'Someone rested this round':'Nobody has rested',w:!S.rested,o:!!S.rested}]},
  form(b){return b.heat>=4?'Blazing':'Smoldering'},
  onHit(b,k,dmg,m){if(m.water){b.heat=Math.max(0,b.heat-1);log('The water hisses. His flames shrink.')}return dmg},
- extra(k){return [{label:'Rest',desc:'Catch your breath. Recover a quarter of your HP, and his flames die down.',rank:.9,run:async()=>{S.rested=true;heal(k,Math.round(k.hpMax*.25));sfx('heal');if(kidPos(k))floatText(...kidCenter(k),'Rest','#9fe8c8');log(`${k.name} stops, breathes, and lets the others carry it for a second.`);renderStatus()}}]},
+ extra(k){return [{label:'Check In',desc:'Check in with yourself: catch your breath, recover a quarter of your HP, and his flames die down.',rank:.9,run:async()=>{S.rested=true;heal(k,Math.round(k.hpMax*.25));sfx('heal');if(kidPos(k))floatText(...kidCenter(k),'Rest','#9fe8c8');log(`${k.name} stops, breathes, and lets the others carry it for a second.`);renderStatus()}}]},
  async turn(b){
   if(S.rested){b.heat=Math.max(0,b.heat-1);S.rested=false;log('Someone stopped to rest. The flames gutter.')}else{b.heat=Math.min(5,b.heat+1);log('Nobody stopped. The flames climb higher.')}
   if(b.heat>=5){log('CINDER WAVE! The whole cavern goes up in flame.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,12+rnd(3)));b.heat=2}
@@ -1882,13 +1878,13 @@ const CONFESS={lightheart:"Mine's been flickering for weeks. I didn't want to be
 const CH16={key:'ch16',num:16,title:'Cracks in the Armor',villain:'Ironclad Vane',bg:'museum',hp:1000,age:'teen',flicker:true,part:2,
  roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:'All five stones have started flickering during morphs, and every one of the kids is hiding it. Ironclad Vane has taken over the museum\'s new Hall of Mirrors, and he feeds on pride.',
- tip:'Vane\'s mirror shield throws half of every hit back at anyone still hiding something. Spend a turn to Confide: your hits land in full, and every confession makes the whole team hit harder. When everyone has confided, the shield shatters.',
+ tip:'Vane\'s mirror shield throws half of every hit back at anyone still hiding something. Spend a turn to Check In and tell the truth: your hits land in full, and every confession makes the whole team hit harder. When everyone has told the truth, the shield shatters.',
  victory:'Ironclad Vane cracks down the middle, and his shard blinks out. That makes three.',
  init(b){b.cycle=0;b.trust=0},draw:drawVane,drawOver:(b,x0,y0)=>{vaneGlow(b,x0,y0);if(!b.shattered){ctx.globalAlpha=.25+.1*Math.sin(T/10);ctx.strokeStyle='#d8f0ff';ctx.beginPath();ctx.arc(x0+28,y0+30,30,0,7);ctx.stroke();ctx.globalAlpha=1}},
  chips(b){return [{t:b.shattered?'Mirror shield shattered':`Mirror shield up`,w:!b.shattered,o:!!b.shattered},{t:`Confessions ${S.boss.trust|0}/${S.roster.length}`,o:(S.boss.trust|0)>0}]},
  form(b){return b.shattered?'Cracked':'I need no one'},
  onHit(b,k,dmg,m){if(!k.confided&&!b.shattered){const r=Math.round(dmg*.35);k.hp=Math.max(1,k.hp-r);if(kidPos(k))floatText(...kidCenter(k),r,'#d8f0ff');log(`The mirror shield throws ${r} back at ${k.name}.`);return Math.round(dmg*.5)}return Math.round(dmg*(1+.08*(S.boss.trust|0))*(b.shattered?1.25:1))},
- extra(k){return [{label:'Confide',desc:k.confided?'You already told them':'Tell the team the truth about your stone. Your hits land in full, and the whole team hits harder.',disabled:!!k.confided,run:async()=>{
+ extra(k){return [{label:'Check In',desc:k.confided?'You already told them':'Tell the team the truth about your stone. Your hits land in full, and the whole team hits harder.',disabled:!!k.confided,run:async()=>{
    k.confided=true;S.boss.trust=(S.boss.trust|0)+1;const first=S.boss.trust===1;sfx('heal');if(kidPos(k))floatText(...kidCenter(k),'Confide','#ffe89a');
    log(`${k.kid}: "${first?"Mine's been flickering for weeks.":CONFESS[k.id]}"`);if(!first)log('...and the others nod. Mine too.');
    const b=S.boss;if(!b.shattered&&S.roster.every(p=>p.confided||p.down)){b.shattered=true;b.stun=1;sfx('clang');rumble(.8,400);burst(BOSS_C[0],BOSS_C[1],'#d8f0ff',30);log('Everyone has said it out loud. The mirror shield SHATTERS!')}
@@ -1901,11 +1897,11 @@ const CH16={key:'ch16',num:16,title:'Cracks in the Armor',villain:'Ironclad Vane
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH16);
 // ================= Part 2 · Chapter 17: The Herald. The first real enemy from beyond the stars =================
 // Aegis of the Void blocks magic every other turn (watch the chip). Proclamation hits everyone and leaves the team
-// Humbled, taking more damage for two turns. Mace of Judgment hits hard and adds a turn to a morph cooldown.
+// Humbled, taking more damage for two turns. Mace of Judgment hits one kid hard.
 const CH17={key:'ch17',num:17,title:'The Herald',villain:'The Herald',bg:'woods',hp:1100,age:'teen',part:2,
  roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:'A ship tears through the sky over Hometown. The Herald, envoy of Vorath the Unmaker, raises a spire of void over the crater, and one by one the Earth Guardians fall.',
- tip:'Aegis of the Void blocks magic every other turn. Hit with weapons while it is up, and with magic while it is down. Proclamation hits everyone and Humbles the team for two turns. Mace of Judgment adds a turn to a morph cooldown.',
+ tip:'Aegis of the Void blocks magic every other turn. Hit with weapons while it is up, and with magic while it is down. Proclamation hits everyone and Humbles the team for two turns.',
  victory:'The Herald lowers his mace. "Enough. I have measured you." He steps back into the dark, and the spire crumbles.',
  init(b){b.cycle=0;b.aegis=false},draw:drawHerald,drawOver:heraldGlow,
  chips(b){return [{t:b.aegis?'Aegis up: magic blocked':'Aegis down: magic gets through',w:b.aegis,o:!b.aegis},...(S.humbled>0?[{t:`Humbled ${S.humbled}`,w:true}]:[])]},
@@ -1913,7 +1909,7 @@ const CH17={key:'ch17',num:17,title:'The Herald',villain:'The Herald',bg:'woods'
  onHit(b,k,dmg,m){if(b.aegis&&m.magic){sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Blocked','#7ae8e0');log('The Aegis of the Void swallows the spell.');return 0}return dmg},
  async turn(b){b.cycle++;if(S.humbled>0)S.humbled--;
   if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)));S.humbled=2}
-  else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4));if(!t.down){if(t.powered){t.powered=Math.max(1,t.powered-1)}else t.cd=(t.cd||0)+1;log(`${t.name}'s stone dims. One more turn to wait.`)}}}
+  else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4))}}
   b.aegis=!b.aegis;if(b.aegis)log('The Aegis of the Void rises around him.');else log('The Aegis of the Void falls away.');renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH17);
 // ================= Part 2 · Chapter 18: The Breaking =================
@@ -1952,7 +1948,7 @@ async function heraldBreak(){const b=S.boss;S.skipBoss=true;await sleep(600);awa
 const CH18={key:'ch18',num:18,title:'The Breaking',villain:'The Herald',bg:'void',hp:1000,age:'teen',part:2,music:'herald',phased:true,phaseFn:()=>heraldBreak(),
  roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:"On the bridge of his ship, the Herald waits. This time the Earth Guardians stand beside you.",
- tip:'Phase 1: each kid can Team-Up with their Guardian once. When the Herald Tithes, he heals but gorges himself and takes 50% more damage for two turns. Phase 2: your stones go past the limit. Morphing has no cooldown but costs HP. Only Meteor Strike can finish him.',
+ tip:'Phase 1: each kid can Team-Up with their Guardian once. When the Herald Tithes, he heals but gorges himself and takes 50% more damage for two turns. Phase 2: your stones go past the limit. Morphing has no cooldown. Only Meteor Strike can finish him.',
  victory:'The Herald shatters into black glass. Five stones crack, and the sky goes quiet.',
  init(b){b.cycle=0;b.aegis=false;b.phase=1;b.gorged=0},draw:drawHerald,drawOver:heraldGlow,
  chips(b){return b.phase===1?[{t:b.aegis?'Aegis up: magic blocked':'Aegis down',w:b.aegis,o:!b.aegis},...(b.gorged>0?[{t:`Gorged ${b.gorged}: +50% damage`,o:true}]:[]),{t:'Phase 1 of 2',o:true}]:[{t:'Only Meteor Strike can finish him',w:true},{t:'Past the limit',o:true}]},
@@ -1968,7 +1964,7 @@ const CH18={key:'ch18',num:18,title:'The Breaking',villain:'The Herald',bg:'void
   if(b.cycle%4===0){const h=Math.round(b.hpMax*.12);b.hp=Math.min(b.hpMax,b.hp+h);b.gorged=2;sfx('drain');floatText(BOSS_C[0],BOSS_C[1]-30,'+'+h,'#7ae8e0');
    log("TITHE! The Herald drinks the Guardians' power and heals. He's gorged: he takes 50% more damage for 2 turns.")}
   else if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)));S.humbled=2}
-  else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4));if(!t.down){if(t.powered){t.powered=Math.max(1,t.powered-1)}else t.cd=(t.cd||0)+1}}}
+  else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4))}}
   b.aegis=!b.aegis;log(b.aegis?'The Aegis of the Void rises around him.':'The Aegis of the Void falls away.');renderStatus()},
  after(){playCutscene(SCENES.whatsLeft).then(()=>{progress.whatsLeft=true;saveProgress();showResult(true)})}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH18A,CH18);
@@ -2315,16 +2311,16 @@ const BOSS_WARN={
  ch19:b=>(b.cycle+1)%3===0?'SHOWBOAT: she leaves herself open':(b.cycle+1)%4===0?'WHIRLWIND hits everyone':'Spear tap on one adult',
  ch18a:b=>b.cycle%3===2?'ROCKFALL hits everyone':'SHIELD BASH on one kid',
  ch18:b=>b.phase===2?'He lashes out at everyone':(b.cycle+1)%4===0?'TITHE: he heals, then takes extra damage':(b.cycle+1)%3===0?'PROCLAMATION hits everyone':'MACE OF JUDGMENT on one kid',
- ch17:b=>(b.cycle+1)%3===0?'PROCLAMATION hits everyone and Humbles the team':'MACE OF JUDGMENT: one kid, plus a cooldown turn',
- ch16:b=>(b.cycle+1)%3===0?'"I NEED NO ONE": he hunts the weakest kid who has not confided':null,
- ch15:b=>b.heat+(S.rested?-1:1)>=5?'CINDER WAVE hits everyone (unless someone rests)':null,
+ ch17:b=>(b.cycle+1)%3===0?'PROCLAMATION hits everyone and Humbles the team':'MACE OF JUDGMENT on one kid',
+ ch16:b=>(b.cycle+1)%3===0?'"I NEED NO ONE": he hunts the weakest kid still hiding a flicker':null,
+ ch15:b=>b.heat+(S.rested?-1:1)>=5?'CINDER WAVE hits everyone (unless someone checks in)':null,
  ch14:b=>{if(!b.cage){const t=activeAlive().filter(k=>(k.lonely|0)>=2)[0];if(t)return `CAGE: ${t.kid} has gone two turns without helping`}return (b.cycle+1)%3===0?'LANTERN FLARE hits everyone':null},
  ch13:b=>((b.t||0)+1)%3===0?'MEGAPHONE hits everyone and breaks Focus':b.ash>=4?'CHARGE hits everyone':null,
  ch1:b=>b.ash+Math.min(2,6-b.ash)>=5?'CHARGE! The Ashlings rush everyone':null,
  ch2:b=>b.rollIn<=1?(b.pins===10?'STRIKE! All ten pins hit everyone hard':`ROLL! ${b.pins} pins hit everyone`):null,
  ch3:b=>b.tail>=2?'Tail Sweep hits everyone':null,
  ch4:b=>b.junk>=4?null:b.slam>=2?'Magnet Slam hits everyone':null,
- ch5:b=>b.ring>=2?'Alarm Ring: damage and longer cooldowns':null,
+ ch5:b=>b.wind>=2?'Fully wound next turn: double speed':null,
  ch6:b=>b.copies.length<2&&!(b.hex>0)?'He pulls out another reflection':null,
  ch8:b=>{const n=b.cycle+1;if(!b.cage&&n%3===1)return 'Cage: one kid gets trapped';if(n%3===2)return 'Lantern Flare hits everyone';return null},
  ch9:b=>b.charge>=3?'ENDLESS MORPH hits everyone hard':null,
@@ -2338,7 +2334,7 @@ const BOSS_WARN={
 function bossWarn(){if(!S||S.over||!S.boss||S.ch.scripted)return null;const f=S.ch.warn||BOSS_WARN[S.ch.key];try{return f?f(S.boss):null}catch(e){return null}}
 function bossScale(ch){const D=ch.key==='dream'?1:DIFF_MULT[DIFF].hp;if(ch.solo)return D;return (1+.13*(expectedLevel(ch)-1))*(TUNE.hp[tuneKey(ch)]||1)*D}
 // Per-chapter boss damage tuning. Story mode targets about half the party's health left at the end of a boss fight.
-const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.35,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.5,ch14:1.25,ch15:1,ch16:1.3,ch17:1.25,ch18a:1.35,ch18:1.2,ch19:1.4,ch20:1.4,ch21:1.5,ch22:2.6,ch23:1.4,ch27:2.25};
+const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.45,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.5,ch14:1.25,ch15:1,ch16:1.3,ch17:1.4,ch18a:1.35,ch18:1.2,ch19:1.4,ch20:1.4,ch21:1.5,ch22:2.6,ch23:1.4,ch27:2.25};
 function dmgScale(ch){const D=(ch.key==='dream'?1:DIFF_MULT[DIFF].dmg)*(DMG_TUNE[ch.key]||1);if(ch.solo)return D;return (1+.12*(expectedLevel(ch)-1))*(ch.key==='dream'?1:TUNE.dmg*(TUNE.dmgCh[tuneKey(ch)]||1))*D}
 function lvStats(id){const p=P(),lv=p.party.lv[id],b=p.party.bonus[id];return {lv,hp:(lv-1)*6+b.hp,atk:Math.floor((lv-1)*.8)+b.atk,mag:Math.floor((lv-1)*.8)+b.mag}}
 // Passive upgrades at levels 4 and 8
@@ -2684,8 +2680,7 @@ function damageKid(k,dmg){
 }
 const VIRTUE={lightheart:'Hope',scareth:'Courage',kaytahn:'Calm',thornforge:'Making',nightshade:'Memory'};
 function morph(k){
-  if(S.ch.key==='ch18'&&S.boss&&S.boss.phase===2){const c=Math.round(k.hpMax*.1);k.hp=Math.max(1,k.hp-c);floatText(...kidCenter(k),'-'+c,'#ff8a8a');log(`${k.name}'s stone cracks a little more.`)}
-  if(S.ch.key==='embermaw'){k.burn=(k.burn||0)+1}
+  if(S.ch.key==='ch18'&&S.boss&&S.boss.phase===2)log(`${k.name}'s stone cracks a little more.`);
   k.powered=(S.ch.rusty?2:3)+(k.charm==='spark'?1:0);k.focused=false;if(k.charm==='watch')k.watchT=true;k.flash=14;sfx('morph');rumble(.35,260);k.voidUsed=false;if(k.id==='lightheart')k.unbreak=true;
   for(let i=0;i<3;i++)burst(...kidCenter(k),i?k.glint:'#fff',20);
   floatText(...kidCenter(k),'MORPH!','#ffcc33');log(`METEOR POWER! ${k.kid} morphs into ${k.name}!${VIRTUE[k.id]?` The light of ${VIRTUE[k.id]}!`:''}`);
@@ -3969,14 +3964,14 @@ SCENES.ch10={pre:{label:"Chapter 10 · The Knight's Keep",steps:[
   {say:'lightheart',text:'My stone is at the top. I can feel it pulling.'},{fx:'flash'}]},
  embermaw:{label:"Chapter 10 · The Knight's Keep",steps:[
   {bg:'keep',music:'knight'},{boss:'embermaw',ms:1100,state:{heat:3}},
-  {say:'boss',text:'Morph again, little ones. And again. Burn brighter until you burn out.'},
-  {say:'kaytahn',text:"Don't overdo it. Take turns resting!"},
-  {cap:'Every morph builds burnout. Rest tired friends on the bench to cool them off.',top:true}]},
+  {say:'boss',text:'Burn brighter, little ones. Let us see who melts first.'},
+  {say:'kaytahn',text:"He's heating up. I'll cool him down!"},
+  {cap:'His heat climbs every turn. At 5, Cinder Wave hits everyone. Water attacks cool him down.',top:true}]},
  vane:{label:"Chapter 10 · The Knight's Keep",steps:[
   {bg:'keep',music:'knight'},{boss:'vane',ms:1100},
   {say:'boss',text:'I need no one. Neither will you, once your friends have fallen.'},
-  {say:'scareth',text:'Then we hit him together. One after another.'},
-  {cap:'Vane shrugs off repeated hits from the same kid. Take turns attacking.',top:true}]},
+  {say:'nightshade',text:'Armor stops fists. Let us see it stop magic.'},
+  {cap:'Magic slips past Vane\'s armor. Kaytahn and Moritania hit him hardest.',top:true}]},
  post:{label:"Chapter 10 · The Knight's Keep",steps:[
   {bg:'keep',music:'friends'},...KEEP_KIDS,{fade:'in'},
   {say:'lightheart',text:'There it is. On the throne.'},
@@ -5984,7 +5979,7 @@ SCENES.ch15={pre:{label:'Chapter 15 · Burning Out',steps:[
   {say:'boss',text:'Look at you. Tired already. Good. Tired things burn so nicely.'},
   {say:'kaytahn',text:"We don't stop. Not until he's out."},
   {say:'lightheart',text:"Lindsey. You're running on fumes. We all are."},
-  {cap:'The team starts worn out. Rest trades your turn for a quarter of your HP and cools his flames. Every round nobody rests, his flames grow.',top:true},{fx:'flash'}]},
+  {cap:'The team starts worn out. Check In trades your turn for a quarter of your HP and cools his flames. Every round nobody checks in, his flames grow.',top:true},{fx:'flash'}]},
  post:{label:'Chapter 15 · Burning Out',steps:[
   {bg:'forge',music:'tender'},...MF_KIDS,{fade:'in'},
   {cap:"The magma cools to black glass. Embermaw's shard blinks out, just like Hart's.",top:true},
@@ -6018,7 +6013,7 @@ SCENES.ch16={pre:{label:'Chapter 16 · Cracks in the Armor',steps:[
   {say:'boss',text:'Look at you five. Each one hiding a crack. Each one too proud to say it.'},
   {say:'lightheart',text:"We don't know what you're talking about."},
   {say:'boss',text:'Then my shield will be happy to show you.'},
-  {cap:"Vane's mirror shield throws attacks back at anyone still hiding something. Spend a turn to Confide: your hits land in full, and every confession makes the team stronger.",top:true},{fx:'flash'}]},
+  {cap:"Vane's mirror shield throws attacks back at anyone still hiding something. Spend a turn to Check In and tell the truth: your hits land in full, and every confession makes the team stronger.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 16 · Cracks in the Armor',steps:[
   {bg:'museum',music:'tender'},...MM_KIDS,{fade:'in'},
   {cap:"Vane's shard blinks out. That makes three.",top:true},
@@ -6136,7 +6131,7 @@ SCENES.ch18={pre:{label:'Chapter 18 · The Breaking',steps:[
   {say:'lightheart',text:"No. We're done watching people fall."},
   {say:'lightheart',text:'Everyone. All five stones. Past the limit. For them.'},
   {say:'nightshade',text:"Aldric said don't hold on. So we don't. We give it. All of it."},
-  {cap:'Phase 2: your stones are past the limit. Morphing has no cooldown, but every morph costs HP. Only Meteor Strike can finish him.',top:true},{music:'finale'}]},
+  {cap:'Phase 2: your stones are past the limit. Morphing has no cooldown. Only Meteor Strike can finish him.',top:true},{music:'finale'}]},
  post:{label:'Chapter 18 · The Breaking',steps:[
   {bg:'void',music:null},...BR_KIDS.map(a=>Object.assign({},a,{form:'armor'})),{boss:'ch18'},{fade:'in'},
   {fx:'flash'},{cap:'Five cracked stones blaze as one.',top:true},{fx:'shake',n:24},
@@ -6779,6 +6774,36 @@ window.addEventListener('blur',()=>{if(NET.guest){NET.gk.clear();NET.pushKeys()}
   sfx=function(n){if(NET.guest&&!NET._remote)return;_sf(n);if(NET.host&&n!=='text')NET.share({t:'sfx',n})}}
 
 
+// One short line on the defeat screen: the most likely reason the team went down. Full rules sit under it.
+const RETRY={
+ dream:'Use a skill, and heal anyone who gets hurt.',
+ patrol:'Focus one group until it drops. Fewer Ashlings means fewer pile-ons.',
+ ch1:'Swat the Ashlings before five gather. Their CHARGE hits everyone.',
+ ch2:'Bowl the pins before he rolls. Save your morphs for when he is dizzy.',
+ ch3:'Keep everyone above half HP. Below that, he attacks twice.',
+ ch4:'Use Reforge when kids are disarmed. At 4 stolen weapons he overloads, so hit hard then.',
+ ch5:'Strike the Key before he is fully wound. If he already is, the Key stuns him.',
+ ch6:'Let Moritania break the reflections. Everyone else does half damage while they are up.',
+ ch8:'Break the cage right away. Freeing a friend stuns Hart.',
+ ch9:'Shield up before its fourth morph, then hit hard while it is down.',
+ embermaw:'Cool him with water before his heat reaches 5.',
+ vane:'Magic slips past his armor. Let Kaytahn and Moritania lead.',
+ ch11:b=>b&&b.phase>=3?'Normal hits heal the shard. Morph three kids at once for Meteor Strike.':'Save your morphs. Only a Meteor Strike breaks the shard at the end.',
+ ch13:'Focus right after the MEGAPHONE, then morph on your next turn.',
+ ch14:'Help a friend every other turn: heal, shield or Check In. Lonely kids get caged.',
+ ch15:'Have someone Check In every round. Each one cools his flames.',
+ ch16:'Check In early. Until you tell the truth, his shield throws your hits back.',
+ ch17:'Weapons while the Aegis is up, magic while it is down. Watch the chip.',
+ ch18a:'Jake can Call the Team. Use it every time it is ready.',
+ ch18:b=>b&&b.phase===2?'Morph everyone, then Meteor Strike. Nothing else can finish him.':'Save your big hits for right after the Tithe. He takes 50% more for two turns.',
+ ch19:'Hit her hard on the turn right after she Showboats.',
+ ch20:'Every third turn the wisps drain everyone. Heal right before it lands.',
+ ch21:'Every third turn the wisps drain everyone. Heal first, and save your Stone Echo for a bad moment.',
+ ch22:'Pop Bastion\'s shield with a small hit first, then use your big ones.',
+ ch23:'Swap the bench friends in. Every friend has to use their Stone Echo.',
+ ch25r:'Hit her hard on the turn right after she Showboats.',
+ ch27:b=>b&&b.phase===2?'Only light and magic hurt the Unmade. Let Joseph and Josh protect the team.':'Use Starfall Blade on the crown. Every shard you break weakens his shield.'};
+function retryTip(){const c=S.ch,B=S.base||c,r=RETRY[c.key]||RETRY[B.key];return typeof r==='function'?r(S.boss):r}
 // Each boss gets the last word when the team goes down.
 const TAUNTS={
   'The Shadow':['The Dream Fades','Little lights... you are not ready. Not yet.'],
@@ -6802,7 +6827,7 @@ function showResult(won){
   if(won==='scripted'){$('menu').innerHTML=`<h2>The Stone Is Taken</h2><p>${c.victory}</p><div class="row"><button class="primary" id="retryBtn">Replay chapter</button><button id="backBtn">All chapters</button></div>`;$('backBtn').onclick=showChapters;$('retryBtn').onclick=()=>startBattle(c);return}
   $('menu').innerHTML=won?`<h2>Victory · Round ${S.round}</h2><p>${c.victory}</p><div class="row">${next?'<button class="primary" id="nextBtn">Next: Chapter '+next.num+'</button>':farewellNext?'<button class="primary" id="nextBtn">Next: Chapter 12</button>':''}<button id="backBtn">All chapters</button></div>`
    :(()=>{const B=S.base||S.ch,v=S.ch.villain||B.villain,t=TAUNTS[v]||['Knocked Out!',`${v} wins this round.`];
-      return `<h2>${t[0]}</h2><p><strong>${v}:</strong> ${t[1].startsWith('(')?t[1]:`"${t[1]}"`}</p><p class="tip"><strong>Tip:</strong> ${B.tip}</p>
+      return `<h2>${t[0]}</h2><p><strong>${v}:</strong> ${t[1].startsWith('(')?t[1]:`"${t[1]}"`}</p>${(()=>{const r=retryTip();return r?`<p class="tip"><strong>Tip:</strong> ${r}</p><details class="tip"><summary>All the rules for this fight</summary>${B.tip}</details>`:`<p class="tip"><strong>Tip:</strong> ${B.tip}</p>`})()}
       <p class="tip">Any items you used are back in your pocket, and you keep all your XP. Try again now, or head back to town to ${["stock up at the Corner Store",progress.ch4?"visit Josh's forge":null,progress.ch1?'fight a few Ashling patrols to level up':null].filter(Boolean).join(', ').replace(/, ([^,]*)$/,progress.ch4&&progress.ch1?', or $1':' or $1')} first.</p>
       <div class="row"><button class="primary" id="retryBtn">Try again</button><button id="loseTown">${HUB.area?'Back to '+AREAS[HUB.area].short:'Back to town'}</button>${STORY?'':'<button id="backBtn">All chapters</button>'}</div>`})();
   if($('backBtn'))$('backBtn').onclick=showChapters;if($('nextBtn'))$('nextBtn').onclick=()=>next?showIntro(next):playFarewell();if($('retryBtn'))$('retryBtn').onclick=()=>startBattle(won?c:(S.base||c),true);
