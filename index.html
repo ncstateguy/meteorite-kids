@@ -2009,23 +2009,24 @@ const CH21={key:'ch21',num:21,title:'One Last Time',villain:'Void Wisps',bg:'woo
  onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH20,CH21);
 // ================= Part 3 · Chapter 22: The Relic Sites · Chapter 23: The Crater =================
-function drawEchoes(b,x0,y0){['bastion','tidewarden','emberwright','verdance'].forEach((g,i)=>{const f=NPCS[g].spr.armor[Math.floor((T+i*11)/30)%2];ctx.save();
-  ctx.globalAlpha=(g==='bastion'&&b.shield?.95:.55)+.12*Math.sin(T/15+i);ctx.translate(x0+30+(i%2)*24+(i>1?8:0),y0-6+(i>1?16:0));ctx.scale(-1,1);ctx.drawImage(f,0,0);ctx.restore()});
+function drawEchoes(b,x0,y0){['bastion','tidewarden','emberwright','verdance','gale'].forEach((g,i)=>{const f=NPCS[g].spr.armor[Math.floor((T+i*11)/30)%2];ctx.save();
+  ctx.globalAlpha=(g==='bastion'&&b.shield?.95:.55)+.12*Math.sin(T/15+i);ctx.translate(x0+[30,54,38,62,46][i],y0+[-6,-6,10,10,26][i]);ctx.scale(-1,1);ctx.drawImage(f,0,0);ctx.restore()});
   if(b.shield){ctx.save();ctx.globalAlpha=.3+.1*Math.sin(T/9);ctx.fillStyle='#ffc860';ctx.fillRect(x0+2,y0+6,4,46);ctx.restore()}}
 const P3ROSTER=['lightheart','kaytahn','scareth','thornforge','nightshade'];
 const CH22={key:'ch22',num:22,title:'The Relic Sites',villain:'Guardian Echoes',bg:'grove',hp:900,part:3,age:'adult',noMorph:true,echoes:true,roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
- intro:'Beyond the last gate on the Relic Road, four echoes of the Earth Guardians wait together to test what the team got back.',
+ intro:'Beyond the last gate on the Relic Road, five echoes of the Earth Guardians wait together to test what the team got back.',
  tip:"The echoes take turns. Bastion's echo raises a shield that blocks the next hit, and Verdance's arrow leaves the team hexed. Each friend has their relic power back now.",
- victory:'The four echoes lower their weapons, nod, and fade into the light.',
+ victory:'The five echoes lower their weapons, nod, and fade into the light.',
  init(b){b.cycle=0;b.shield=false},draw:drawEchoes,
- chips(b){return [b.shield?{t:'Shield up: next hit blocked',w:true}:{t:`Next: ${['Bastion','Tidewarden','Emberwright','Verdance'][b.cycle%4]}`,o:true},...(S.humbled>0?[{t:`Hexed ${S.humbled}`,w:true}]:[])]},
+ chips(b){return [b.shield?{t:'Shield up: next hit blocked',w:true}:{t:`Next: ${['Bastion','Tidewarden','Emberwright','Verdance','Gale'][b.cycle%5]}`,o:true},...(S.humbled>0?[{t:`Hexed ${S.humbled}`,w:true}]:[])]},
  form(b){return 'Testing what you learned'},
  onHit(b,k,dmg){if(b.shield){b.shield=false;sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Blocked','#ffc860');log("Bastion's echo turns the blow aside.");return 0}return dmg},
- async turn(b){const who=b.cycle%4;b.cycle++;const J=pickTarget();if(!J)return;if(S.humbled>0)S.humbled--;
+ async turn(b){const who=b.cycle%5;b.cycle++;const J=pickTarget();if(!J)return;if(S.humbled>0)S.humbled--;
   if(who===0){b.shield=true;sfx('shield');log("Bastion's echo raises a tower shield.")}
   else if(who===1){log("Tidewarden's echo sends a wave crashing over everyone!");await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)))}
   else if(who===2){log(`Emberwright's echo brings his hammer down on ${J.name}!`);await lunge(b,-1);damageKid(J,18+rnd(5))}
-  else{log("Verdance's echo looses a living arrow. The team is hexed and takes more damage for 2 turns.");await lunge(b,-1);damageKid(J,10+rnd(3));S.humbled=2}
+  else if(who===3){log("Verdance's echo looses a living arrow. The team is hexed and takes more damage for 2 turns.");await lunge(b,-1);damageKid(J,10+rnd(3));S.humbled=2}
+  else{const two=activeAlive().sort(()=>Math.random()-.5).slice(0,2);log(`Gale's echo whips past ${two.map(k=>k.name).join(' and ')} in a blur of wind!`);await bossDash(b);two.forEach(k=>damageKid(k,10+rnd(3)))}
   renderStatus()}};
 function drawSentinel(b,x0,y0){const f=NPCS.aldric.spr.armor[Math.floor(T/36)%2];glow(x0+30,y0+24,30,'#ff3a2a',.16+.06*Math.sin(T/20));ctx.save();ctx.globalAlpha=b.kneel?.55:.95;ctx.translate(x0+46,y0+(b.kneel?10:0));ctx.scale(-1.3,1.3);ctx.drawImage(f,0,0);ctx.restore()}
 const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',bg:'woods',hp:999,part:3,age:'adult',noMorph:true,echoes:true,allEchoWin:true,roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
@@ -2309,7 +2310,7 @@ let GUIDE=true;try{GUIDE=localStorage.getItem('mk-guide')!=='off'}catch(e){}
 function toggleGuide(){GUIDE=!GUIDE;try{localStorage.setItem('mk-guide',GUIDE?'on':'off')}catch(e){}sfx('cursor');document.querySelectorAll('.guideBtn').forEach(b=>b.textContent=`Guide arrow: ${GUIDE?'On':'Off'}`)}
 // what a boss will do on its next turn, when that turn is a big one (shown on its card and in the turn strip)
 const BOSS_WARN={
- ch22:b=>[null,'TIDAL WAVE hits everyone','EMBER HAMMER: a heavy hit on one hero','LIVING ARROW: the team takes more damage for 2 turns'][b.cycle%4],
+ ch22:b=>[null,'TIDAL WAVE hits everyone','EMBER HAMMER: a heavy hit on one hero','LIVING ARROW: the team takes more damage for 2 turns','GALE SLASH hits two heroes'][b.cycle%5],
  ch23:b=>(b.cycle+1)%3===0?'GREATSWORD ARC hits everyone':null,
  ch19:b=>(b.cycle+1)%3===0?'SHOWBOAT: she leaves herself open':(b.cycle+1)%4===0?'WHIRLWIND hits everyone':'Spear tap on one adult',
  ch18a:b=>b.cycle%3===2?'ROCKFALL hits everyone':'SHIELD BASH on one kid',
@@ -2720,8 +2721,10 @@ const RELIC_MV={
  kaytahn:{label:'Crest Barrier',desc:'From the temple relic: shield the whole team',run:async k=>{sfx('shield');activeAlive().forEach(p=>{p.barrier=true;burst(...kidCenter(p),'#4fe0d0',8)});log('Crest Barrier shields the team.')}},
  thornforge:{label:'Anvil Guard',desc:'From the forge relic: draw every attack and take half damage for 2 turns',run:async k=>{S.boss.taunt=2;k.guard=2;sfx('shield');burst(...kidCenter(k),'#ff9a3a',16);log('Anvil Guard! Josh plants his feet and draws every attack.')}},
  nightshade:{label:'Hexfire',desc:'From the grove relic: dark magic that hexes',run:async k=>{await hitBoss(k,k.mag*3,{magic:true,label:'engulfs'});if(!S.over&&!S.transition)S.boss.hex=Math.max(S.boss.hex,2)}},
- lightheart:{label:'Starfall Blade',desc:"From Aldric's spark: a heavy strike of light",run:k=>hitBoss(k,k.atk*3.5,{light:true,label:'brings down Starfall Blade on'})}};
-function relicAction(k){const M=RELIC_MV[k.id];if(!M||S.ch.gray)return null;const has=k.id==='lightheart'?progress.ch23:progress['mv_'+k.id];if(!has)return null;
+ lightheart:{label:'Share the Light',desc:"From Skyreach Peak: a friend's relic power recharges, they heal 15% and act sooner",run:async k=>{const pool=activeAlive().filter(p=>p!==k);if(!pool.length)return;
+   const t=pool.sort((a,c)=>((c.rcd|0)-(a.rcd|0))||(a.hp/a.hpMax-c.hp/c.hpMax))[0];t.rcd=0;heal(t,Math.round(t.hpMax*.15));t.haste=Math.max(t.haste|0,1);sfx('heal');burst(...kidCenter(t),'#9fd8ff',16);log(`Jake passes his share of the light to ${t.kid}.`)}}};
+const STARFALL={label:'Starfall Blade',desc:"From Aldric's spark: a heavy strike of light",run:k=>hitBoss(k,k.atk*3.5,{light:true,label:'brings down Starfall Blade on'})};
+function relicAction(k){const M=RELIC_MV[k.id];if(!M||S.ch.gray)return null;const has=progress['mv_'+k.id];if(!has)return null;
   return {label:M.label,desc:k.rcd?`Recharging: ${k.rcd} turn${k.rcd>1?'s':''}`:M.desc,disabled:k.rcd>0,run:async()=>{k.rcd=2;await M.run(k);renderStatus()}}}
 function actionsFor(k){
   if(k.seraph){let SA=seraphActions(k);if(S.ch.party3)SA=SA.filter(a=>a.label!=='Call a friend');
@@ -2741,7 +2744,8 @@ function actionsFor(k){
   if(C.extra)A.push(...C.extra(k));
   if(C.party3&&S._echo)A.push(...S._echo);
   if(C.echoes){const e=echoAction(k);if(e)A.push(e)}
-  if(C.age==='adult'&&!k.powered){const r=relicAction(k);if(r)A.push(r)}
+  if(C.age==='adult'&&!k.powered){const r=relicAction(k);if(r)A.push(r);
+    if(k.id==='lightheart'&&progress.ch23&&!C.gray)A.push({label:STARFALL.label,desc:k.scd?`Recharging: ${k.scd} turn${k.scd>1?'s':''}`:STARFALL.desc,disabled:k.scd>0,run:async()=>{k.scd=2;await STARFALL.run(k);renderStatus()}})}
   if(!k.powered){
     if(k.id==='scareth')A.push({label:'Quick Jab',desc:(evo('scareth')?'Phantom Jab: ':'')+(C.key==='ch2'?'Fast strike that knocks down 3 pins. Comes back quick.':evo('scareth')?'Fast strike that knocks the boss far back in line. Comes back quick.':'Fast strike that knocks the boss back in line. Comes back quick.'),run:async()=>{await hitBoss(k,k.atk*1.4,{pins:3,label:'jabs'});if(!S.over){if(C.key!=='ch2')scarePassive(k);if(S.boss.ct!=null&&!S.transition&&!S.boss.jabbed){S.boss.ct+=evo('scareth')?20:10;S.boss.jabbed=true;floatText(BOSS_C[0],BOSS_C[1]-30,'Delayed','#c8d0dc')}}}});
     if(k.id==='kaytahn')A.push({label:'Mend',desc:evo('kaytahn')?'Tidal Mend: heal or revive the most hurt ally, and they act sooner':'Heal or revive the most hurt ally',run:async()=>{
@@ -2823,7 +2827,7 @@ async function slotTurn(i){
   }
   if(k.powered){k.powered--;if(!k.powered){k.cd=cdFor(k);k.unbreak=false;log(`${k.name}'s armor fades. Cooldown: ${k.cd} turns.`)}}
   else if(k.cd>0)k.cd--;
-  if(k.rcd>0)k.rcd--;if(k.guard>0)k.guard--;
+  if(k.rcd>0)k.rcd--;if(k.scd>0)k.scd--;if(k.guard>0)k.guard--;
   S.active=null;renderStatus();
 }
 async function bossTurn(){
@@ -3568,7 +3572,8 @@ farewell:{label:"Chapter 12 · Farewell",steps:[
   {say:'aldric',text:'Thank you. You did what I never could. You let each other carry the weight.'},
   {say:'lightheart',text:"We couldn't have done it alone."},
   {say:'aldric',text:"Then listen closely. The shard showed me things, and I don't have long."},
-  {say:'aldric',text:'My stone was the sixth light. The Warden. It was never meant to fight. It was meant to hold five lights together.'},
+  {say:'aldric',text:'My stone was the sixth light. The Warden. It was never meant to fight. Lumora sent it ahead, long before yours.'},
+  {say:'aldric',text:'It wasn\'t sent to protect this world alone. It was sent to bring the five lights together.'},
   {say:'aldric',text:'I never found my five. I tried to be all of them, and it broke me. You are the team I should have had.'},
   {say:'aldric',text:'Your stones came from a world called Lumora. They were its lights. The one who burned it is still out there, and he remembers the stones that got away.'},
   {say:'aldric',text:'He never comes all at once. First comes a herald. When you hear his voice, know that his master is listening.'},
@@ -4459,7 +4464,7 @@ BANTER.push(
  {id:'t_ch19',town:true,era:'adult',when:()=>progress.ch19,lines:[['scareth','My back hurts from one exhibition match.'],['nightshade','You are thirty, Joseph. Not ninety.']]});
 BANTER.push(
  {id:'t_ch20',town:true,era:'adult',when:()=>progress.ch20&&!progress.ch21,lines:[['kaytahn','The whole town is in my library basement.'],['scareth','Mom brought a casserole for forty people.']]},
- {id:'t_ch21',town:true,era:'adult',when:()=>progress.ch21,lines:[['thornforge','Four relic sites. One truck. Zero working powers.'],['nightshade','Not zero. Mine flickered at the crater.']]});
+ {id:'t_ch21',town:true,era:'adult',when:()=>progress.ch21,lines:[['thornforge','Five relic sites. One truck. Zero working powers.'],['nightshade','Not zero. Mine flickered at the crater.']]});
 BANTER.push(
  {id:'a_rr_hub',area:'rr_hub',lines:[['thornforge','Road trip. Finally.'],['kaytahn','We are thirty-two and still fighting about the radio.']]},
  {id:'t_ep',town:true,era:'adult',when:()=>progress.ch27&&!progress.ch25,lines:[['lightheart','It feels like nothing ever happened.'],['nightshade','Good. That was the point.']]});
@@ -4726,7 +4731,7 @@ async function hubInteract(o){
       if(L!=='scareth')return hubSay([['Brian','Beat it, kid. This dock is mine.'],['','(Maybe Joseph could stare him down.)']]);
       await hubSay([me('...'),['Brian','What are you looking at?'],me('...'),['Brian','Okay, okay! Jeez! Take the dock. And take this weird rock I found, it gives me the creeps.']]);
       HUB.state.bully=true;saveHub();buildObjs();return shardLines('bully')}}
-  if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],['me','He would have loved Founders\' Day.']]));
+  if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, brother of the Red Hero, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],['me','He would have loved Founders\' Day.']]));
   if(o.type==='lore'&&o.id==='dino'){HUB.state.dino_found=true;saveHub();buildObjs();updateHubHud();sfx('heal');return hubSay([['','A small green toy T. rex, face down in the grass. Baxter must have tracked him all the way here.'],['','(You found Rex! Take him back to Corran.)']])}
   if(o.type==='guardian'&&o.id==='gale25'){if(!HUB.state.ep_cer){await hubSay([['Gale','There you are! Bastion has a speech. Then you and I have unfinished business.']]);const r=await hubChoice("Chapter 25: A Brighter Future",["Let's go",'Not yet']);if(r===0)exitHubTo(CH25R);return}
     return hubSay([['Gale','Two years in a row. Next year I am bringing Bastion.'],['Gale','...Okay, Bastion says no.']])}
@@ -4796,11 +4801,13 @@ function teenNpc(o,L,me){const R=REVEALED();
   if(o.id==='shop'&&!R&&(L==='kaytahn'||L==='thornforge')&&!HUB.state.rocco_couple){HUB.state.rocco_couple=true;saveHub();return [['Rocco',"Well, if it isn't Hometown's cutest couple. One milkshake, two straws?"],me(L==='thornforge'?'...Yes, please.':'ROCCO.')]}
   if(o.id==='shop')return R?[['Rocco','I KNEW those snack runs were suspicious. You saved the world on my granola bars.'],['Rocco','Ten percent off, for life. Do not tell the Earth Guardians.']]
     :[['Rocco','Earth Guardian lunchboxes sold out again. Third time this month.'],['Rocco','Remember those mystery heroes, back when you were little? Whatever happened to them?'],me('...No idea.')];
-  if(o.id==='elder'){if(R)return [['Mr. Hollis','I knew it. The minute I saw you five on the news, I knew it.'],['Mr. Hollis',"He'd have been glad you weren't alone."]];
+  if(o.id==='elder'){if(R){if(HUB.state.hollisR)return [['Mr. Hollis',"He'd have been glad you weren't alone."]];HUB.state.hollisR=true;saveHub();
+      return [['Mr. Hollis','I knew it. The minute I saw you five on the news, I knew it.'],me('Mr. Hollis... we were with him at the end. At the crater.'),me('He was at peace. He was looking at the stars.'),
+        ['','Mr. Hollis is quiet for a long time.'],['Mr. Hollis','I spent a long time wondering what happened to my brother.'],['Mr. Hollis','I think I can finally stop waiting for him to come home.'],['Mr. Hollis',"He'd have been glad you weren't alone."]]}
     const n=HUB.state.hollisT||0;HUB.state.hollisT=Math.min(2,n+1);saveHub();
     if(n===0)return [['Mr. Hollis','Have you seen the new exhibit at the museum? The Red Hero. It took me a lifetime of clippings to fill that wall.'],me('You collected all of those?'),['Mr. Hollis','Somebody had to remember him.']];
-    if(n===1)return [['Mr. Hollis',"I used to tell people I couldn't remember his name. That wasn't true. It just hurt to say it."],['Mr. Hollis','Aldric. We were friends, back when the observatory still had its lights on.'],['Mr. Hollis','I offered to help him more than once. He always said no. Said he could carry it alone.'],me("I'm sorry.")];
-    return [['Mr. Hollis','You five remind me of somebody I used to know.'],me('Who?'),['Mr. Hollis','Oh, nobody. Just an old man talking. Go on, enjoy being young.']]}
+    if(n===1)return [['Mr. Hollis',"I used to tell people I couldn't remember his name. That wasn't true. It just hurt to say it."],['Mr. Hollis','Aldric. He was my big brother. Back when the observatory still had its lights on, he was the whole world to me.'],['Mr. Hollis','I offered to help him more than once. He always said no. Said he could carry it alone.'],me("I'm sorry.")];
+    return [['Mr. Hollis','You five remind me of somebody I used to know.'],me('Who?'),['Mr. Hollis','Oh... just my big brother. An old man talking. Go on, enjoy being young.']]}
   if(o.id==='ballkid'){if(R)return L==='lightheart'?[['Neighbor Kid','Wait. You were a SUPERHERO when you helped me out of that tree?!'],me('Technically, you climbed it yourself.'),['Neighbor Kid','This is the best day of my life.']]:[['Neighbor Kid','My neighbors are the Meteorite Kids. Nobody at school believes me.']];
     return L==='lightheart'?[['Neighbor Kid','Jake! You helped me get my ball out of that tree when I was little. I made the school team this year.'],me('No way. Nice work.'),['Neighbor Kid','First branch, then the next one. I still think about that.']]:[['Neighbor Kid','Pickup game later? We need a fifth.'],me('Maybe after homework.')]}
   if(o.id==='fan')return R?[['Little Kid','Okay. The Meteorite Kids are TIED with the Earth Guardians now.'],['Little Kid',"Can you sign my lunchbox? It's an Earth Guardians lunchbox, but still."]]
@@ -5091,7 +5098,7 @@ const PAGES={
   text:['The keepers saw the cracks in their lights long before the dark came. They hid them from each other.','The Warden hid the deepest crack of all. By the time they finally told the truth, the dark was already at the door.'],
   react:()=>[['lightheart','They hid it too. Just like we did.'],['nightshade','And the Warden hid the most. Like Aldric.']]},
  mem5:{n:14,part:2,ch:'ch17',where:'the Void Spire',kind:'memory',find:'a sliver of crystal, cold as ice',title:'Memory: The Voice Before the Dark',
-  text:['The dark sent a voice ahead of itself: a herald in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."','As the city fell, the keepers threw all six lights into the sky. Behind them, Lumora cracked and went dim, a red ember in the dark.'],
+  text:['The dark sent a voice ahead of itself: a herald in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."','As the city fell, the keepers threw the five lights into the sky, after the Warden they had sent ahead long before. Behind them, Lumora cracked and went dim, a red ember in the dark.'],
   react:()=>[['nightshade',"He's been doing this a long time."],['kaytahn','A red ember. The Ember Star in the old telescope. That is Lumora.']]},
  last:{n:9,ch:'ch10',where:"the Knight's Keep",kind:'journal',find:'a page scratched out in crimson ink',title:'The last page',
   text:['If anyone finds this: I was wrong.',"The stone didn't break because I fought too much. It broke because I fought alone.",'If others come after me, tell them to share the weight.'],sign:'A.',
@@ -5555,19 +5562,28 @@ Object.assign(AREAS,{
 
 
 // ================= The Relic Road (Chapter 22) =================
-DUNGEONS.ch22={scene:'ch22open',start:'rr_hub',name:'the Relic Road',town:[37,15],enterText:'Josh pulls the truck up where the east road ends. Four old paths lead off from here.',againText:'The Relic Road. Four quiet paths, and a gate at the end.'};
+DUNGEONS.ch22={scene:'ch22open',start:'rr_hub',name:'the Relic Road',town:[37,15],enterText:'Josh pulls the truck up where the east road ends. Five old paths lead off from here.',againText:'The Relic Road. Five quiet paths, and a gate at the end.'};
 const SITE=["####################","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#########E##########"];
-const RELIC=(id,who,g,name,hint,learn,lines)=>({type:'relic',area:true,id,who,g,tx:9,ty:3,name,hint,learn,solid:true,lines:[...lines,['',`Light pours from the pedestal into ${KIDS[who].kid}'s stone. It glows again, just a little.`]]});
+const RELIC=(id,who,g,name,hint,learn,lines)=>({type:'relic',area:true,id,who,g,tx:9,ty:3,name,hint,learn,solid:true,lines:[...lines,who==='lightheart'?['',"Jake's stone stays dark. But he can feel the other four now, and he can pass his share of the light to any of them."]:['',`Light pours from the pedestal into ${KIDS[who].kid}'s stone. It glows again, just a little.`]]});
 const siteGoal=(id,hint)=>()=>aSt()[id]?goalTo('Head back to the Relic Road.',9,9):goalTo(hint,9,3);
 Object.assign(AREAS,{
  rr_hub:{name:'The Relic Road',short:'the Relic Road',ch:'ch22',theme:'trail',tf:{z:'rr_all'},
-  rows:["##D##D########D##D##","#.......#.#........#","#.......#z#........#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#########E##########"],
-  spawns:{entry:[9,8,'up'],from_c:[2,1,'down'],from_t:[5,1,'down'],from_f:[14,1,'down'],from_g:[17,1,'down']},
-  intro:()=>[['','Four old paths lead off the Relic Road: a canyon, a sunken temple, a mountain forge, and a grove.'],['lightheart','Each one with the friend who knows it best.']],
-  objs:()=>[AEXIT(9,9,'town'),AEXIT(2,0,'rr_canyon','fromHub'),AEXIT(5,0,'rr_temple','fromHub'),AEXIT(14,0,'rr_forge','fromHub'),AEXIT(17,0,'rr_grove','fromHub'),
-    SAVEPT(4,6),BOSSD('ch22',9,1,'The Last Gate','Beyond the last gate, four echoes of the Earth Guardians wait side by side.','Step through')],
-  goal(){const S2=aSt();if(S2.rr_all)return progress.ch22?null:goalTo('All four sites are done. The last gate is open.',9,1);
-    const nx=[['rr_c',2,'The Shadowed Canyon. Bring Joseph.'],['rr_t',5,'The Sunken Temple. Bring Lindsey.'],['rr_f',14,'The Mountain Forge. Bring Josh.'],['rr_g',17,'The Rune Grove. Bring Tricia.']].find(x=>!S2[x[0]]);return nx?goalTo(nx[2],nx[1],0):null}},
+  rows:["##D##D########D##D##","#.......#.#........#","#.......#z#........#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","####D####E##########"],
+  spawns:{entry:[9,8,'up'],from_c:[2,1,'down'],from_t:[5,1,'down'],from_f:[14,1,'down'],from_g:[17,1,'down'],from_p:[4,8,'up']},
+  intro:()=>[['','Five old paths lead off the Relic Road: a canyon, a sunken temple, a mountain forge, a grove, and the long climb to Skyreach Peak.'],['lightheart','Each one with the friend who knows it best.']],
+  objs:()=>[AEXIT(9,9,'town'),AEXIT(2,0,'rr_canyon','fromHub'),AEXIT(5,0,'rr_temple','fromHub'),AEXIT(14,0,'rr_forge','fromHub'),AEXIT(17,0,'rr_grove','fromHub'),AEXIT(4,9,'rr_peak','fromHub'),
+    SAVEPT(4,6),BOSSD('ch22',9,1,'The Last Gate','Beyond the last gate, five echoes of the Earth Guardians wait side by side.','Step through')],
+  goal(){const S2=aSt();if(S2.rr_all)return progress.ch22?null:goalTo('All five sites are done. The last gate is open.',9,1);
+    const nx=[['rr_c',2,'The Shadowed Canyon. Bring Joseph.'],['rr_t',5,'The Sunken Temple. Bring Lindsey.'],['rr_f',14,'The Mountain Forge. Bring Josh.'],['rr_g',17,'The Rune Grove. Bring Tricia.'],['rr_p',4,'Skyreach Peak. Jake leads this one.',9]].find(x=>!S2[x[0]]);return nx?goalTo(nx[2],nx[1],nx[3]||0):null}},
+ rr_peak:{name:'Relic Road · Skyreach Peak',short:'the peak',ch:'ch22',theme:'trail',rows:SITE,spawns:{fromHub:[9,8,'up']},
+  objs:()=>[AEXIT(9,9,'rr_hub','from_p'),RELIC('rr_p','lightheart','gale','Wind Shrine','Five old banners snap in the wind around an empty pole. Somebody has to lead the way up here.','Share the Light',
+    [['','Wind howls across the top of the peak. Five old banners snap on a ring of poles, and a sixth pole stands empty in the middle.'],
+     ['me:lightheart',"Everyone else got something back. Mine's still dark."],
+     ['','The wind tugs at the banners, passing from one to the next, never resting on just one.'],
+     ['me:lightheart','It never holds on. It just keeps moving.'],
+     ['','Jake raises his stone. It stays dark, but the warmth in it slides out into the other four. All of them brighten.'],
+     ['Gale (echo)',"Vorath was wrong about me. Wind isn't air that hasn't been stopped yet. It's air that keeps moving. Pass it on, leader."]])],
+  goal:siteGoal('rr_p','The wind shrine at the top. Jake leads this one.')},
  rr_canyon:{name:'Relic Road · Shadowed Canyon',short:'the canyon',ch:'ch22',theme:'hollow',rows:SITE,spawns:{fromHub:[9,8,'up']},
   objs:()=>[AEXIT(9,9,'rr_hub','from_c'),RELIC('rr_c','scareth','bastion','Shadowed Path','Shadows hiss and coil across the only path. Someone needs to stare them down.','Shadow Rend',
     [['','The canyon floor is choked with shadows that hiss and coil.'],['me:scareth','Okay. Everybody stay behind me.'],['','Joseph steps forward and just... looks at them. The shadows scatter.'],['','At the end of the path, a faint echo of Bastion stands guard over an empty pedestal.'],['Bastion (echo)','A shield is only as strong as the one who holds it. Hold it for someone else.']])],
@@ -5721,9 +5737,9 @@ async function areaInteract0(o){const L=NET.actor||HUB.leader,S2=HUB.state;
     return hubSay([['','The nest burns away to nothing, and the cafeteria lights flicker back on. Glow has grown into FLARE!'],['','(Flare burns through soot and can hit switches from far away. Look for things that are out of reach.)'],...sayLines([['kaytahn','Jake. Your stone. It has never done THAT before.'],['lightheart','I think it missed us too.']])])}
   if(o.type==='note')return hubSay(sayLines(o.lines));
   if(o.type==='relic'){if(S2[o.id])return hubSay([['',`${NPCS[o.g].name}'s echo is gone. Only a soft glow remains.`]]);if(L!==o.who)return hubSay([['',o.hint],['',`(${KIDS[o.who].kid} should lead here.)`]]);
-    await hubSay(sayLines(o.lines));S2[o.id]=true;progress['mv_'+o.who]=true;saveProgress();if(['rr_c','rr_t','rr_f','rr_g'].every(k=>S2[k]))S2.rr_all=true;saveHub();AGROUND.key=null;buildAreaObjs();sfx('heal');
+    await hubSay(sayLines(o.lines));S2[o.id]=true;progress['mv_'+o.who]=true;saveProgress();if(['rr_c','rr_t','rr_f','rr_g','rr_p'].every(k=>S2[k]))S2.rr_all=true;saveHub();AGROUND.key=null;buildAreaObjs();sfx('heal');
     for(let i=0;i<16;i++)HUB_PARTS.push({x:o.tx*TS+8,y:o.ty*TS+6,vx:(Math.random()-.5)*1.4,vy:-.4-Math.random(),c:NPCS[o.g].stone,l:40});
-    await hubSay([['',`${KIDS[o.who].kid} can use ${o.learn} again! (A relic power, usable every few turns.)`]]);if(S2.rr_all)await hubSay([['','All four sites are done. Back on the Relic Road, the last gate opens.']]);return}
+    await hubSay([['',o.who==='lightheart'?`Jake learned ${o.learn}! (A relic power, usable every few turns.)`:`${KIDS[o.who].kid} can use ${o.learn} again! (A relic power, usable every few turns.)`]]);if(S2.rr_all)await hubSay([['','All five sites are done. Back on the Relic Road, the last gate opens.']]);return}
   if(o.type==='relicarmor')return hubSay(sayLines([['',"Aldric's crimson armor rests in the void cradle, empty and still."],['me','Thank you.']]));
   if(o.type==='pair'){if(S2[o.id])return hubSay([['',`${NPCS[o.g].name} gives you a nod.`]]);if(L!==POWER_OWNER[o.power])return needPower(o);
     await castPower(o);S2[o.id]=true;const A=AREAS[HUB.area],all=OBJS.filter(p=>p.type==='pair'&&p.grp===o.grp).every(p=>S2[p.id]);if(all)S2[o.grp]=true;
@@ -6216,25 +6232,25 @@ SCENES.ch20={pre:{label:'Chapter 20 · The Fall of the Guardians',steps:[
  post:{label:'Chapter 20 · The Fall of the Guardians',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'vorath'},...G20,{boss:'vorath',ms:1400},{fade:'in',ms:1000},
   {cap:'Above the crater, the five Earth Guardians make their stand.',top:true},
-  {say:'boss',name:'???',col:VORATH_C,text:'You broke my Herald. I felt it the way you feel a tooth go missing. I have chewed very carefully since.'},
+  {say:'boss',name:'???',col:VORATH_C,text:'You broke my Herald. I felt it the way you feel a tooth go missing. I have been very patient since.'},
   {say:'bastion',text:'Hold the line! All of you, with me!'},{fx:'flash'},
   {say:'boss',name:'???',col:VORATH_C,text:'A shield. Every world builds a shield. I keep a collection.'},
   {say:'tidewarden',text:'Then take the whole ocean!'},{fx:'shake',n:12},
   {say:'boss',name:'???',col:VORATH_C,text:'The sea was here before you, little warden. I was here before the sea.'},
   {say:'emberwright',text:'Burn, you overgrown shadow!'},{fx:'flash'},
-  {say:'boss',name:'???',col:VORATH_C,text:'Fire. How quaint. Stars are fire, and I have eaten stars.'},
+  {say:'boss',name:'???',col:VORATH_C,text:'Fire. How quaint. Stars are fire, and I have watched every one of them go out.'},
   {say:'verdance',text:"The forest remembers what you are. It won't let you in."},
   {say:'boss',name:'???',col:VORATH_C,text:'Your forest remembers everything. Soon it will have nothing left to remember.'},
   {say:'gale',text:"Too slow, big guy! Can't hit what you can't catch!"},
   {say:'boss',name:'???',col:VORATH_C,text:'So fast. So proud. Wind is only air that has not been stopped yet.'},
   {fx:'shake',n:24},{sfx:'drain'},
-  {say:'boss',name:'???',col:VORATH_C,text:'Lumora had keepers too. They sang while I ate their sky. You may sing, if it helps.'},
+  {say:'boss',name:'???',col:VORATH_C,text:'Lumora had keepers too. They sang while their sky went dark. You may sing, if it helps.'},
   {cap:'The Unmaking.',top:true},{fx:'flash'},
   {fadeActor:'gale',ms:500},{fadeActor:'verdance',ms:500},{fadeActor:'emberwright',ms:500},{fadeActor:'tidewarden',ms:500},{fadeActor:'bastion',ms:900},
   {cap:'One by one, the relics go dark.',top:true},
   {say:'boss',name:'Vorath',col:VORATH_C,text:'You may call me Vorath. Soon your sky will call me nothing at all. I unmake what is made. It is not cruelty. Every made thing ends. I am simply the one who ends them.'},
   {say:'boss',name:'Vorath',col:VORATH_C,text:'Somewhere on this world, five embers are hiding from me. Cracked. Dim. Clever. They were the lock on my door, once. I would like them back.'},
-  {say:'boss',name:'Vorath',col:VORATH_C,text:'Sleep, guardians. I will finish the meal when I find the plate.'},
+  {say:'boss',name:'Vorath',col:VORATH_C,text:'Sleep, guardians. When I find the five, it will all be very quiet.'},
   {boss:null,ms:1400},{fade:'out',ms:900},
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'taken'},...P3_KIDS,{fade:'in',ms:1000},
   {cap:'Later. The crater fence. The Guardians lie still in the grass behind them.',top:true},
@@ -6259,34 +6275,35 @@ SCENES.ch21={pre:{label:'Chapter 21 · One Last Time',steps:[
  post:{label:'Chapter 21 · One Last Time',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'tender'},L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),{fade:'in',ms:900},
   {say:'kaytahn',text:"We can't morph anymore. Doesn't matter. Where you go, we go."},
-  {say:'nightshade',text:"The Guardians drew their power from four places. If any of it is left, it's there."},
+  {say:'nightshade',text:"The Guardians drew their power from five places. If any of it is left, it's there."},
   {say:'nightshade',text:"That spark wanted to come up. Our stones are just too weak to hold it. The relics might wake them enough."},
   {say:'thornforge',text:'Road trip.'},
   {say:'scareth',text:'I call the front seat.'},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Go. We'll be right here."},
   {say:'lightheart',text:"Six o'clock?"},
   {say:'kylee',name:'Kylee',col:'#ff9ab8',text:"Six o'clock, Jake."},
-  {cap:'Four relic sites. Maybe enough to wake the stones, a little.',top:true},
+  {cap:'Five relic sites. Maybe enough to wake the stones, a little.',top:true},
   {fade:'out',ms:1400}]}};
 
 const P3S=[L('lightheart',60,56,{age:'adult'}),L('scareth',28,34,{age:'adult'}),L('nightshade',96,30,{age:'adult'}),L('kaytahn',26,84,{age:'adult'}),L('thornforge',98,86,{age:'adult'})];
 SCENES.ch22open={label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'town',music:'friends'},{fx:'norift'},...P3_KIDS,{fade:'in',ms:900},
-  {say:'thornforge',text:"Truck's gassed up. Four stops. Who has snacks?"},
+  {say:'thornforge',text:"Truck's gassed up. Five stops. Who has snacks?"},
   {say:'kaytahn',text:'Me. Obviously.'},
-  {say:'nightshade',text:'Canyon, temple, forge, grove. Each one held a relic.'},
+  {say:'nightshade',text:'Canyon, temple, forge, grove, and the peak. Each one held a relic.'},
   {say:'lightheart',text:"Then let's go get your light back."},
+  {say:'nightshade',text:"The peak was Gale's. That one's yours, Jake."},
   {say:'scareth',text:'Shotgun.'},
-  {cap:'The Relic Road: visit the four sites in any order, each led by the friend who knows it.',top:true},{fade:'out',ms:900}]};
+  {cap:'The Relic Road: visit the five sites in any order, each led by the friend who knows it.',top:true},{fade:'out',ms:900}]};
 SCENES.ch22={pre:{label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'grove',music:'dgn_ancient'},...P3S,{fade:'in',ms:900},
-  {cap:'Beyond the last gate, four echoes of the Earth Guardians stand together.',top:true},
+  {cap:'Beyond the last gate, five echoes of the Earth Guardians stand together.',top:true},
   {say:'lightheart',text:'They are testing us. Everything we just got back.'},
   {cap:"The echoes take turns. Bastion's shield blocks the next hit. Verdance's arrow leaves the team hexed.",top:true},{fx:'flash'}]},
  post:{label:'Chapter 22 · The Relic Sites',steps:[
   {fx:'reset'},{bg:'grove',music:'mystery'},...P3S,{fade:'in'},
   {say:'scareth',text:'Four stones, glowing again. Just a little.'},
-  {say:'lightheart',text:'Mine is the only one still dark.'},
+  {say:'lightheart',text:'Mine is the only one still dark. But I can feel all of yours.'},
   {say:'nightshade',text:'And the grove said to go home. To the crater.'},
   {cap:'That night, the others load the truck. Jake stays behind in the grove a moment longer.',top:true},
   {fadeActor:'scareth',ms:300},{fadeActor:'nightshade',ms:300},{fadeActor:'kaytahn',ms:300},{fadeActor:'thornforge',ms:300},
