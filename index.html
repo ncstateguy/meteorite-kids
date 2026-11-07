@@ -1353,7 +1353,7 @@ const CHAPTERS=[
   if(b.rollIn<=0){
     const strike=b.pins===10;log(strike?'All ten pins standing... STRIKE!':`Strike Out rolls through ${b.pins} pin${b.pins===1?'':'s'}!`);
     floatText(BOSS_C[0],BOSS_C[1]-26,strike?'STRIKE!':'ROLL!','#ff4d6d');await bossDash(b);
-    const dmg=strike?38:Math.round(5+3*b.pins);activeAlive().forEach(k=>damageKid(k,dmg+rnd(3)));
+    const dmg=strike?38:Math.round(5+3*b.pins);teamHit(k=>damageKid(k,dmg+rnd(3)));
     b.pins=0;b.stun=1;b.vuln=1.5;b.rollIn=3;b.delayed=false;if(b.fear)b.fear--;
     log('Strike Out spins out, dizzy. Hit him hard!');
   }else{
@@ -1372,9 +1372,10 @@ const CHAPTERS=[
    if(b.bowl<=0){b.stun=2;b.vuln=1.3;b.bowl=3;burst(BOSS_C[0],BOSS_C[1]-8,'#d8f2ff',30);log('The fishbowl shatters! Captain Chomp is gasping for 2 turns.')}else log(`${m.water?'The water pressure':'The blow'} cracks his fishbowl.`)}return dmg},
  async turn(b){
   b.frenzy=activeAlive().some(k=>k.hp<k.hpMax/2);b.tail++;
-  if(b.tail>=3){b.tail=0;log('Tail Sweep!');await bossDash(b);activeAlive().forEach(k=>damageKid(k,9+rnd(3)))}
+  let swept=false;
+  if(b.tail>=3){b.tail=0;swept=true;log('Tail Sweep!');await bossDash(b);teamHit(k=>damageKid(k,9+rnd(3)))}
   else{const t=pickTarget();if(t){log(`Captain Chomp bites ${t.name}!`);await lunge(b,-1);damageKid(t,13+rnd(4))}}
-  if(b.frenzy&&activeAlive().length){await sleep(300);const t=S.boss.taunt>0?pickTarget():lowest();log('Blood in the Water! He frenzies and strikes again.');floatText(BOSS_C[0],BOSS_C[1]-26,'FRENZY','#ff4d6d');await lunge(b,-1);damageKid(t,11+rnd(4))}
+  if(b.frenzy&&!swept&&activeAlive().length){await sleep(300);const t=S.boss.taunt>0?pickTarget():lowest();log('Blood in the Water! He frenzies and strikes again.');floatText(BOSS_C[0],BOSS_C[1]-26,'FRENZY','#ff4d6d');await lunge(b,-1);damageKid(t,11+rnd(4))}
  }},
 {key:'ch4',num:4,title:'The Forge',villain:'Magnet Max',bg:'forge',hp:850,roster:['scareth','lightheart','kaytahn','thornforge'],
  intro:'Magnet Max is stripping the town of metal and keeps circling an old blacksmith shop. Inside, the kids find Josh, who found a dark green stone in the same meteor shower. Enzayer joins the team.',
@@ -1386,7 +1387,7 @@ const CHAPTERS=[
  async turn(b){
   if(b.junk>=4){b.junk=0;b.vuln=1.5;burst(BOSS_C[0],BOSS_C[1],'#ffe066',30);log('Too much metal! Magnet Max overloads and sparks out. Hit him now!');return}
   b.slam++;
-  if(b.slam>=3){b.slam=0;log('Magnet Slam!');await bossDash(b);activeAlive().forEach(k=>damageKid(k,11+rnd(3)))}
+  if(b.slam>=3){b.slam=0;log('Magnet Slam!');await bossDash(b);teamHit(k=>damageKid(k,11+rnd(3)))}
   else{const pool=activeAlive().filter(k=>!k.disarmed);const t=S.boss.taunt>0?pickTarget():(pool.length?pool[rnd(pool.length)]:pickTarget());
     if(t){await lunge(b,-1);damageKid(t,8+rnd(3));if(!t.disarmed&&!t.down){t.disarmed=true;b.junk++;log(`Magnet Max yanks away ${t.name}'s weapon!`)}else log(`Magnet Max slams ${t.name}.`)}}
  }},
@@ -1566,7 +1567,7 @@ const CH1={key:'ch1',num:1,title:'The Falling Star',villain:'Captain Cinder',bg:
  async turn(b){
   b.whistle=20;sfx('cursor');const add=Math.min(2,6-b.ash);b.ash+=add;if(add)log(`TWEEET! Captain Cinder whistles in ${add} more Ashling${add>1?'s':''}.`);
   setTimeout(()=>{b.whistle=0},700);
-  if(b.ash>=5){log('"ASHLINGS... CHARGE!"');floatText(BOSS_C[0],BOSS_C[1]-30,'CHARGE!','#ff7a2a');await bossDash(b);activeAlive().forEach(k=>damageKid(k,3*b.ash));b.ash=1}
+  if(b.ash>=5){log('"ASHLINGS... CHARGE!"');floatText(BOSS_C[0],BOSS_C[1]-30,'CHARGE!','#ff7a2a');await bossDash(b);teamHit(k=>damageKid(k,3*b.ash));b.ash=1}
   else{const t=pickTarget();if(t){log(`Ember Punch on ${t.name}!`);await lunge(b,-1);damageKid(t,9+rnd(3))}}
  }};
 const CH8={key:'ch8',num:8,title:'Without Light',villain:'Hollow Hart',bg:'hollow',hp:900,stoneless:['lightheart'],roster:['scareth','lightheart','kaytahn','thornforge','nightshade'],
@@ -1585,7 +1586,7 @@ const CH8={key:'ch8',num:8,title:'Without Light',villain:'Hollow Hart',bg:'hollo
   if(b.cage){b.cage.turns--;if(b.cage.turns<=0){log(`The cage fades on its own. ${b.cage.kid.name} is free.`);freeCage(false)}}
   if(!b.cage&&b.cycle%3===1){const pool=activeAlive();if(pool.length>1){const t=pool[rnd(pool.length)];b.cage={kid:t,hp:34,turns:3};t.caged=true;sfx('drain');
     log(`Hollow Hart raises its lantern. ${t.name} is trapped in a cage of red light!`);floatText(...kidCenter(t),'Caged!','#ff6a5a');renderStatus();await sleep(400);return}}
-  if(b.cycle%3===2){log('Lantern Flare washes over the team.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)))}
+  if(b.cycle%3===2){log('Lantern Flare washes over the team.');await bossDash(b);teamHit(k=>damageKid(k,7+rnd(3)))}
   else{const pool=activeAlive().filter(k=>!k.caged);const t=S.boss.taunt>0?pickTarget():pool[rnd(pool.length)]||pickTarget();if(t){log(`Antler Rush hits ${t.name}!`);await lunge(b,-1);damageKid(t,13+rnd(4))}}
  }};
 function freeCage(byFriend){const b=S.boss,c=b.cage;if(!c)return;c.kid.caged=false;b.cage=null;
@@ -1638,7 +1639,7 @@ const CH9={key:'ch9',num:9,title:'The Red Hero',villain:"Aldric's Echo",bg:'hide
  stunText:"The echo's armor sputters. It can't keep going.",
  async turn(b){
   b.charge++;floatText(BOSS_C[0],BOSS_C[1]-30,'MORPH','#ff8a6a');sfx('morph');
-  if(b.charge>=4){log('ENDLESS MORPH! The echo pours out everything it has.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,13+rnd(3)));
+  if(b.charge>=4){log('ENDLESS MORPH! The echo pours out everything it has.');await bossDash(b);teamHit(k=>damageKid(k,13+rnd(3)));
     b.charge=0;b.stun=2;b.vuln=1.5;log("The echo's armor cracks and it collapses. It's wide open!")}
   else{const t=pickTarget();if(t){log(`Horn Charge on ${t.name}!`);await lunge(b,-1);damageKid(t,8+b.charge*3+rnd(3))}}
  }};
@@ -1650,7 +1651,7 @@ const EMBERMAW_DEF={key:'embermaw',villain:'Duke Embermaw',hp:720,
  onHit(b,k,dmg,m){if(m.water){b.heat=Math.max(0,b.heat-2);log('Undertow douses his flames. Heat drops!')}return dmg},
  async turn(b){
   b.heat=Math.min(5,b.heat+1);
-  if(b.heat>=5){log('CINDER WAVE! The whole hall goes up in flame.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,12+rnd(3)));b.heat=2}
+  if(b.heat>=5){log('CINDER WAVE! The whole hall goes up in flame.');await bossDash(b);teamHit(k=>damageKid(k,12+rnd(3)));b.heat=2}
   else{const t=pickTarget();if(t){log(`Flame Lash on ${t.name}!`);await lunge(b,-1);damageKid(t,9+b.heat*2+rnd(3))}}
  }};
 const VANE_DEF={key:'vane',villain:'Ironclad Vane',hp:760,
@@ -1703,7 +1704,7 @@ const CH11={key:'ch11',num:11,title:'Meteor Strike',villain:'The Black Knight',b
   b.cycle++;
   if(b.phase===1){const pw=activeAlive().filter(k=>k.powered);
    if(pw.length&&b.cycle%2){const t=pw[rnd(pw.length)];sfx('drain');log(`STONE DRAIN! The Knight rips the armor off ${t.name}.`);await lunge(b,-1);t.powered=0;t.unbreak=false;t.cd=5;t.flash=10;damageKid(t,9+rnd(3))}
-   else if(b.cycle%3===0){log('Crimson Cleave sweeps across the team!');await bossDash(b);activeAlive().forEach(k=>damageKid(k,8+rnd(3)))}
+   else if(b.cycle%3===0){log('Crimson Cleave sweeps across the team!');await bossDash(b);teamHit(k=>damageKid(k,8+rnd(3)))}
    else{const t=pickTarget();if(t){log(`Greatsword strike on ${t.name}!`);await lunge(b,-1);damageKid(t,13+rnd(4))}}}
   else if(b.phase===2){const m=b.cycle%4;const t=pickTarget();if(!t)return;
    if(m===0){log(`Stolen Shadow Rend! Three strikes on ${t.name}.`);for(let i=0;i<3;i++){await lunge(b,-1);damageKid(t,5+rnd(2))}}
@@ -1711,7 +1712,7 @@ const CH11={key:'ch11',num:11,title:'Meteor Strike',villain:'The Black Knight',b
    else if(m===2){t.held=1;sfx('drain');log(`Stolen Void Hold! ${t.name} is frozen and will lose a turn.`);damageKid(t,6)}
    else{log(`Stolen Starfall Blade on ${t.name}!`);await bossDash(b);damageKid(t,18+rnd(4))}}
   else{if(b.reachCd>0)b.reachCd--;if(b.hold){b.hold=0;sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Held back','#f4efe6');log('"Not... this time." Aldric holds the shard back. The Crimson Rage falters.');return}
-   log('CRIMSON RAGE! The shard lashes out twice.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,9+rnd(3))}}
+   log('CRIMSON RAGE! The shard lashes out twice.');await bossDash(b);teamHit(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,9+rnd(3))}}
  }};
 async function knightPhase(){
   const b=S.boss;S.skipBoss=true;await sleep(600);
@@ -1770,7 +1771,7 @@ function bgVoid(){
 }
 const CH27={key:'ch27',num:24,after(){if(progress.ep)showResult(true);else startEpilogue()},title:'Two Worlds, One Light',villain:'Vorath the Unmaker',bg:'void',hp:820,final:true,noMorph:true,lastLight:true,age:'adult',roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:'Part 3 finale. Together one last time, the five cross the rift to the place where Lumora\'s ghost still hangs in the sky. Vorath is waiting.',
- tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Lindsey and Tricia) hurt it, so let Joseph and Josh protect the team. Everyone is in their Last Light Form for the whole fight.',
+ tip:'Phase 1: Vorath\'s crown of stolen stones shields him, about 10% per shard. Starfall Blade shatters 2 shards. A shield on anyone halves Crown Barrage. Phase 2: the Unmade is a spirit, so physical hits pass through it; light (Starfall Blade) and magic (Lindsey and Tricia) hurt it, so let Joseph and Josh protect the team. Everyone is in their Last Light Form for the whole fight.',
  victory:'Vorath is gone. The lights of Lumora live on in Earth\'s guardians, and five friends finally finished what a lost world started.',
  init(b){b.phase=1;b.shards=2;b.cycle=0;b.name='Vorath the Unmaker'},
  draw(b,x0,y0){if(b.phase===1)drawVorath(b,x0,y0)},
@@ -1788,12 +1789,12 @@ const CH27={key:'ch27',num:24,after(){if(progress.ep)showResult(true);else start
   if(b.phase===3)return;const k=pickTarget();if(!k)return;b.cycle++;
   if(b.phase===1){
    b.shards=Math.min(5,b.shards+1);
-   if(b.shards>=4&&b.cycle%2===0){log(`CROWN BARRAGE! ${b.shards} stolen stones fire at once.`);await bossDash(b);activeAlive().forEach(p=>damageKid(p,2*b.shards+2));b.shards=1}
+   if(b.shards>=4&&b.cycle%2===0){log(`CROWN BARRAGE! ${b.shards} stolen stones fire at once.`);await bossDash(b);const sh=activeAlive().find(p=>p.barrier||p.veil||p.guard>0);if(sh){log(`${sh.name}'s shield breaks the barrage! It hits everyone at half power.`);floatText(...kidCenter(sh),'Barrage broken','#9fc0ff')}teamHit(p=>damageKid(p,Math.round((2*b.shards+2)*(sh?.5:1))));b.shards=1}
    else if(b.cycle%3===0){log('VOID DECREE. Every shield is stripped away.');sfx('drain');activeAlive().forEach(p=>{p.barrier=false;p.veil=false});await lunge(b,-1);damageKid(k,10)}
    else{log(`Unmaking Ray at ${k.name}!`);await lunge(b,-1);damageKid(k,14+rnd(4))}
   }else{
    const c=b.cycle%3;
-   if(c===1){log('WAIL OF THE UNMADE. It hits everyone.');sfx('wail');await bossDash(b);activeAlive().forEach(p=>damageKid(p,7+rnd(3)))}
+   if(c===1){log('WAIL OF THE UNMADE. It hits everyone.');sfx('wail');await bossDash(b);teamHit(p=>damageKid(p,7+rnd(3)))}
    else if(c===2){log(`The Unmade devours ${k.name}'s light!`);sfx('drain');await lunge(b,-1);const before=k.hp;damageKid(k,14+rnd(4));const got=before-k.hp;const hl=Math.round(got/2);b.hp=Math.min(b.hpMax,b.hp+hl);floatText(BOSS_C[0],BOSS_C[1]-20,'+'+hl,'#9fc8bc')}
    else{if(k.barrier){k.barrier=false;log(`Spectral claws grab for ${k.name}, and Crest Barrier holds them off.`);sfx('shield')}else{log(`Spectral claws seize ${k.name}. They lose their next turn.`);k.held=1;await lunge(b,-1);damageKid(k,10)}}
   }
@@ -1822,9 +1823,9 @@ const CH13={key:'ch13',num:13,title:'Five Years Later',villain:'Captain Cinder',
  extra(k){return CH1.extra(k)},onHit(b,k,dmg,m){return CH1.onHit(b,k,dmg,m)},
  async turn(b){b.t=(b.t||0)+1;
   if(b.t%3===0){b.mega=40;setTimeout(()=>{b.mega=0},900);sfx('clang');rumble(.6,300);floatText(BOSS_C[0],BOSS_C[1]-30,'MEGAPHONE!','#ffe0a0');log('"CAN EVERYBODY HEAR ME?!" The megaphone blast rattles the whole team.');await bossDash(b);
-    activeAlive().forEach(k=>{damageKid(k,7+rnd(2));if(k.focused){k.focused=false;if(kidPos(k))floatText(...kidCenter(k),'Focus lost','#c8d0dc');log(`${k.name} loses Focus!`)}});return}
+    teamHit(k=>{damageKid(k,7+rnd(2));if(k.focused){k.focused=false;if(kidPos(k))floatText(...kidCenter(k),'Focus lost','#c8d0dc');log(`${k.name} loses Focus!`)}});return}
   const add=Math.min(2,6-b.ash);b.ash+=add;if(add)log(`"ASHLINGS, FALL IN!" ${add} more Ashling${add>1?'s':''} march onto the field.`);
-  if(b.ash>=5){log('"ASHLINGS... CHARGE!"');floatText(BOSS_C[0],BOSS_C[1]-30,'CHARGE!','#ff7a2a');await bossDash(b);activeAlive().forEach(k=>damageKid(k,3*b.ash));b.ash=1}
+  if(b.ash>=5){log('"ASHLINGS... CHARGE!"');floatText(BOSS_C[0],BOSS_C[1]-30,'CHARGE!','#ff7a2a');await bossDash(b);teamHit(k=>damageKid(k,3*b.ash));b.ash=1}
   else{const t=pickTarget();if(t){log(`Ember Punch on ${t.name}!`);await lunge(b,-1);damageKid(t,11+rnd(3))}}}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH13);
 // ================= Part 2 · Chapter 14: The Hollow Returns. Drifting apart, grown up =================
@@ -1847,7 +1848,7 @@ const CH14={key:'ch14',num:14,title:'The Hollow Returns',villain:'Hollow Hart',b
   if(b.cage){b.cage.turns--;if(b.cage.turns<=0){log(`The cage fades on its own. ${b.cage.kid.name} is free.`);freeCage(false)}}
   if(!b.cage){const t=activeAlive().filter(k=>(k.lonely|0)>=2).sort((a,c)=>c.lonely-a.lonely)[0];
     if(t&&activeAlive().length>1){b.cage={kid:t,hp:34,turns:3};t.caged=true;t.lonely=0;sfx('drain');log(`Hollow Hart turns its lantern on ${t.name}. "Alone again? Then stay that way."`);floatText(...kidCenter(t),'Caged!','#ff6a5a');renderStatus();await sleep(400);return}}
-  if(b.cycle%3===0){log('Lantern Flare washes over the team.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,8+rnd(3)))}
+  if(b.cycle%3===0){log('Lantern Flare washes over the team.');await bossDash(b);teamHit(k=>damageKid(k,8+rnd(3)))}
   else{const pool=activeAlive().filter(k=>!k.caged);const t=S.boss.taunt>0?pickTarget():pool[rnd(pool.length)]||pickTarget();if(t){log(`Antler Rush hits ${t.name}!`);await lunge(b,-1);damageKid(t,13+rnd(4))}}
  }};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH14);
@@ -1866,7 +1867,7 @@ const CH15={key:'ch15',num:15,title:'Burning Out',villain:'Duke Embermaw',bg:'fo
  extra(k){return [{label:'Check In',desc:'Check in with yourself: catch your breath, recover a quarter of your HP, and his flames die down.',rank:.9,run:async()=>{S.rested=true;heal(k,Math.round(k.hpMax*.25));sfx('heal');if(kidPos(k))floatText(...kidCenter(k),'Rest','#9fe8c8');log(`${k.name} stops, breathes, and lets the others carry it for a second.`);renderStatus()}}]},
  async turn(b){
   if(S.rested){b.heat=Math.max(0,b.heat-1);S.rested=false;log('Someone stopped to rest. The flames gutter.')}else{b.heat=Math.min(5,b.heat+1);log('Nobody stopped. The flames climb higher.')}
-  if(b.heat>=5){log('CINDER WAVE! The whole cavern goes up in flame.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,12+rnd(3)));b.heat=2}
+  if(b.heat>=5){log('CINDER WAVE! The whole cavern goes up in flame.');await bossDash(b);teamHit(k=>damageKid(k,12+rnd(3)));b.heat=2}
   else{const t=pickTarget();if(t){log(`Flame Lash on ${t.name}!`);await lunge(b,-1);damageKid(t,9+b.heat*2+rnd(3))}}
  }};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH15);
@@ -1908,7 +1909,7 @@ const CH17={key:'ch17',num:17,title:'The Herald',villain:'The Herald',bg:'woods'
  form(b){return b.aegis?'Behind the Aegis':'Counting the lights'},
  onHit(b,k,dmg,m){if(b.aegis&&m.magic){sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Blocked','#7ae8e0');log('The Aegis of the Void swallows the spell.');return 0}return dmg},
  async turn(b){b.cycle++;if(S.humbled>0)S.humbled--;
-  if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)));S.humbled=2}
+  if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);teamHit(k=>damageKid(k,7+rnd(3)));S.humbled=2}
   else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4))}}
   b.aegis=!b.aegis;if(b.aegis)log('The Aegis of the Void rises around him.');else log('The Aegis of the Void falls away.');renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH17);
@@ -1933,7 +1934,7 @@ const CH18A={key:'ch18a',num:18,title:'Side by Side',villain:'Bastion',bg:'town'
    for(const o of activeAlive()){if(S.over||S.transition)break;await hitBoss(o,(o.powered?o.atk*2:o.atk)*2,{label:'charges in at'})}
    if(!S.over)log('Bastion staggers. "...You asked them."');renderStatus()}}]},
  async turn(b){b.cycle++;
-  if(b.cycle%3===0){log('Bastion slams his tower shield down. Rockfall on everyone!');floatText(BOSS_C[0],BOSS_C[1]-30,'ROCKFALL','#ffc860');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)))}
+  if(b.cycle%3===0){log('Bastion slams his tower shield down. Rockfall on everyone!');floatText(BOSS_C[0],BOSS_C[1]-30,'ROCKFALL','#ffc860');await bossDash(b);teamHit(k=>damageKid(k,6+rnd(3)))}
   else{const t=pickTarget();if(t){log(`Shield Bash on ${t.name}!`);await lunge(b,-1);damageKid(t,11+rnd(3))}}
   if(b.wall&&b.cycle%2===0)log('Bastion: "Face me alone, if you think you can."')}};
 const PARTNER={lightheart:'bastion',kaytahn:'tidewarden',thornforge:'emberwright',scareth:'gale',nightshade:'verdance'};
@@ -1958,12 +1959,12 @@ const CH18={key:'ch18',num:18,title:'The Breaking',villain:'The Herald',bg:'void
  extra(k){const b=S.boss;if(!b||b.phase!==1)return [];const g=PARTNER[k.id];if(!g)return [];
   return [{label:`Team-Up: ${NPCS[g].name}`,desc:k.teamUsed?'Already used this fight':TEAMUP[g].desc,disabled:!!k.teamUsed,special:true,rank:.9,run:async()=>{k.teamUsed=true;await TEAMUP[g].run(k,b);renderStatus()}}]},
  async turn(b){b.cycle++;if(S.humbled>0)S.humbled--;
-  if(b.phase===2){log('The Herald drains the fallen Guardians and lashes out at everyone.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,8+rnd(3))}
+  if(b.phase===2){log('The Herald drains the fallen Guardians and lashes out at everyone.');await bossDash(b);teamHit(k=>damageKid(k,6+rnd(3)));const t=pickTarget();if(t){await lunge(b,-1);damageKid(t,8+rnd(3))}
    S.roster.forEach(k=>{k.cd=0});renderStatus();return}
   if(b.gorged>0)b.gorged--;
   if(b.cycle%4===0){const h=Math.round(b.hpMax*.12);b.hp=Math.min(b.hpMax,b.hp+h);b.gorged=2;sfx('drain');floatText(BOSS_C[0],BOSS_C[1]-30,'+'+h,'#7ae8e0');
    log("TITHE! The Herald drinks the Guardians' power and heals. He's gorged: he takes 50% more damage for 2 turns.")}
-  else if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)));S.humbled=2}
+  else if(b.cycle%3===0){log('"HEAR ME." Proclamation! The whole team is Humbled.');floatText(BOSS_C[0],BOSS_C[1]-30,'PROCLAMATION','#7ae8e0');sfx('drain');await bossDash(b);teamHit(k=>damageKid(k,7+rnd(3)));S.humbled=2}
   else{const t=pickTarget();if(t){log(`Mace of Judgment on ${t.name}!`);await lunge(b,-1);damageKid(t,14+rnd(4))}}
   b.aegis=!b.aegis;log(b.aegis?'The Aegis of the Void rises around him.':'The Aegis of the Void falls away.');renderStatus()},
  after(){playCutscene(SCENES.whatsLeft).then(()=>{progress.whatsLeft=true;saveProgress();showResult(true)})}};
@@ -1983,7 +1984,7 @@ const CH19={key:'ch19',num:19,title:"Founders' Day",villain:'Gale',bg:'town',nor
  onHit(b,k,dmg,m){if(b.show>0){b.show=0;floatText(BOSS_C[0],BOSS_C[1]-30,'Wide open!','#9ad8ff');return Math.round(dmg*1.6)}return dmg},
  async turn(b){b.cycle++;
   if(b.cycle%3===0){b.show=1;sfx('confirm');floatText(BOSS_C[0],BOSS_C[1]-30,'SHOWBOAT','#9ad8ff');log('Gale spins her spear and waves to the crowd. The town goes wild. She is wide open!');renderStatus();return}
-  if(b.cycle%4===0){log('Whirlwind! A gust knocks everyone off balance.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,5+rnd(3)))}
+  if(b.cycle%4===0){log('Whirlwind! A gust knocks everyone off balance.');await bossDash(b);teamHit(k=>damageKid(k,5+rnd(3)))}
   else{const t=pickTarget();if(t){log(`Gale's spear taps ${t.name}. "Too slow!"`);await lunge(b,-1);damageKid(t,9+rnd(3))}}renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH19);
 // ================= Part 3 · Chapter 20: The Fall of the Guardians · Chapter 21: Five Into One =================
@@ -2019,7 +2020,7 @@ const CH22={key:'ch22',num:22,title:'The Relic Sites',villain:'Guardian Echoes',
  onHit(b,k,dmg){if(b.shield){b.shield=false;sfx('shield');floatText(BOSS_C[0],BOSS_C[1]-30,'Blocked','#ffc860');log("Bastion's echo turns the blow aside.");return 0}return dmg},
  async turn(b){const who=b.cycle%5;b.cycle++;const J=pickTarget();if(!J)return;if(S.humbled>0)S.humbled--;
   if(who===0){b.shield=true;sfx('shield');log("Bastion's echo raises a tower shield.")}
-  else if(who===1){log("Tidewarden's echo sends a wave crashing over everyone!");await bossDash(b);activeAlive().forEach(k=>damageKid(k,7+rnd(3)))}
+  else if(who===1){log("Tidewarden's echo sends a wave crashing over everyone!");await bossDash(b);teamHit(k=>damageKid(k,7+rnd(3)))}
   else if(who===2){log(`Emberwright's echo brings his hammer down on ${J.name}!`);await lunge(b,-1);damageKid(J,18+rnd(5))}
   else if(who===3){log("Verdance's echo looses a living arrow. The team is hexed and takes more damage for 2 turns.");await lunge(b,-1);damageKid(J,10+rnd(3));S.humbled=2}
   else{const two=activeAlive().sort(()=>Math.random()-.5).slice(0,2);log(`Gale's echo whips past ${two.map(k=>k.name).join(' and ')} in a blur of wind!`);await bossDash(b);two.forEach(k=>damageKid(k,10+rnd(3)))}
@@ -2034,7 +2035,7 @@ const CH23={key:'ch23',num:23,title:'The Crater',villain:'The Crimson Sentinel',
  form(){return 'Testing you'},stunText:'The Sentinel stands perfectly still, waiting.',
  onHit(b,k,dmg){floatText(BOSS_C[0],BOSS_C[1]-30,'Turned aside','#ff8a6a');return 0},
  async turn(b){b.cycle++;const J=activeAlive().find(k=>k.id==='lightheart')||pickTarget();if(!J)return;
-  if(b.cycle%3===0){log('The Sentinel sweeps its greatsword in a wide arc.');await bossDash(b);activeAlive().forEach(k=>damageKid(k,4+rnd(2)))}
+  if(b.cycle%3===0){log('The Sentinel sweeps its greatsword in a wide arc.');await bossDash(b);teamHit(k=>damageKid(k,4+rnd(2)))}
   else{log(`The Sentinel strikes at ${J.name}. A hollow voice: "...Alone?"`);await lunge(b,-1);damageKid(J,8+rnd(3))}renderStatus()}};
 CHAPTERS.splice(CHAPTERS.findIndex(c=>c.key==='ch27'),0,CH22,CH23);
 async function startEpilogue(){showBattleUI(false);HUB.active=false;await playCutscene(SCENES.ch25open);progress.ep=true;saveProgress();
@@ -2273,7 +2274,7 @@ const DREAM={key:'dream',num:0,title:'A Dream of Falling Light',villain:'The Sha
  hint(k){const el=$('tut');if(!k){if(S.round===1){el.innerHTML='<b>ENEMY TURN</b>The enemy acts when its turn comes up in the Turn order strip.';el.hidden=false}else el.hidden=true;return}
    const t=(TUT_TIPS[S.round]||{})[k.id];if(t){el.innerHTML=`<b>${t[0].toUpperCase()}</b>${t[1]}`;el.hidden=false}else if(S.round>2){el.innerHTML='<b>FINISH IT</b>You have the basics. Take the shadow down!';el.hidden=false}},
  async turn(b){const t=pickTarget();if(!t)return;
-   if(S.round===2){log('The shadow lashes out at everyone!');await lunge(b,-1);activeAlive().forEach(k=>damageKid(k,4))}
+   if(S.round===2){log('The shadow lashes out at everyone!');await lunge(b,-1);teamHit(k=>damageKid(k,4))}
    else{log(`Shadow Lash on ${t.name}!`);await lunge(b,-1);damageKid(t,Math.min(6,Math.floor((t.hp-1)/2.1)))}},
  after(){if(DREAM.replay){DREAM.replay=false;showChapters()}else enterHub()}};
 EXTRA_BOSSES.dream=DREAM;
@@ -2328,7 +2329,7 @@ const BOSS_WARN={
  vane:b=>(b.cycle+1)%3===0?'"I NEED NO ONE": he hunts the weakest kid':null,
  ch11:b=>{const n=b.cycle+1;if(b.phase===1){if(activeAlive().some(k=>k.powered)&&n%2)return 'Stone Drain rips the armor off a morphed kid';if(n%3===0)return 'Crimson Cleave hits everyone';return null}
    if(b.phase===2)return ['Stolen Shadow Rend: three strikes on one kid',null,'Stolen Void Hold: a kid loses a turn','Stolen Starfall Blade: one heavy hit'][n%4];return 'Crimson Rage hits everyone, then strikes again'},
- ch27:b=>{const n=b.cycle+1;if(b.phase===1){if(Math.min(5,b.shards+1)>=4&&n%2===0)return 'CROWN BARRAGE: every stolen stone fires';if(n%3===0)return 'Void Decree strips your protection';return null}
+ ch27:b=>{const n=b.cycle+1;if(b.phase===1){if(Math.min(5,b.shards+1)>=4&&n%2===0)return 'CROWN BARRAGE: every stolen stone fires (a shield on anyone halves it)';if(n%3===0)return 'Void Decree strips your protection';return null}
    return b.phase===3?null:['Spectral claws: a hero loses a turn unless shielded','WAIL hits everyone','The Unmade devours a hero\'s light and heals'][n%3]},
  dream:b=>S.round===2?'The shadow lashes out at everyone':null};
 function bossWarn(){if(!S||S.over||!S.boss||S.ch.scripted)return null;const f=S.ch.warn||BOSS_WARN[S.ch.key];try{return f?f(S.boss):null}catch(e){return null}}
@@ -2465,7 +2466,7 @@ function startPatrol(p,ambush,opt){
     init(b){b.ash=3;b.n0=3},draw(b,x0,y0){for(let i=0;i<b.ash;i++)drawAshling(x0+8+i*13,y0+40+(i%2)*6,i)},
     chips(b){return [{t:`Ashlings ${b.ash}`}]},form(b){return 'Patrolling'},stunText:'The Ashlings bump into each other.',
     onHit(b,k,dmg){setTimeout(()=>{b.ash=Math.max(1,Math.ceil(b.n0*Math.max(0,b.hp)/b.hpMax))},0);return dmg},
-    async turn(b){b.t=(b.t||0)+1;if(b.ash>=3&&b.t%2===0){log('The Ashlings pile on!');await lunge(b,-1);activeAlive().forEach(k=>damageKid(k,3))}
+    async turn(b){b.t=(b.t||0)+1;if(b.ash>=3&&b.t%2===0){log('The Ashlings pile on!');await lunge(b,-1);teamHit(k=>damageKid(k,3))}
       else{const t=pickTarget();if(t){log(`An Ashling swipes at ${t.name}.`);await lunge(b,-1);damageKid(t,4+b.ash)}}},
     zone:p.z.id,after(){HUB.patrols=[];(HUB.down=HUB.down||new Set()).add(p.z.id);if(opt&&opt.onWin)opt.onWin();enterHub();HUB.grace=90}};
   const F=FOES[p.z.kind||'ashling'];Object.assign(C,{warn:F.warn,villain:F.villain,hp:F.hp,tip:F.tip,victory:F.victory,stunText:F.stunText,draw:F.draw,turn:F.turn,chips(b){return [{t:`Left: ${b.ash}`}]}});
@@ -2662,6 +2663,8 @@ function inspire(k){
 }
 let lastHeal=0;
 function heal(k,n){if(k.down)return;if(k.charm==='glass')n=Math.round(n*1.25);const h=Math.min(n,k.hpMax-k.hp);if(h>0){if(performance.now()-lastHeal>400){sfx('heal');lastHeal=performance.now()}k.hp+=h;if(kidPos(k))floatText(...kidCenter(k),'+'+h,'#4ff2b0')}}
+// Team-wide hits: anyone at 40% HP or more when the hit lands holds on at 1 HP.
+function teamHit(f){const L=activeAlive();S.aoeHp=new Map(S.roster.map(k=>[k,k.hp/k.hpMax]));try{L.forEach(f)}finally{S.aoeHp=null}}
 function damageKid(k,dmg){
   if(!k||k.down)return;
   if(S.ch.party3&&!k.seraph){const J=S.roster.find(p=>p.seraph);if(!J||J.down)return;dmg=Math.round(dmg*.5);if(kidPos(k))floatText(...kidCenter(k),'Covered','#ffe8a0');k=J}
@@ -2672,6 +2675,7 @@ function damageKid(k,dmg){
   if(k.guard>0)mult*=.5;
   if(k.id==='thornforge'&&S.boss.taunt>0)mult*=.7;
   dmg=Math.max(1,Math.round(dmg*mult));k.barrier=false;
+  if(S.aoeHp&&k.hp-dmg<=0&&(S.aoeHp.get(k)||0)>=.4){dmg=k.hp-1;floatText(...kidCenter(k),'Hold on!','#ffe8a0');log(`${k.name} holds on!`)}
   if(k.hp-dmg<=0&&S.roster.some(p=>p.unbreak&&!p.down)){k.hp=1;S.roster.forEach(p=>p.unbreak=false);sfx('shield');floatText(...kidCenter(k),'Unbreakable!','#9fc0ff');log(`Unbreakable! ${k.name} holds on with 1 HP.`);return}
   if(k.hp-dmg<=0&&S.ch.key==='ch11'&&S.boss&&S.boss.phase>=2&&!S.boss.mercy&&k.hp>1){S.boss.mercy=true;dmg=k.hp-1;floatText(...kidCenter(k),'Held back','#f4efe6');log(`The greatsword stops an inch from ${k.name}. A tired voice: "...not this one."`)}
   if(k.hp-dmg<=0&&k.charm==='resolve'&&!k.resolved){k.resolved=true;k.hp=1;k.flash=6;sfx('shield');floatText(...kidCenter(k),'Resolve!','#ffcc33');log(`Shard of Resolve! ${k.name} refuses to go down.`);return}
@@ -4912,7 +4916,7 @@ function mkFoe(kind,o){return {warn:b=>((b.t||0)+1)%(o.every||3)===0&&b.ash>=2?o
 const FOES={
   ashling:{warn:b=>b.ash>=3&&((b.t||0)+1)%2===0?'Pile-on hits everyone':null,villain:'Ashling Patrol',hp:70,tip:'Knock them out before they pile on.',victory:'The Ashlings scatter back into the shadows.',stunText:'The Ashlings bump into each other.',
     draw(b,x0,y0){for(let i=0;i<b.ash;i++)drawAshling(x0+8+i*13,y0+40+(i%2)*6,i)},
-    async turn(b){b.t=(b.t||0)+1;if(b.ash>=3&&b.t%2===0){log('The Ashlings pile on!');await lunge(b,-1);activeAlive().forEach(k=>damageKid(k,3))}
+    async turn(b){b.t=(b.t||0)+1;if(b.ash>=3&&b.t%2===0){log('The Ashlings pile on!');await lunge(b,-1);teamHit(k=>damageKid(k,3))}
       else{const t=pickTarget();if(t){log(`An Ashling swipes at ${t.name}.`);await lunge(b,-1);damageKid(t,4+b.ash)}}}},
   pins:mkFoe('pins',{villain:'Living Pins',hp:193,tip:'Three living pins. Every third turn they line up for a Split that hits two kids.',victory:'The pins clatter to the floor and lie still. Just pins again.',hit:'A pin spins into @!',big:'SEVEN-TEN SPLIT! The pins bounce off two kids at once.'}),
   crab:mkFoe('crab',{villain:'Chomplings',hp:207,tip:"Captain Chomp's little helpers. Every third turn they all pinch at once.",victory:'The Chomplings scuttle back into the lake.',hit:'A Chompling nips @!',big:'PINCH PILE-ON! Claws everywhere!',all:true}),
@@ -6802,7 +6806,7 @@ const RETRY={
  ch22:'Pop Bastion\'s shield with a small hit first, then use your big ones.',
  ch23:'Swap the bench friends in. Every friend has to use their Stone Echo.',
  ch25r:'Hit her hard on the turn right after she Showboats.',
- ch27:b=>b&&b.phase===2?'Only light and magic hurt the Unmade. Let Joseph and Josh protect the team.':'Use Starfall Blade on the crown. Every shard you break weakens his shield.'};
+ ch27:b=>b&&b.phase===2?'Only light and magic hurt the Unmade. Let Joseph and Josh protect the team.':'Shield someone before Crown Barrage, and use Starfall Blade on the crown.'};
 function retryTip(){const c=S.ch,B=S.base||c,r=RETRY[c.key]||RETRY[B.key];return typeof r==='function'?r(S.boss):r}
 // Each boss gets the last word when the team goes down.
 const TAUNTS={

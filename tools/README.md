@@ -19,6 +19,8 @@ All tests use Playwright and read `src/meteorite-kids-battle.html` unless `GAME=
 | `node tests/part3-flow.js` | Part 3 story flow from the reunion to the end, including the Relic Road |
 | `node tests/scenes.js` | Plays a list of scenes (edit the list in the file) |
 | `node tests/playlog.js` | The playtest log records and opens |
+| `node tests/teamhit.js` | Team-wide hit cap and the Crown Barrage shield rule |
+| `node tests/defeat.js [keys]` | Defeat screen shows the short retry tip |
 | `node tests/dev-panel.js` | The Dev tools panel opens in the dev copy |
 | `node tests/render-songs.js` | Renders each song to WAV and reports levels |
 | `python3 tests/balance.py N keys [tune] [profiles] [difficulty]` | Simulated boss fights: win rate, rounds, health left |
