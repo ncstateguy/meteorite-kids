@@ -3681,6 +3681,8 @@ SCENES.ch27={
   {say:'scareth',text:'Oh, I missed this.'},
   {say:'thornforge',text:'Capes. We have CAPES now.'},
   {music:'vorath'},
+  {say:'nightshade',text:"His crown. Those are the Knight's old shards. Hart. Embermaw. Vane."},
+  {say:'boss',text:'I keep what breaks. It is a habit.'},
   {cap:'Phase 1: his crown of stolen stones shields him. Starfall Blade shatters the shards.',top:true}]},
  p2:{label:'Chapter 24 · Phase 2',steps:[
   {bg:'void',music:null},{boss:'vorath'},
@@ -3691,12 +3693,13 @@ SCENES.ch27={
   {music:'wraith'},{boss:'wraith',ms:1600},{fx:'shake',n:16},
   {say:'boss',text:'EVERY WORLD I ENDED IS STILL IN HERE. LISTEN. THEY ARE STILL SINGING.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
+  {say:'nightshade',text:"They're not singing for you. You kept them from having a future."},
   {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land, so Jake, Lindsey and Tricia lead while Joseph and Josh protect them.',top:true}]},
  p3:{label:'Chapter 24 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
   L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'boss',text:'You cannot end what endings are made of. When every light is gone, I am what is left.'},
-  {say:'lightheart',text:"We can't destroy him by holding on to the light."},
+  {say:'lightheart',text:'The light was never ours to keep.'},
   {say:'nightshade',text:'The stones were never meant to last forever.'},
   {say:'kaytahn',text:'They were meant to be given. Aldric told us.'},
   {say:'scareth',text:'Then we give it. All of it. Together.'},
@@ -3709,11 +3712,20 @@ SCENES.ch27={
   {bg:'void',music:'seraph'},{fx:'pillars'},{fade:'in'},
   L('lightheart',60,56,{age:'adult',form:'final'}),L('scareth',28,34,{age:'adult',form:'final'}),L('nightshade',96,30,{age:'adult',form:'final'}),L('kaytahn',26,84,{age:'adult',form:'final'}),L('thornforge',98,86,{age:'adult',form:'final'}),
   {say:'lightheart',text:"It's over."},
+  {cap:'The Unmade comes apart, and everything it held pours out at once.',top:true},
+  {cap:'For a moment: white towers under two moons. Families on the stairs of the Tower of Lights. Keepers passing the lights from hand to hand.',top:true},
+  {say:'nightshade',text:'Memories. Free to fade now, the way memories should.'},
   {unmorph:['lightheart','scareth','kaytahn','thornforge','nightshade']},
   {cap:"Five stones go gray. The last light of Lumora pours into Earth's guardians.",top:true},
   {fade:'out',ms:1000},{fx:'nopillars'},{fx:'reset'},{bg:'woods',light:'calm',mote:'calm',woods:{red:false,crater:true},music:'tender'},
   L('scareth',28,62,{age:'adult'}),L('lightheart',56,70,{age:'adult'}),L('kaytahn',24,92,{age:'adult'}),L('thornforge',86,86,{age:'adult'}),L('nightshade',104,62,{age:'adult'}),
   {fade:'in',ms:1200},{cap:'Dawn. The crater.',top:true},
+  {say:'scareth',text:"So... that's it? No more armor? No more powers?"},
+  {say:'thornforge',text:'You still have that shadow you cast when you walk into a room.'},
+  {say:'scareth',text:"That's different. That's natural talent."},
+  {say:'nightshade',text:"The magic is gone. What it changed in us isn't."},
+  {say:'kaytahn',text:"I think that's enough."},
+  {say:'lightheart',text:'More than enough.'},
   {fx:'flash'},L('bastion',150,58,{form:'armor',flip:true}),L('tidewarden',184,74,{form:'armor',flip:true}),L('emberwright',206,52,{form:'armor',flip:true}),L('verdance',170,92,{form:'armor',flip:true}),L('gale',216,86,{form:'armor',flip:true}),{sfx:'heal'},
   {cap:'Five Earth Guardians stand up out of the grass, their relics glowing.',top:true},
   {say:'bastion',text:'This light is not ours.'},
@@ -3872,7 +3884,7 @@ SCENES.interlude={label:'Interlude · Earth Awakens',steps:[
   {say:'kaytahn',text:'So what happens to us now?'},
   {say:'lightheart',text:'We get to just be kids for a while. And if this world ever needs us again, we\'ll be ready.'},
   {say:'thornforge',text:'Meteorite Kids, on call. Forever.'},
-  {cap:'The stones grew quiet. Five years went by.'},{fade:'out',ms:1000}]};
+  {cap:'The stones grew quiet. Two more years went by.'},{fade:'out',ms:1000}]};
 
 SCENES.ch1={pre:{label:SCENES.ch1.label,steps:([
   {fx:'reset'},{bg:'school',music:'mischief'},{boss:'ch1',state:{ash:2}},
@@ -5079,7 +5091,7 @@ const PAGES={
   text:['The keepers saw the cracks in their lights long before the dark came. They hid them from each other.','The Warden hid the deepest crack of all. By the time they finally told the truth, the dark was already at the door.'],
   react:()=>[['lightheart','They hid it too. Just like we did.'],['nightshade','And the Warden hid the most. Like Aldric.']]},
  mem5:{n:14,part:2,ch:'ch17',where:'the Void Spire',kind:'memory',find:'a sliver of crystal, cold as ice',title:'Memory: The Voice Before the Dark',
-  text:['The dark sent a voice ahead of itself: a knight in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."','As the city fell, the keepers threw all six lights into the sky. Behind them, Lumora cracked and went dim, a red ember in the dark.'],
+  text:['The dark sent a voice ahead of itself: a herald in black who smiled while he counted the lights.','"Five," he said. "Only five. How fragile."','As the city fell, the keepers threw all six lights into the sky. Behind them, Lumora cracked and went dim, a red ember in the dark.'],
   react:()=>[['nightshade',"He's been doing this a long time."],['kaytahn','A red ember. The Ember Star in the old telescope. That is Lumora.']]},
  last:{n:9,ch:'ch10',where:"the Knight's Keep",kind:'journal',find:'a page scratched out in crimson ink',title:'The last page',
   text:['If anyone finds this: I was wrong.',"The stone didn't break because I fought too much. It broke because I fought alone.",'If others come after me, tell them to share the weight.'],sign:'A.',
@@ -6033,6 +6045,7 @@ SCENES.ch17={pre:{label:'Chapter 17 · The Herald',steps:[
  post:{label:'Chapter 17 · The Herald',steps:[
   {bg:'woods',woods:{red:false,crater:true},music:'herald'},{boss:'ch17'},...VS_KIDS,{fade:'in'},
   {say:'boss',text:'Enough. I have measured you.'},
+  {say:'boss',text:'Every light. Every guardian. That is all I came to do.'},
   {say:'boss',text:'Three days, children. Then my master will speak to your world in person.'},
   {boss:null,ms:1200},{music:'friends'},
   {cap:'The spire crumbles into black sand. Below, every news camera in the state is pointed at the crater.',top:true},
@@ -6069,7 +6082,7 @@ SCENES.ch18a={pre:{label:'Chapter 18 · The Breaking',steps:[
  post:{label:'Chapter 18 · The Breaking',steps:[
   {bg:'town',music:'tender'},...P2_KIDS,...G18,{fade:'in'},
   {say:'bastion',text:'You asked them for help. Just like that.'},
-  {say:'lightheart',text:'Every time. That is the whole trick.'},
+  {say:'lightheart',text:"Every time. It's the only way any of this works."},
   {say:'tidewarden',text:'He has carried us for three years. He never asks for anything.'},
   {say:'kaytahn',text:"You've been glaring at him this whole time. Say it out loud. It helps. Trust me."},
   {say:'tidewarden',text:'...Fine. I am angry that he never listens.'},
@@ -6094,6 +6107,8 @@ SCENES.ch18open={label:'Chapter 18 · The Breaking',steps:[
 const BR_KIDS=[L('scareth',38,21,{age:'teen'}),L('lightheart',60,49,{age:'teen'}),L('kaytahn',38,77,{age:'teen'})];
 SCENES.ch18={pre:{label:'Chapter 18 · The Breaking',steps:[
   {fx:'reset'},{bg:'void',music:'herald'},{boss:'ch18'},...BR_KIDS,L('bastion',96,40,{form:'armor'}),{fade:'in',ms:1000},
+  {say:'nightshade',text:'Listen. The walls are humming. Like a hundred voices stuck on the same note.'},
+  {say:'scareth',text:'Cool. I hate it.'},
   {say:'boss',text:'Children. And their wounded guardians. My master is listening. He wanted to see this.'},
   {say:'bastion',text:'Then let him watch.'},
   {say:'lightheart',text:'Side by side!'},
@@ -6357,6 +6372,7 @@ SCENES.finale={label:'Chapter 25 · A Brighter Future',steps:[
   {say:'kaytahn',text:'There goes one! Quick, make a wish!'},
   {say:'corran',name:'Corran',col:'#9ae07a',text:'I wish something cool would actually happen around here.'},
   {say:'scareth',text:'Kid. You have no idea.'},
+  {cap:'High above the crater, five stars burn in a ring around one faint crimson star.',top:true},
   {cap:'THE END',top:true},
   {fade:'out',ms:1800}]};
 async function startPart3(){if(progress.part3)return;HUB.active=false;await playCutscene(SCENES.part3);progress.part3=true;saveProgress();
