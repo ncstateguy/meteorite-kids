@@ -1,0 +1,3 @@
+const path=require('path');const GAME='file://'+path.resolve(process.env.GAME||path.join(__dirname,'../src/meteorite-kids-battle.html'));const OUT=path.join(__dirname,'out');require('fs').mkdirSync(OUT,{recursive:true});
+const {chromium}=require('playwright');(async()=>{const f=process.argv[2]?'file://'+path.resolve(process.argv[2]):GAME;const b=await chromium.launch();const p=await b.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message+' '+(e.stack||'').split('\n')[1]));
+await p.goto(f);await p.waitForTimeout(800);console.log(errs);await b.close();process.exit(errs.length?1:0)})();

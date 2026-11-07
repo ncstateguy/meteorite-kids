@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the dev copy of the game from the main file.
 
-The main file (meteorite-kids-battle.html) is the only one you edit.
-This script makes meteorite-kids-dev.html from it: story gates off,
+The main file (src/meteorite-kids-battle.html) is the only one you edit.
+This script makes src/meteorite-kids-dev.html from it: story gates off,
 everything unlocked, and the Dev tools panel added (tools/dev-tools.js).
 
 Usage: python3 tools/build-dev.py [MAIN] [OUT]
@@ -12,8 +12,9 @@ change to the main file can never silently break the dev build.
 import pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
-MAIN = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path('/home/claude/meteorite-kids-battle.html')
-OUT = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else pathlib.Path('/home/claude/meteorite-kids-dev.html')
+SRC = HERE.parent / 'src'
+MAIN = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else SRC / 'meteorite-kids-battle.html'
+OUT = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else SRC / 'meteorite-kids-dev.html'
 
 src = MAIN.read_text(encoding='utf-8')
 
