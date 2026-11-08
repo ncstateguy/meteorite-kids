@@ -3707,6 +3707,8 @@ SCENES.ch27={
   {say:'boss',text:'EVERY WORLD I ENDED IS STILL IN HERE. LISTEN. THEY ARE STILL SINGING.'},
   {say:'lightheart',text:"Everything you ever took... it's all still in there."},
   {say:'nightshade',text:"They're not singing for you. You kept them from having a future."},
+  {say:'boss',text:'Every light I took was burning in fear. When it goes out, it stops being afraid. That is the Eternal Silence. I am not cruel. I am the only one who ever made them quiet.'},
+  {say:'nightshade',text:"They weren't afraid. They were alive. You couldn't tell the difference."},
   {cap:'Phase 2: the Unmade is a spirit. Physical blows pass through it. Only light and magic land, so Jake, Lindsey and Tricia lead while Joseph and Josh protect them.',top:true}]},
  p3:{label:'Chapter 24 · Phase 3',steps:[
   {bg:'void',music:null},{boss:'wraith'},
@@ -4739,7 +4741,7 @@ async function hubInteract(o){
       if(L!=='scareth')return hubSay([['Brian','Beat it, kid. This dock is mine.'],['','(Maybe Joseph could stare him down.)']]);
       await hubSay([me('...'),['Brian','What are you looking at?'],me('...'),['Brian','Okay, okay! Jeez! Take the dock. And take this weird rock I found, it gives me the creeps.']]);
       HUB.state.bully=true;saveHub();buildObjs();return shardLines('bully')}}
-  if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, brother of the Red Hero, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],['me','He would have loved Founders\' Day.']]));
+  if(o.type==='lore'&&o.id==='hollis')return hubSay(sayLines([['',"A small plaque on Mr. Hollis's bench: \"For Mr. Hollis, brother of the Red Hero, who remembered everything.\" Someone left fresh flowers."],['me:nightshade','I kept every clipping, Mr. Hollis. Every single one.'],...(progress.ch27?[['me:nightshade',"They're going to the museum, next to yours. He belongs to everyone now."]]:[]),['me','He would have loved Founders\' Day.']]));
   if(o.type==='lore'&&o.id==='dino'){HUB.state.dino_found=true;saveHub();buildObjs();updateHubHud();sfx('heal');return hubSay([['','A small green toy T. rex, face down in the grass. Baxter must have tracked him all the way here.'],['','(You found Rex! Take him back to Corran.)']])}
   if(o.type==='guardian'&&o.id==='gale25'){if(!HUB.state.ep_cer){await hubSay([['Gale','There you are! Bastion has a speech. Then you and I have unfinished business.']]);const r=await hubChoice("Chapter 25: A Brighter Future",["Let's go",'Not yet']);if(r===0)exitHubTo(CH25R);return}
     return hubSay([['Gale','Two years in a row. Next year I am bringing Bastion.'],['Gale','...Okay, Bastion says no.']])}
@@ -6269,6 +6271,9 @@ SCENES.ch21={pre:{label:'Chapter 21 · One Last Time',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3_KIDS,{fade:'in',ms:1000},
   {cap:'Night. The edge of the crater.',top:true},
   {say:'lightheart',text:'Everybody ready?'},
+  {cap:'Lindsey hums under her breath.',top:true},
+  {say:'thornforge',text:"You still hum when you're nervous."},
+  {say:'kaytahn',text:'You still notice.'},
   {cap:'Five cracked stones, set together in the grass.',top:true},
   {say:'scareth',text:'...Nothing.'},
   {say:'nightshade',text:'"Five lights, held as one by the Warden."'},
@@ -6299,6 +6304,8 @@ SCENES.ch22open={label:'Chapter 22 · The Relic Sites',steps:[
   {say:'thornforge',text:"Truck's gassed up. Five stops. Who has snacks?"},
   {say:'kaytahn',text:'Me. Obviously.'},
   {say:'nightshade',text:'Canyon, temple, forge, grove, and the peak. Each one held a relic.'},
+  {say:'scareth',text:'You still have that notebook?'},
+  {say:'nightshade',text:'Somebody has to remember him right.'},
   {say:'lightheart',text:"Then let's go get your light back."},
   {say:'nightshade',text:"The peak was Gale's. That one's yours, Jake."},
   {say:'scareth',text:'Shotgun.'},
