@@ -22,6 +22,7 @@ All tests use Playwright and read `src/meteorite-kids-battle.html` unless `GAME=
 | `node tests/teamhit.js` | Team-wide hit cap and the Crown Barrage shield rule |
 | `node tests/defeat.js [keys]` | Defeat screen shows the short retry tip |
 | `node tests/benchswap.js` | Ch 23 Swap button glows, names who is waiting, caption shows |
+| `node tests/saveslots.js` | Save files stay separate across new game, load and reload |
 | `node tests/dev-panel.js` | The Dev tools panel opens in the dev copy |
 | `node tests/render-songs.js` | Renders each song to WAV and reports levels |
 | `python3 tests/balance.py N keys [tune] [profiles] [difficulty]` | Simulated boss fights: win rate, rounds, health left |

@@ -51,7 +51,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .panel h2{font-family:var(--display);font-size:clamp(20px,4vw,26px);margin:0;color:var(--accent);letter-spacing:.04em;text-wrap:balance}
 .panel p{margin:0;max-width:68ch}
 .panel .tip{color:var(--muted);font-size:14px}
-.chlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.chlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}.chlist .chpart{grid-column:1/-1;margin:10px 0 0;font-size:14px;color:var(--accent)}.chlist .chpart small{color:var(--muted,#a9a3c4);font-weight:normal;margin-left:6px}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .status{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .card{background:var(--panel);border:2px solid var(--line);padding:8px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -6410,15 +6410,18 @@ async function playFarewell(){await playCutscene(SCENES.farewell);progress.ch12=
 function showChapters(){
   HUB.active=false;
   playSong('town');
-  S=newState(S?S.ch:CHAPTERS[0]);S.over=true;showBattleUI(false);$('chLabel').textContent='Part 1 · Ages 10 to 13';
+  S=newState(S?S.ch:CHAPTERS[0]);S.over=true;showBattleUI(false);$('chLabel').textContent='Extras';
   const cleared=CHAPTERS.filter(c=>progress[c.key]).length+(progress.ch12?1:0);
-  $('menu').innerHTML=`<h2>Part 1: The Meteorite Kids</h2><p class="tip">From the night the stones fell to the Black Knight's last stand, plus a playable Part 3 finale. Chapters cleared: ${cleared} of ${CHAPTERS.length+1}.</p><p class="controls">Controls: click or tap, arrow keys with Enter and Esc, or an Xbox controller (D-pad or left stick to move, A to select, B to go back, Start to begin). Sound starts after your first click or key press.</p><div class="chlist" id="chlist"></div>`;
+  $('menu').innerHTML=`<h2>Extras</h2><p class="tip">Replay any chapter you have reached, from the night the stones fell to the last light over Hometown. Chapters cleared: ${cleared} of ${CHAPTERS.length+1}.</p><p class="controls">Controls: click or tap, arrow keys with Enter and Esc, or an Xbox controller (D-pad or left stick to move, A to select, B to go back, Start to begin). Sound starts after your first click or key press.</p><div class="chlist" id="chlist"></div>`;
   {const bt=document.createElement('button');bt.id='ch-hub';bt.className='special';bt.innerHTML=`Explore Hometown<small>Walk around town, talk to people, and use each kid's power</small>`;bt.onclick=enterHub;$('chlist').appendChild(bt)}
   {const bt=document.createElement('button');bt.id='ch-prologue';bt.innerHTML=`Prologue · The Night the Stars Fell<small>Story scene · The meteor shower</small>`;bt.onclick=async()=>{await playCutscene(SCENES.opening);progress.opening=true;saveProgress();enterHub()};$('chlist').appendChild(bt)}
   if(progress.dream){const bt=document.createElement('button');bt.id='ch-dream';bt.innerHTML=`Dream · A Dream of Falling Light<small>Tutorial battle · Learn the basics</small>`;bt.onclick=()=>{DREAM.replay=true;startBattle(DREAM)};$('chlist').appendChild(bt)}
   {const bt=document.createElement('button');bt.id='ch-title';bt.innerHTML=`Title screen<small>Watch the opening again</small>`;bt.onclick=()=>{AU.song=null;showTitle()};$('chlist').appendChild(bt)}
   const lockBtn=(bt,label)=>{bt.disabled=true;bt.classList.add('locked');bt.innerHTML=`${label} · ???<small>${LOCK_HINTS[(parseInt(label.replace(/\D/g,''))||0)%LOCK_HINTS.length]}</small>`};
-  CHAPTERS.forEach(c=>{const bt=document.createElement('button');bt.id='ch-'+c.key;
+  const partOf=c=>c.num<=12?1:c.num<=18?2:3;let lastPart=0;
+  const PARTS={1:['Part 1: The Meteorite Kids','Ages 10 to 13'],2:['Part 2: Called Back','Ages 15 to 18'],3:['Part 3: The Last Light','Fifteen years later']};
+  [...CHAPTERS].sort((a,b)=>a.num-b.num).forEach(c=>{const pt=partOf(c);if(pt!==lastPart){lastPart=pt;const h=document.createElement('h3');h.className='chpart';h.innerHTML=`${PARTS[pt][0]}<small>${PARTS[pt][1]}</small>`;$('chlist').appendChild(h)}
+    const bt=document.createElement('button');bt.id='ch-'+c.key;
     if(isUnlocked(c.key)){bt.innerHTML=`Ch. ${c.num} · ${c.title}${progress[c.key]?' ✓':''}<small>Villain: ${c.villain} · Party: ${c.roster.map(r=>KIDS[r].name).join(', ')}</small>`;bt.onclick=()=>showIntro(c)}
     else lockBtn(bt,`Ch. ${c.num}`);
     $('chlist').appendChild(bt);
@@ -6428,18 +6431,13 @@ function showChapters(){
       const b3=document.createElement('button');b3.id='ch-interlude';
       if(progress.ch12){b3.innerHTML=`Interlude · Earth Awakens${progress.interlude?' ✓':''}<small>Story scene · The Earth Guardians rise</small>`;b3.onclick=async()=>{await playCutscene(SCENES.interlude);progress.interlude=true;saveProgress();showChapters()}}else lockBtn(b3,'Interlude');
       $('chlist').appendChild(b3)}});
-  const PREV=['ch-shardborn','ch-herald','ch-vorath','ch-preview5'];
+  const PREV=['ch-shardborn'];
   setTimeout(()=>PREV.forEach(id=>{const b=$(id);if(b&&!part1Done()){b.disabled=true;b.classList.add('locked');b.innerHTML=`Preview · ???<small>Some stories are still waiting to be told.</small>`}}),0);
-  [['shardborn','Preview · The Shard-Born',"Meet the Knight's three lieutenants"]].forEach(([key,t,sub])=>{
+  {const h=document.createElement('h3');h.className='chpart';h.textContent='More';$('chlist').appendChild(h)}
+  [['shardborn','The Shard-Born',"Meet the Knight's three lieutenants"]].forEach(([key,t,sub])=>{
    const bt=document.createElement('button');bt.id='ch-'+key;bt.innerHTML=`${t}<small>${sub}</small>`;bt.onclick=async()=>{await playCutscene(SCENES[key]);showChapters()};$('chlist').appendChild(bt)});
   {const bt=document.createElement('button');bt.id='ch-gallery';bt.innerHTML=`Character Gallery<small>See the five as kids, teens, and adults</small>`;
    bt.onclick=async()=>{await playCutscene(SCENES.gallery);showChapters()};$('chlist').appendChild(bt)}
-  {const bt=document.createElement('button');bt.id='ch-herald';bt.innerHTML=`Preview · The Herald<small>Part 2 story scene · A dark crusader arrives</small>`;
-   bt.onclick=async()=>{await playCutscene(SCENES.herald);showChapters()};$('chlist').appendChild(bt)}
-  {const bt=document.createElement('button');bt.id='ch-vorath';bt.innerHTML=`Preview · Vorath the Unmaker<small>Part 3 story scene · The Dark King arrives</small>`;
-   bt.onclick=async()=>{await playCutscene(SCENES.vorath);showChapters()};$('chlist').appendChild(bt)}
-  {const bt=document.createElement('button');bt.id='ch-preview5';bt.innerHTML=`Preview · The Last Light<small>Part 3 story scene · the Last Light Forms</small>`;
-   bt.onclick=async()=>{await playCutscene(SCENES.preview5);showChapters()};$('chlist').appendChild(bt)}
 }
 function showIntro(c){
   playSong('town');
@@ -6966,7 +6964,7 @@ function openSlots(mode,back){
   SAVE.mode=mode;SAVE.back=back;if(HUB.active){HUB.saving=true;HUB.keys={};HUB.target=null}
   const title={new:'New Game · choose a file',load:'Load Game',save:'Save Game'}[mode];
   const where=SAVE.cloud?'Saved to your Claude account, so it follows you to any device.':'Saved in this browser.';
-  $('menu').innerHTML=`<h2>${title}</h2><p class="tip">${mode==='new'?'Pick a file for your new adventure. A used file will be overwritten.':mode==='save'?'Pick a file to save to. Your current file also saves automatically after every chapter.':'Pick a file to continue.'} ${where}</p>
+  $('menu').innerHTML=`<h2>${title}</h2><p class="tip">${mode==='new'?'Pick a file for your new adventure. A used file will be overwritten.':mode==='save'?(AUTOSAVE?'Pick a file to save to. Your current file also saves automatically as you play.':'Pick a file to save to. Autosave is off, so save before you quit.'):'Pick a file to continue.'} ${where}</p>
    <div class="slots">${[0,1,2].map(slotCard).join('')}</div><p id="slotMsg" class="tip"></p><div class="row"><button id="slotBack">Back</button></div>`;
   [0,1,2].forEach(i=>{const b=$('slot-'+i);if(mode==='load'&&!SAVE.slots[i])b.disabled=true;b.onclick=()=>slotPick(i)});
   $('slotBack').onclick=closeSlots;
