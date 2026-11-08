@@ -929,6 +929,7 @@ async function lunge(obj,dir){for(let i=0;i<5;i++){obj.ox+=dir*3;await sleep(16)
 function pickTarget(){
   const a=activeAlive();if(!a.length)return null;
   if(S.ch.party3){const J=S.roster.find(p=>p.seraph&&!p.down);if(J)return J}
+  {const sd=a.find(k=>k.stunt);if(sd)return sd}
   if(S.boss.taunt>0){const t=a.find(k=>k.id==='thornforge');if(t)return t}
   return a[rnd(a.length)];
 }
@@ -1976,7 +1977,7 @@ function drawGale(b,x0,y0){const f=NPCS.gale.spr.armor[Math.floor(T/24)%2];ctx.s
 const CH19={key:'ch19',num:19,title:"Founders' Day",villain:'Gale',bg:'town',norift:true,hp:820,age:'adult',part:3,noMorph:true,music:'skirmish',
  roster:['lightheart','scareth','kaytahn','thornforge','nightshade'],
  intro:"Founders' Day at the fountain. The whole town cheers as Gale challenges the old Meteorite Kids to a friendly exhibition match.",
- tip:'Nobody can morph anymore. When Gale Showboats for the crowd, she leaves herself open: hit her hard on the next turn.',
+ tip:'Nobody can morph anymore, but each of you has a new signature move from your grown-up life, with a 3-turn recharge. When Gale Showboats for the crowd, she leaves herself open: hit her hard on the next turn.',
  victory:'Gale drops her spear and laughs. "Okay, okay! The old-timers still have it!"',
  init(b){b.cycle=0;b.show=0},draw:drawGale,
  chips(b){return [b.show>0?{t:'Showboating: wide open',o:true}:{t:'Friendly match',o:true}]},
@@ -2339,7 +2340,7 @@ const BOSS_WARN={
 function bossWarn(){if(!S||S.over||!S.boss||S.ch.scripted)return null;const f=S.ch.warn||BOSS_WARN[S.ch.key];try{return f?f(S.boss):null}catch(e){return null}}
 function bossScale(ch){const D=ch.key==='dream'?1:DIFF_MULT[DIFF].hp;if(ch.solo)return D;return (1+.13*(expectedLevel(ch)-1))*(TUNE.hp[tuneKey(ch)]||1)*D}
 // Per-chapter boss damage tuning. Story mode targets about half the party's health left at the end of a boss fight.
-const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.45,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.3,ch14:1.25,ch15:1,ch16:1.3,ch17:1.4,ch18a:1.35,ch18:1.2,ch19:1.4,ch20:1.4,ch21:1.5,ch22:2.6,ch23:1.4,ch27:2.25};
+const DMG_TUNE={ch1:1.8,ch2:1.3,ch3:1.4,ch4:1.4,ch5:1.45,ch6:1.3,ch8:1.35,ch9:1.6,ch11:1.4,ch13:1.3,ch14:1.25,ch15:1,ch16:1.3,ch17:1.4,ch18a:1.35,ch18:1.2,ch19:1.6,ch20:1.55,ch21:1.75,ch22:2.6,ch23:1.4,ch27:2.25};
 function dmgScale(ch){const D=(ch.key==='dream'?1:DIFF_MULT[DIFF].dmg)*(DMG_TUNE[ch.key]||1);if(ch.solo)return D;return (1+.12*(expectedLevel(ch)-1))*(ch.key==='dream'?1:TUNE.dmg*(TUNE.dmgCh[tuneKey(ch)]||1))*D}
 function lvStats(id){const p=P(),lv=p.party.lv[id],b=p.party.bonus[id];return {lv,hp:(lv-1)*6+b.hp,atk:Math.floor((lv-1)*.8)+b.atk,mag:Math.floor((lv-1)*.8)+b.mag}}
 // Passive upgrades at levels 4 and 8
@@ -2680,6 +2681,7 @@ function damageKid(k,dmg){
   if(!k||k.down)return;
   if(S.ch.party3&&!k.seraph){const J=S.roster.find(p=>p.seraph);if(!J||J.down)return;dmg=Math.round(dmg*.5);if(kidPos(k))floatText(...kidCenter(k),'Covered','#ffe8a0');k=J}
   if(k.charm==='penny'&&Math.random()<.12){sfx('dodge');floatText(...kidCenter(k),'Lucky!','#ffe89a');log(`The Lucky Penny! It misses ${k.name}.`);return}
+  if(k.stunt){k.stunt=false;sfx('dodge');floatText(...kidCenter(k),'Stunt double!','#c8d0dc');log(`${k.kid} dives out of the way. The boss hits nothing but air.`);return}
   if(k.veil){k.veil=false;sfx('dodge');floatText(...kidCenter(k),'Dodge!','#c8d0dc');log(`${k.name} slips away in Phantom Veil.`);return}
   let mult=2.1*(S.dmgK||1)*(S.humbled>0?1.2:1)*(1-.1*S.boss.fear)*(k.barrier?.5:1)*(k.charm==='ward'?.85:1)*(k.charm==='ring'?.92:1)*(k.charm==='obsidian'?1.05:1);
   if(k.id==='thornforge'&&k.powered)mult*=.75;
@@ -2736,6 +2738,16 @@ const RELIC_MV={
 const STARFALL={label:'Starfall Blade',desc:"From Aldric's spark: a heavy strike of light",run:k=>hitBoss(k,k.atk*3.5,{light:true,label:'brings down Starfall Blade on'})};
 function relicAction(k){const M=RELIC_MV[k.id];if(!M||S.ch.gray)return null;const has=progress['mv_'+k.id];if(!has)return null;
   return {label:M.label,desc:k.rcd?`Recharging: ${k.rcd} turn${k.rcd>1?'s':''}`:M.desc,disabled:k.rcd>0,run:async()=>{k.rcd=2;await M.run(k);renderStatus()}}}
+// Adult signature moves: Ch 19 to 21 and the Ch 25 rematch (the adult fights without relics)
+const SIG_CH=['ch19','ch20','ch21','ch25r'];
+const SIG={
+  lightheart:{label:'Rally Call',desc:'Every friend on the field acts sooner',run:async k=>{activeAlive().filter(p=>p!==k).forEach(p=>{p.haste=Math.max(p.haste|0,1);floatText(...kidCenter(p),'Rallied!','#ffd76a')});sfx('confirm');burst(...kidCenter(k),'#ffd76a',18);log('Rally Call! Jake gets everyone moving.')}},
+  scareth:{label:'Stunt Double',desc:"Draw the boss's next attack and dodge it",run:async k=>{k.stunt=true;sfx('dodge');burst(...kidCenter(k),'#c8d0dc',16);log('Stunt Double! Joseph waves both arms at the boss. "Over here!"')}},
+  kaytahn:{label:'Triage',desc:'Heal the most hurt friend by 30% and clear slow or disarm',run:async k=>{const pool=activeAlive();const t=pool.sort((a,c)=>a.hp/a.hpMax-c.hp/c.hpMax)[0];if(!t)return;heal(t,Math.round(t.hpMax*.3));t.slow=0;t.disarmed=false;burst(...kidCenter(t),'#4fe0d0',16);log(`Triage! Lindsey patches up ${t.kid}.`)}},
+  thornforge:{label:'Field Repair',desc:'Every friend gets a shield that halves their next hit',run:async k=>{activeAlive().forEach(p=>{p.barrier=true;floatText(...kidCenter(p),'Shielded','#9fc0ff')});sfx('shield');burst(...kidCenter(k),'#ff9a3a',16);log('Field Repair! Josh fixes up everyone\'s gear with duct tape and hope.')}},
+  nightshade:{label:'Recall',desc:'You have seen this before: hex the boss for 2 turns and slow it',run:async k=>{const b=S.boss;b.hex=Math.max(b.hex|0,2);b.slow=Math.max(b.slow|0,1);sfx('magic');floatText(BOSS_C[0],BOSS_C[1]-30,'Recalled','#c8b8ff');log('Recall! Tricia remembers exactly how this fight goes.')}}};
+function sigAction(k){const g=SIG[k.id];if(!g||!SIG_CH.includes(S.ch.key)||k.powered)return null;
+  return {label:g.label,desc:k.sgcd?`Recharging: ${k.sgcd} turn${k.sgcd>1?'s':''}`:g.desc,disabled:k.sgcd>0,run:async()=>{k.sgcd=3;await g.run(k);renderStatus()}}}
 function actionsFor(k){
   if(k.seraph){let SA=seraphActions(k);if(S.ch.party3)SA=SA.filter(a=>a.label!=='Call a friend');
     const MV={'Shadow Rend':'scareth','Crest Barrier':'kaytahn','Anvil Guard':'thornforge','Hexfire':'nightshade'};
@@ -2754,6 +2766,7 @@ function actionsFor(k){
   if(C.extra)A.push(...C.extra(k));
   if(C.party3&&S._echo)A.push(...S._echo);
   if(C.echoes){const e=echoAction(k);if(e)A.push(e)}
+  {const sg=sigAction(k);if(sg)A.push(sg)}
   if(C.age==='adult'&&!k.powered){const r=relicAction(k);if(r)A.push(r);
     if(k.id==='lightheart'&&progress.ch23&&!C.gray)A.push({label:STARFALL.label,desc:k.scd?`Recharging: ${k.scd} turn${k.scd>1?'s':''}`:STARFALL.desc,disabled:k.scd>0,run:async()=>{k.scd=2;await STARFALL.run(k);renderStatus()}})}
   if(!k.powered){
@@ -2843,7 +2856,7 @@ async function slotTurn(i){
   }
   if(k.powered){k.powered--;if(!k.powered){k.cd=cdFor(k);k.unbreak=false;log(`${k.name}'s armor fades. Cooldown: ${k.cd} turns.`)}}
   else if(k.cd>0)k.cd--;
-  if(k.rcd>0)k.rcd--;if(k.scd>0)k.scd--;if(k.guard>0)k.guard--;
+  if(k.rcd>0)k.rcd--;if(k.scd>0)k.scd--;if(k.sgcd>0)k.sgcd--;if(k.guard>0)k.guard--;
   S.active=null;renderStatus();
 }
 async function bossTurn(){
@@ -6209,7 +6222,7 @@ SCENES.ch19={pre:{label:"Chapter 19 · Founders' Day",steps:[
   {say:'thornforge',text:'Rude.'},
   {say:'gale',text:'Friendly match. No powers, no armor. Just you five and me. Ready?'},
   {say:'lightheart',text:'Ready as we will ever be.'},
-  {cap:'Nobody can morph anymore. When Gale Showboats for the crowd, hit her hard.',top:true},{fx:'flash'}]},
+  {cap:'Nobody can morph anymore, but each of you has a new signature move. When Gale Showboats for the crowd, hit her hard.',top:true},{fx:'flash'}]},
  post:{label:"Chapter 19 · Founders' Day",steps:[
   {fx:'reset'},{bg:'town',music:'spring'},{fx:'norift'},...P3_KIDS,...P3_G,{fade:'in',ms:1000},
   {cap:'That night. The festival winds down under the stars.',top:true},
