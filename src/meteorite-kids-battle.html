@@ -2350,7 +2350,9 @@ const ITEMS={
 const ITEM_CAP=3;
 const MATS={dream:['Dream Dust','a shimmer of the shadow you beat'],ch1:['Cinder Coal','still warm'],ch2:['Lucky Pin','from the Strike Out lanes'],ch3:['Shark Tooth','from Captain Chomp'],ch4:['Magnet Scrap','from Magnet Max'],
   ch5:['Clock Gear','from Overclock'],ch6:['Mirror Shard','from Mirror Mime'],ch7:['Crimson Flake','from the Black Knight\'s armor'],ch8:['Lantern Glass','from Hollow Hart'],ch9:['Echo Ember','from Aldric\'s echo'],
-  ch10:['Keep Iron','from the Knight\'s Keep'],ch11:['Black Shard Dust','from the Knight\'s broken shard'],patrol:['Soot','left behind by Ashlings']};
+  ch10:['Keep Iron','from the Knight\'s Keep'],ch11:['Black Shard Dust','from the Knight\'s broken shard'],
+  ch13:['Rift Shard','a sliver of the rift'],ch14:['Rift Shard','a sliver of the rift'],ch15:['Rift Shard','a sliver of the rift'],ch16:['Rift Shard','a sliver of the rift'],ch17:['Rift Shard','from the Herald\'s spire'],ch18a:['Rift Shard','from the Herald\'s spire'],ch18:['Rift Shard','from the Herald\'s spire'],
+  ch19:['Guardian Stone','a pebble the Guardians left behind'],ch20:['Guardian Stone','a pebble the Guardians left behind'],ch21:['Guardian Stone','a pebble the Guardians left behind'],ch22:['Guardian Stone','warm from a relic site'],ch23:['Guardian Stone','from the crater'],patrol:['Soot','left behind by Ashlings']};
 function itemActions(k){const it=P().items,A=[];const pool=()=>S.roster.filter(p=>kidPos(p));
   const use=(id,fn)=>async()=>{it[id]--;saveProgress();sfx('heal');await fn();log(`${k.name} uses a ${ITEMS[id].name}.`);renderStatus()};
   if(it.juice>0)A.push({label:`Juice Box ×${it.juice}`,desc:ITEMS.juice.desc,run:use('juice',async()=>{const t=pool().filter(p=>!p.down).sort((a,c)=>a.hp/a.hpMax-c.hp/c.hpMax)[0];if(t){heal(t,30);burst(...kidCenter(t),'#ffb04a',12)}})});
@@ -2414,8 +2416,8 @@ function openParty(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();
     </div></div>
    <h3>Equipment</h3>
    <div class="slots">
-    <div class="slot" style="cursor:default">Weapon: ${weaponName(who,g.w)}<small>${g.w?`+${WEAPON_TIERS[g.w].v} ${main}`:'No bonus yet'} · ${g.w<3?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded.'}</small></div>
-    <div class="slot" style="cursor:default">Outfit: ${g.o?OUTFIT_TIERS[g.o].name:'Everyday clothes'}<small>${g.o?`+${OUTFIT_TIERS[g.o].v} HP`:'No bonus yet'} · ${g.o<3?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded.'}</small></div>
+    <div class="slot" style="cursor:default">Weapon: ${weaponName(who,g.w)}<small>${g.w?`+${WEAPON_TIERS[g.w].v} ${main}`:'No bonus yet'} · ${tierOpen(WEAPON_TIERS[g.w+1])?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></div>
+    <div class="slot" style="cursor:default">Outfit: ${g.o?OUTFIT_TIERS[g.o].name:'Everyday clothes'}<small>${g.o?`+${OUTFIT_TIERS[g.o].v} HP`:'No bonus yet'} · ${tierOpen(OUTFIT_TIERS[g.o+1])?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></div>
     <div class="slot" style="cursor:default">Charm: ${g.c?`${CHARMS[g.c].name}`:'None'}<small>${g.c?CHARMS[g.c].desc:(owned.length?'Pick one below.':'Josh can craft charms at the Old Forge.')}</small></div>
     ${owned.map(cid=>{const c=CHARMS[cid],holder=HERO_IDS.find(h=>p.gear[h].c===cid);return `<button class="slot" id="pc-${cid}" ${holder===who?'disabled':''}>${holder===who?'Wearing':'Equip'}: ${c.name}<small>${c.desc}${holder&&holder!==who?` · now worn by ${KIDS[holder].kid}, equipping moves it`:''}</small></button>`}).join('')}
     ${g.c?`<button class="slot" id="pcOff">Take off the ${CHARMS[g.c].name}</button>`:''}
@@ -2478,11 +2480,16 @@ const WEAPON_NAMES={lightheart:'Longsword',scareth:'Dual Short Swords',kaytahn:'
 const WEAPON_TIERS=[null,
   {pre:'Coal-Tempered',v:2,cost:{'Cinder Coal':1,Soot:2},coins:15},
   {pre:'Magnet-Forged',v:4,cost:{'Magnet Scrap':1,'Clock Gear':1,Soot:3},coins:30},
-  {pre:'Keep-Iron',v:7,cost:{'Keep Iron':1,'Crimson Flake':1,Soot:4},coins:50}];
+  {pre:'Keep-Iron',v:7,cost:{'Keep Iron':1,'Crimson Flake':1,Soot:4},coins:50},
+  {pre:'Rift-Tempered',v:10,cost:{'Rift Shard':1,Soot:4},coins:80,need:'ch13'},
+  {pre:'Guardian-Forged',v:13,cost:{'Guardian Stone':1,Soot:5},coins:100,need:'ch19'}];
 const OUTFIT_TIERS=[null,
   {name:'Patched Jacket',v:10,cost:{'Lucky Pin':1,Soot:2},coins:15},
   {name:'Reinforced Jacket',v:20,cost:{'Shark Tooth':1,'Mirror Shard':1,Soot:3},coins:30},
-  {name:'Keep-Plate Vest',v:32,cost:{'Lantern Glass':1,'Keep Iron':1,Soot:4},coins:50}];
+  {name:'Keep-Plate Vest',v:32,cost:{'Lantern Glass':1,'Keep Iron':1,Soot:4},coins:50},
+  {name:'Rift-Lined Coat',v:44,cost:{'Rift Shard':1,Soot:4},coins:80,need:'ch13'},
+  {name:'Guardian Coat',v:56,cost:{'Guardian Stone':1,Soot:5},coins:100,need:'ch19'}];
+const tierOpen=t=>!!t&&(!t.need||!!progress[t.need]);
 const CHARMS={
   spark:{name:'Spark Plug',desc:'Morphs last 1 extra turn',cost:{'Clock Gear':1,'Magnet Scrap':1},coins:25},
   cool:{name:'Cool Stone',desc:'Morph cooldown is 1 turn shorter',cost:{'Shark Tooth':1,'Dream Dust':1},coins:25},
@@ -2514,7 +2521,7 @@ const costTxt=(cost,coins)=>{const p=P();return Object.entries(cost).map(([m,n])
 const weaponName=(id,t)=>t?`${WEAPON_TIERS[t].pre} ${WEAPON_NAMES[id]}`:`Old ${WEAPON_NAMES[id]}`;
 function openForge(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();const ids=HERO_IDS.filter(heroUnlocked);who=who&&ids.includes(who)?who:(FORGE_WHO&&ids.includes(FORGE_WHO)?FORGE_WHO:ids[0]);FORGE_WHO=who;
   const g=p.gear[who],K=KIDS[who],st=MAIN_STAT[who]==='atk'?'Attack':'Magic';
-  const wn=WEAPON_TIERS[g.w+1],on=OUTFIT_TIERS[g.o+1];
+  const wn=tierOpen(WEAPON_TIERS[g.w+1])?WEAPON_TIERS[g.w+1]:null,on=tierOpen(OUTFIT_TIERS[g.o+1])?OUTFIT_TIERS[g.o+1]:null;
   const mats=Object.entries(p.mats).map(([m,n])=>`${m} ×${n}`).join(', ')||'none';
   $('menu').innerHTML=`<h2>The Old Forge</h2><p class="tip">Josh fires up the furnace. "Bring me the junk the bad guys leave behind, and I'll turn it into something useful." Coins: ${p.coins}. Materials: ${mats}.</p>
    <div class="row" id="forgeWho">${ids.map(id=>`<button id="fw-${id}" ${id===who?'class="primary"':''}>${KIDS[id].kid}</button>`).join('')}</div>
