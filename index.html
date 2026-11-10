@@ -151,6 +151,57 @@ body.net-guest #menu button,body.net-guest #battleUI button{pointer-events:none;
 body.net-guest.net-myturn #btns button:not([disabled]){pointer-events:auto;opacity:1}
 body.net-guest.net-myturn .cmds{outline:2px solid #7af0c8;outline-offset:4px;border-radius:4px}
 body.net-guest #skipBtn,body.net-guest #exitBtn,body.net-guest #diffTop,body.net-guest #autoTop{display:none}
+
+/* ---- layout: picture fills the window ---- */
+body{padding-block:8px}
+.wrap{max-width:none;gap:8px}
+header{flex-wrap:nowrap;align-items:center;gap:10px}
+header h1{font-size:16px;white-space:nowrap}
+header .hud{flex-wrap:nowrap;gap:6px;justify-content:flex-end}
+header .chapter{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+#stageRow{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}#leftCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;max-width:100%}body.wide.in-battle #leftCol .status{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}@media (max-width:640px){header{flex-wrap:wrap}header .hud{flex-wrap:wrap}}
+body.wide.in-battle #stageRow{flex-direction:row;align-items:flex-start;justify-content:center}
+.screen{width:var(--sw,100%);max-width:100%;flex:0 0 auto}
+@media (orientation:landscape) and (max-height:520px){.screen{max-width:100%}}
+#battleUI{width:100%}
+body.wide.in-battle #battleUI{flex:0 0 auto;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+body.wide.in-battle #battleUI .deck{grid-template-columns:1fr}
+
+/* turn order across the top of the picture */
+.screen .tq-row{position:absolute;top:5px;left:6px;right:6px;margin:0;z-index:6;padding:3px 4px;background:rgba(8,6,20,.62);border-radius:4px;flex-wrap:nowrap!important;overflow:hidden!important}
+body:not(.in-battle) .screen .tq-row,body.cut .screen .tq-row{display:none}
+/* battle log: latest line, click to open */
+.log{cursor:pointer;position:relative}
+.log:not(.open){max-height:none!important;overflow:hidden}
+.log:not(.open) div{display:none}
+.log:not(.open) div:last-child{display:block}
+.log::after{content:'\25BE  Log';position:absolute;right:8px;top:6px;font-size:11px;color:var(--muted)}.log:not(.open){align-self:start;padding-right:56px}.screen .tq-row .tq-label{display:none}
+.log.open::after{content:'\25B4  Close'}
+.log.open{max-height:220px;overflow-y:auto}
+/* menu as a window over the picture (landscape) */
+body.wide .screen #menu{position:absolute;left:50%;bottom:2.5%;transform:translateX(-50%);width:min(94%,820px);max-height:92%;overflow-y:auto;z-index:8;background:rgba(22,18,42,.96);box-shadow:0 6px 30px rgba(0,0,0,.6)}
+body.wide.hubwalk .screen #menu,body.cut .screen #menu{display:none}
+/* town HUD and on-map buttons */
+#hubHud{display:none;font-size:calc(12px*var(--ts));line-height:1.35;color:#e8ecff}
+#hubHud p{margin:0}
+#hubHud .goal{margin:0 0 2px;padding:2px 6px;border-left:3px solid var(--accent);background:rgba(0,0,0,.25)}
+#hubHud #hubLeader,#hubHud #hubShards{color:#c9c4e6}
+#hubHud #hubPrompt{color:#ffe9a8;font-weight:700}
+#hubHud #hubPrompt:empty{display:none}
+body.inhub #hubHud{display:block}
+body.wide .screen #hubHud{position:absolute;top:6px;right:6px;max-width:44%;z-index:5;background:rgba(8,6,20,.72);padding:6px 8px;border-radius:4px;pointer-events:none}
+body:not(.wide) #hubHud{width:100%;padding:6px 2px}
+#mapBtns{display:none;position:absolute;right:6px;bottom:6px;z-index:5;gap:6px}
+body.wide.hubwalk:not(.talking) #mapBtns{display:flex}
+#mapBtns button{padding:4px 12px;background:rgba(8,6,20,.8)}
+@media (pointer:fine){#mapBtns #hubTalk{display:none}}
+/* settings window */
+#setBody{display:flex;flex-direction:column;gap:10px}
+#setBody .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#setBody .vol{display:flex;align-items:center;gap:6px}
+/* phone held upright */
+body:not(.wide) #hubClose{display:none}body.cut #mapBtns,body.cut #hubHud{display:none!important}body.wide .screen .hub-saved{top:auto;bottom:44px}#rotHint{display:none;background:var(--panel2);border:1px solid var(--accent);padding:6px 10px;font-size:13px;align-items:center;justify-content:space-between;gap:8px}
+@media (orientation:portrait) and (max-width:700px){#rotHint:not([hidden]){display:flex}}
 </style>
 
 <div class="wrap">
@@ -3248,8 +3299,62 @@ function toggleSound(){AU.on=!AU.on;try{localStorage.setItem('mk-sound',AU.on?'o
 // ================= Input: Xbox controller + keyboard =================
 const PAD={active:false,index:-1,prev:{},hold:{},blocked:false};
 let navMode='mouse';
+// ---- Layout: fit the picture to the window, move panels on or off it ----
+function openSettings(){const d=$('setDlg');if(!d)return;d.hidden=false;sfx('cursor');setTimeout(()=>{if(navMode!=='mouse')setFocus($('setX'),true)},0)}
+function syncLayout(){
+  const b=document.body,scr=$('screen'),bu=$('battleUI'),menu=$('menu'),row=$('stageRow');if(!row)return;
+  const vw=document.documentElement.clientWidth,vh=window.innerHeight,inB=!bu.hidden,cut=!!(typeof CUT!=='undefined'&&CUT.active);
+  const wide=vw>=640&&vw>vh*1.05,hubMenu=!!(menu.querySelector('#hubSwitch')||(!menu.children.length&&!HUB.saving)),inhub=!!(HUB.active&&!(typeof TITLE!=='undefined'&&TITLE.active)&&!inB&&hubMenu);
+  b.classList.toggle('wide',wide);b.classList.toggle('in-battle',inB);b.classList.toggle('cut',cut);b.classList.toggle('inhub',inhub);
+  b.classList.toggle('talking',!!HUB.talking);
+  if(HUB.menuNav&&(HUB.saving||HUB.choosing||!HUB.active))HUB.menuNav=false,menu.classList.remove('menu-open');
+  b.classList.toggle('hubwalk',inhub&&!HUB.menuNav&&!HUB.saving&&!HUB.choosing);
+  // where the panels live
+  const hud=$('hubHud'),tq=$('turnOrder'),stt=$('status'),lc=$('leftCol');
+  if(wide){if(menu.parentElement!==scr)scr.appendChild(menu);if(hud.parentElement!==scr)scr.appendChild(hud);if(tq.parentElement!==scr)scr.appendChild(tq)}
+  else{if(hud.previousElementSibling!==row)row.after(hud);if(menu.previousElementSibling!==hud)hud.after(menu);if(tq.parentElement!==bu)bu.insertBefore(tq,bu.querySelector('.deck'))}
+  const under=wide&&inB&&vh>=600;if(under){if(stt.parentElement!==lc)lc.appendChild(stt)}else if(wide){if(bu.lastElementChild!==stt)bu.appendChild(stt)}else if(stt.nextElementSibling!==bu.querySelector('.deck'))bu.insertBefore(stt,bu.querySelector('.deck'))
+  // picture size
+  const top=row.getBoundingClientRect().top+window.scrollY,wrapW=row.clientWidth,cardsH=under?stt.offsetHeight+8:0,avH=vh-top-8-6-cardsH-10;
+  const side=inB&&wide?Math.round(Math.min(430,Math.max(290,wrapW*.28))):0;
+  let w=wide?Math.min(wrapW-(side?side+10:0),avH*16/9):wrapW;w=Math.max(240,Math.floor(w));
+  scr.style.setProperty('--sw',w+'px');lc.style.width=wide?w+'px':'100%';bu.style.width=side?side+'px':'';bu.style.maxHeight=side?Math.round(vh-top-8)+'px':'';
+}
+function setupLayout(){
+  const scr=$('screen'),bu=$('battleUI');const row=document.createElement('div');row.id='stageRow';scr.before(row);const lc=document.createElement('div');lc.id='leftCol';row.append(lc,bu);lc.appendChild(scr);
+  const hud=document.createElement('div');hud.id='hubHud';scr.appendChild(hud);
+  const mb=document.createElement('div');mb.id='mapBtns';mb.innerHTML='<button id="hubTalk">Talk</button><button id="mapMenu">Menu</button>';scr.appendChild(mb);
+  $('mapMenu').onclick=()=>{navMode='mouse';openHubMenu()};
+  // Settings window: sound, volume, difficulty, autosave, online, manual, controller, text, guide, banter
+  const d=document.createElement('div');d.className='modal';d.id='setDlg';d.hidden=true;
+  d.innerHTML=`<div class="modal-box" style="width:min(94%,560px)"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Settings</h2><button id="setX">Close</button></div><div id="setBody">
+    <div class="row" id="setA"></div><div class="row" id="setB"></div><div class="row" id="setC"></div><div class="row" id="setD"></div></div></div>`;
+  scr.appendChild(d);
+  const mv=(id,to)=>{const e=$(id);if(e)$(to).appendChild(e.tagName==='INPUT'?e.closest('label'):e)};
+  mv('soundBtn','setA');mv('volMusic','setA');mv('volSfx','setA');
+  mv('diffTop','setB');mv('autoTop','setB');
+  $('setC').innerHTML=`<button class="textBtn">Text size: ${TEXT_SIZES[TEXT_SIZE][1]}</button><button class="guideBtn">Guide arrow: ${GUIDE?'On':'Off'}</button><button class="banterBtn">Banter: ${BANTER_ON?'On':'Off'}</button>`;
+  $('setC').querySelector('.textBtn').onclick=cycleTextSize;$('setC').querySelector('.guideBtn').onclick=toggleGuide;$('setC').querySelector('.banterBtn').onclick=toggleBanter;
+  mv('netBtn','setD');mv('manualBtn','setD');mv('padStatus','setD');
+  $('setX').onclick=()=>{sfx('cancel');d.hidden=true};
+  d.addEventListener('click',e=>{if(e.target.closest('#diffTop,#manualBtn,#netBtn'))d.hidden=true},true);
+  // header: Settings and Fullscreen
+  const hudBar=document.querySelector('header .hud');const sb=document.createElement('button');sb.className='mini';sb.id='settingsBtn';sb.textContent='Settings';sb.onclick=openSettings;
+  const fs=document.createElement('button');fs.className='mini';fs.id='fsBtn';fs.textContent='Fullscreen';
+  fs.onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(e){}};
+  document.addEventListener('fullscreenchange',()=>{fs.textContent=document.fullscreenElement?'Exit fullscreen':'Fullscreen';setTimeout(syncLayout,50)});
+  if(!document.fullscreenEnabled)fs.hidden=true;
+  hudBar.insertBefore(fs,$('exitBtn'));hudBar.insertBefore(sb,fs);
+  // phone held upright: one hint, dismissible
+  const rh=document.createElement('div');rh.id='rotHint';rh.innerHTML='<span>Turn your phone sideways for a bigger view.</span><button class="mini" id="rotX">OK</button>';
+  document.querySelector('header').after(rh);let seen=false;try{seen=sessionStorage.getItem('mk-rot')==='1'}catch(e){}if(seen)rh.hidden=true;
+  $('rotX').onclick=()=>{rh.hidden=true;try{sessionStorage.setItem('mk-rot','1')}catch(e){}};
+  // battle log: click to open or close
+  $('log').addEventListener('click',()=>$('log').classList.toggle('open'));
+  window.addEventListener('resize',syncLayout);setInterval(syncLayout,150);syncLayout();
+}
 function openModal(){return !$('exitDlg').hidden?$('exitDlg'):!$('manualDlg').hidden?$('manualDlg'):[...document.querySelectorAll('.modal')].find(m=>!m.hidden)||null}
-function closeModal(m){const x=m.querySelector('#diffCancel,#netX,#xferX,#devX,#manualX,#exitNo');sfx('cancel');if(x)x.click();else m.hidden=true}
+function closeModal(m){const x=m.querySelector('#diffCancel,#netX,#xferX,#devX,#manualX,#exitNo,#setX');sfx('cancel');if(x)x.click();else m.hidden=true}
 function navItems(){
   const mo=openModal();const root=mo||($('battleUI').hidden?$('menu'):$('btns'));
   const extra=mo||HUB.menuNav?[]:[...document.querySelectorAll('header button')];
@@ -3276,6 +3381,8 @@ document.addEventListener('keydown',e=>{
   if(CUT.active){if(e.key==='Enter'||e.key===' '||e.key==='z'){e.preventDefault();cutAdvance()}else if(e.key==='Escape'){e.preventDefault();cutSkip()}return}
   if(HUB.active&&HUB.saving){if(e.key==='Escape'){e.preventDefault();if(SAVE.mode)closeSlots();else{HUB.saving=false;enterHub()}return}}
   else if(HUB.active){const k=e.key.length===1?e.key.toLowerCase():e.key;
+    if(HUB.menuNav){const dirs={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};if(dirs[e.key]){e.preventDefault();navMode='key';moveFocus(...dirs[e.key])}
+      else if(e.key==='Escape'){e.preventDefault();closeHubMenu()}else if(e.key==='Enter'||e.key===' '){const ae=document.activeElement;if(!(ae&&ae.tagName==='BUTTON')){e.preventDefault();pressA()}}return}
     if(HUB.choice){e.preventDefault();if(['ArrowUp','ArrowLeft','w','a'].includes(k))choiceMove(-1);else if(['ArrowDown','ArrowRight','s','d','Tab'].includes(k))choiceMove(1);else if(['Enter',' ','e','z'].includes(k))choicePick();else if(k==='Escape')choicePick(HUB.choice.opts.length-1);return}
     if(HUB.talking){if(['Enter',' ','e','z','Escape'].includes(k)){e.preventDefault();hubAdvance()}return}
     if(HUB.choosing){const d={ArrowLeft:-1,a:-1,ArrowRight:1,d:1}[k];if(d){e.preventDefault();pickMove(d)}else if(['Enter',' ','e','z'].includes(k)){const ae=document.activeElement;if(ae&&ae.tagName==='BUTTON'&&ae.id.startsWith('pick-'))return;e.preventDefault();pickHero(PARTY_ORDER[HUB.pick])}else if(k==='Escape'&&HUB.state.hero){e.preventDefault();pickHero(HUB.leader)}return}
@@ -3283,7 +3390,7 @@ document.addEventListener('keydown',e=>{
     if(['Enter',' ','e','z'].includes(k)){const ae=document.activeElement;if(ae&&ae.tagName==='BUTTON'&&(k==='Enter'||k===' '))return;e.preventDefault();hubInteract(HUB.near);return}
     if(k==='Tab'||k==='q'){e.preventDefault();openHeroPick();return}
     if(k==='r'){e.preventDefault();switchEra();return}
-    if(k==='Escape'){e.preventDefault();hubMenuKey();return}
+    if(k==='Escape'){e.preventDefault();navMode='key';openHubMenu();return}
     return}
   if(e.target&&/INPUT|TEXTAREA/.test(e.target.tagName))return;
   const k=e.key;const dirs={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
@@ -3316,12 +3423,12 @@ function pollPad(){
       if(HUB.choosing){if(rep('L'))pickMove(-1);if(rep('R'))pickMove(1);if(edge('A'))pickHero(PARTY_ORDER[HUB.pick]);if(edge('B')&&HUB.state.hero)pickHero(HUB.leader);HUB.pad=[0,0];PAD.prev=st;requestAnimationFrame(pollPad);return}
       if(HUB.choice){HUB.pad=[0,0];if(rep('L')||rep('U'))choiceMove(-1);if(rep('R')||rep('D'))choiceMove(1);if(edge('A'))choicePick();else if(edge('B'))choicePick(HUB.choice.opts.length-1);PAD.prev=st;requestAnimationFrame(pollPad);return}
       if(HUB.menuNav){HUB.pad=[0,0];if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);
-        if(edge('A')){pressA();setTimeout(()=>{if(HUB.saving||!HUB.active||HUB.choosing||HUB.talking||openModal())closeHubMenu(true)},0)}
+        if(edge('A')){pressA();setTimeout(()=>{if(HUB.saving||!HUB.active||HUB.choosing||HUB.talking)closeHubMenu(true)},0)}
         else if(edge('B')||edge('Start'))closeHubMenu();PAD.prev=st;requestAnimationFrame(pollPad);return}
       if(edge('A')){HUB.talking?hubAdvance():hubInteract(HUB.near)}if(edge('B')&&HUB.talking)hubAdvance();
       const X=btn(2)||btn(3);if(X&&!PAD.prevX&&!HUB.talking)openHeroPick();PAD.prevX=X;
       const LB=btn(4)||btn(5);if(LB&&!PAD.prevLB&&!HUB.talking)switchEra();PAD.prevLB=LB;
-      if(edge('Start')&&!HUB.talking){HUB.pad=[0,0];openHubMenu()}
+      if(edge('Start')&&!HUB.talking){HUB.pad=[0,0];navMode='pad';openHubMenu()}
       PAD.prev=st;requestAnimationFrame(pollPad);return}
     if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);
     if(edge('A'))pressA();if(edge('B'))pressB();if(edge('Start'))pressStart();
@@ -4552,7 +4659,7 @@ function hubUpdate(){
     const nm=here?bName(here):null;if(nm&&HUB.lastArea!==nm){HUB.banner={s:nm,t:120};HUB.lastArea=nm}else if(!nm)HUB.lastArea=null}
   let best=null,bd=999;OBJS.forEach(o=>{if(o.type==='exit')return;if(o.type==='chest'&&HUB.state['chest_'+o.id])return;if(o.type==='bird'&&HUB.state.bird)return;const ox=o.tx*TS+8,oy=o.ty*TS+(o.type==='door'?2:10);const d=Math.hypot(ox-HUB.x,oy-HUB.y);if(d<(o.reach||22)&&d<bd){bd=d;best=o}});
   HUB.near=best;
-  const p=best?`${best.type==='door'?'Enter':best.power&&POWER_OWNER[best.power]===HUB.leader?POWERS[HUB.leader].name:'Check'}: ${best.name}`:'';if(p!==HUB.promptTxt){HUB.promptTxt=p;const el=$('hubPrompt');if(el)el.textContent=p?`Talk / use (Enter, Space, or A): ${p}`:'Walk around town. Look for people to help and places to visit.'}
+  const p=best?`${best.type==='door'?'Enter':best.power&&POWER_OWNER[best.power]===HUB.leader?POWERS[HUB.leader].name:'Check'}: ${best.name}`:'';if(p!==HUB.promptTxt){HUB.promptTxt=p;const el=$('hubPrompt');if(el)el.textContent=p?`A: ${p}`:''}
 }
 // ---- dialogue in town ----
 async function hubSay(lines){
@@ -4859,11 +4966,11 @@ function teenNpc(o,L,me){const R=REVEALED();
   if(o.id==='fan')return R?[['Little Kid','Okay. The Meteorite Kids are TIED with the Earth Guardians now.'],['Little Kid',"Can you sign my lunchbox? It's an Earth Guardians lunchbox, but still."]]
     :[['Little Kid','The Earth Guardians are the best heroes EVER. Way better than those old mystery ones.'],me('Hey, the old ones were okay.'),['Little Kid','Nobody even knows what they looked like. They were probably boring.']];
   return null}
-function openHubMenu(){if(HUB.talking||HUB.choosing||HUB.choice)return;HUB.menuNav=true;HUB.keys={};HUB.pad=[0,0];HUB.target=null;navMode='pad';
-  $('menu').classList.add('menu-open');const first=$('hubSwitch')||$('menu').querySelector('button');if(first)setFocus(first,true);
-  try{$('menu').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}HUB.banner={s:'Menu · B to close',t:100};sfx('cursor')}
+function openHubMenu(){if(HUB.talking||HUB.choosing||HUB.choice)return;HUB.menuNav=true;HUB.keys={};HUB.pad=[0,0];HUB.target=null;
+  $('menu').classList.add('menu-open');syncLayout();const first=$('hubSwitch')||$('menu').querySelector('button');if(first&&navMode!=='mouse')setFocus(first,true);
+  if(!document.body.classList.contains('wide'))try{$('menu').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}sfx('cursor')}
 function closeHubMenu(quiet){if(!HUB.menuNav)return;HUB.menuNav=false;$('menu').classList.remove('menu-open');document.querySelectorAll('.pad-focus').forEach(x=>x.classList.remove('pad-focus'));
-  try{document.activeElement&&document.activeElement.blur()}catch(e){}if(!quiet){sfx('cancel');try{$('screen').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}}
+  try{document.activeElement&&document.activeElement.blur()}catch(e){}syncLayout();if(!quiet){sfx('cancel');if(!document.body.classList.contains('wide'))try{$('screen').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}}
 function hubMenuKey(){if(!STORY||part1Done()){HUB.active=false;showChapters()}else openExit()}
 const ERAS=[['kid','kids'],['teen','teens'],['adult','adults']];
 function switchEra(){if(STORY&&!part1Done())return;const i=ERAS.findIndex(e=>e[0]===HUB.age);const n=ERAS[(i+1)%3];HUB.age=n[0];buildObjs();buildPatrols();sfx('magic');HUB.banner={s:`Era: ${n[1]}`,t:110};const b=$('hubEra');if(b)b.textContent=`Era: ${n[1]}`}
@@ -4880,12 +4987,12 @@ function enterHub(){
   if(STORY&&!part1Done())HUB.age='kid';const eraOK=!STORY||part1Done();
   if(STORY&&progress.ch18&&HUB.age==='adult'&&!progress.part3&&!HUB.p3pending){HUB.p3pending=true;setTimeout(()=>{HUB.p3pending=false;if(HUB.active&&!HUB.area&&!progress.part3)startPart3()},600)}
   if(STORY&&part1Done()&&!progress.part2&&!HUB.p2pending){HUB.p2pending=true;setTimeout(()=>{HUB.p2pending=false;if(HUB.active&&!HUB.area&&!progress.part2)startPart2()},600)}
-  $('menu').innerHTML=`<h2>Hometown</h2><p class="goal" id="hubGoal" hidden></p><p class="tip" id="hubLeader"></p><p class="tip" id="hubShards"></p><p id="hubPrompt">Walk around town. Look for people to help and places to visit.</p>
-   <div class="row"><button id="hubTalk">Talk / use</button><button id="hubSwitch">Change hero</button>${eraOK?'<button id="hubEra">Era: kids</button>':''}<button id="hubParty">Party</button>${STORY?(part1Done()?'<button id="hubChapters">Extras</button>':''):'<button id="hubChapters">Chapters</button>'}</div>
-   <div class="row" style="margin-top:6px"><button class="guideBtn" id="hubGuide">Guide arrow: ${GUIDE?'On':'Off'}</button><button class="banterBtn" id="hubBanter">Banter: ${BANTER_ON?'On':'Off'}</button><button class="textBtn" id="hubText">Text size: ${TEXT_SIZES[TEXT_SIZE][1]}</button><button id="hubSave">Save</button></div>
-   <div class="row" style="margin-top:6px"><button id="hubDiff">Difficulty</button><button id="hubManual">Manual</button><button id="hubExit">Exit game</button></div>
-   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use: Enter, Space, or A. Change hero: Tab, Q, or X/Y.${STORY?' Follow the yellow arrow to find where the story goes next.':''}${eraOK?' Change era (kids, teens, or adults): R or the bumpers.':''} Party: levels, items, and coins. Save: the Save button or the glowing meteor crystal by the fountain. Ashling patrols roam the edges of town: walk into one to fight, or sneak up from behind for an ambush. ${STORY?(part1Done()?'Extras: Esc.':'Exit: Esc.'):'Chapter list: Esc.'} Controller: Start opens this menu, Select exits. Each kid's human power solves a different problem around town.</p>`;
-  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;if($('hubEra'))$('hubEra').onclick=switchEra;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;$('hubDiff').onclick=()=>$('diffTop').click();$('hubManual').onclick=()=>$('manualBtn').click();$('hubExit').onclick=openExit;if($('hubChapters'))$('hubChapters').onclick=()=>{HUB.active=false;showChapters()};
+  $('hubHud').innerHTML='<p class="goal" id="hubGoal" hidden></p><p id="hubLeader"></p><p id="hubShards"></p><p id="hubPrompt"></p>';$('menu').innerHTML=`<h2>Hometown</h2>
+   <div class="row"><button id="hubSwitch">Change hero</button>${eraOK?'<button id="hubEra">Era: kids</button>':''}<button id="hubParty">Party</button>${STORY?(part1Done()?'<button id="hubChapters">Extras</button>':''):'<button id="hubChapters">Chapters</button>'}<button id="hubSave">Save</button></div>
+   <div class="row" style="margin-top:6px"><button id="hubSettings">Settings</button><button id="hubExit">Exit game</button><button id="hubClose">Close menu</button></div>
+   <p class="tip">Talk or use: A, Enter or Space. Change hero: X/Y, Tab or Q. Menu: Start or Esc. The Manual (in Settings) has the rest.</p>
+`;
+  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;if($('hubEra'))$('hubEra').onclick=switchEra;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubExit').onclick=openExit;$('hubSettings').onclick=openSettings;$('hubClose').onclick=()=>closeHubMenu();if($('hubChapters'))$('hubChapters').onclick=()=>{HUB.active=false;showChapters()};
   HUB.promptTxt='';buildPatrols();updateHubHud();playSong(townSong());HUB.banner={s:'Hometown',t:120};banterEnter();
   if(HUB.state.hero&&KIDS[HUB.state.hero]&&heroUnlocked(HUB.state.hero)){HUB.leader=HUB.state.hero;morningNudge()}else openHeroPick();
   if(HUB.pendingBeat){const b=HUB.pendingBeat;HUB.pendingBeat=null;setTimeout(()=>storyBeat(b),350)}else if(!HUB.firstMorning)joinNotice();
@@ -5740,12 +5847,12 @@ function enterArea(){const A=AREAS[HUB.area];HUB.menuNav=false;
   if(!HUB.map||HUB.mapArea!==HUB.area){HUB.map=A.rows.map(r=>[...r]);HUB.mapArea=HUB.area;MW=HUB.map[0].length;MH=HUB.map.length;AGROUND.key=null}
   buildAreaObjs();HUB.dir=HUB.dir||'down';banterEnter();
   if(A.split&&!HUB.state[A.split.until]){if(!HUB.split||HUB.split.area!==HUB.area){const B=A.split.Bpos;HUB.split={area:HUB.area,cur:'A',other:{x:B[0]*TS+8,y:B[1]*TS+12,leader:A.split.B[0],face:-1}};if(!A.split.A.includes(HUB.leader))HUB.leader=A.split.A[0];HUB.state.hero=HUB.leader}}else HUB.split=null;
-  $('menu').innerHTML=`<h2>${A.name}</h2><p class="goal" id="hubGoal" hidden></p><p class="tip" id="hubLeader"></p><p class="tip" id="hubShards"></p><p id="hubPrompt">Explore. Each kid's field power solves a different kind of puzzle.</p>
-   <div class="row"><button id="hubTalk">Talk / use</button><button id="hubSwitch">Change hero</button><button id="hubParty">Party</button></div>
-   <div class="row" style="margin-top:6px"><button class="guideBtn" id="hubGuide">Guide arrow: ${GUIDE?'On':'Off'}</button><button class="banterBtn" id="hubBanter">Banter: ${BANTER_ON?'On':'Off'}</button><button class="textBtn" id="hubText">Text size: ${TEXT_SIZES[TEXT_SIZE][1]}</button><button id="hubSave">Save</button></div>
-   <div class="row" style="margin-top:6px"><button id="hubDiff">Difficulty</button><button id="hubManual">Manual</button><button id="hubExit">Exit game</button></div>
-   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use a field power: Enter, Space, or A. Change hero: Tab, Q, or X/Y. Controller: Start opens this menu, Select exits. Walk into enemies to fight them, or sneak up from behind for an ambush. Doorways lead to the next room. Save at a meteor crystal.</p>`;
-  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;$('hubDiff').onclick=()=>$('diffTop').click();$('hubManual').onclick=()=>$('manualBtn').click();$('hubExit').onclick=openExit;
+  $('hubHud').innerHTML='<p class="goal" id="hubGoal" hidden></p><p id="hubLeader"></p><p id="hubShards"></p><p id="hubPrompt"></p>';$('menu').innerHTML=`<h2>${A.name}</h2>
+   <div class="row"><button id="hubSwitch">Change hero</button><button id="hubParty">Party</button><button id="hubSave">Save</button></div>
+   <div class="row" style="margin-top:6px"><button id="hubSettings">Settings</button><button id="hubExit">Exit game</button><button id="hubClose">Close menu</button></div>
+   <p class="tip">Talk or use: A, Enter or Space. Change hero: X/Y, Tab or Q. Menu: Start or Esc. The Manual (in Settings) has the rest.</p>
+`;
+  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubExit').onclick=openExit;$('hubSettings').onclick=openSettings;$('hubClose').onclick=()=>closeHubMenu();
   HUB.promptTxt='';buildPatrols();updateHubHud();playSong(DSONG[A.theme]||'dungeon');
   if(HUB.lastBanner!==HUB.area){HUB.banner={s:A.name.split(' · ').pop(),t:130};HUB.lastBanner=HUB.area}
   if(HUB.state.hero&&KIDS[HUB.state.hero]&&heroUnlocked(HUB.state.hero))HUB.leader=HUB.state.hero;else openHeroPick();
@@ -7054,7 +7161,7 @@ const MANUAL_TABS=[
    <li><b>Keyboard:</b> arrow keys or WASD to move and choose, Enter or Space to confirm, Esc to go back.</li>
    <li><b>Mouse or touch:</b> click buttons, and tap where you want to walk in town.</li>
    <li><b>Xbox controller:</b> D-pad or left stick to move, A to confirm, B to go back, Start to begin or skip, the View button to open Exit.</li>
-   <li><b>In town and dungeons:</b> Tab, Q, or X/Y changes your hero. On a controller, Start opens the menu (Party, Save, Extras, options): the D-pad moves, A picks, B closes. The View button opens Exit. On a keyboard, Esc opens the exit menu.</li>
+   <li><b>In town and dungeons:</b> Tab, Q, or X/Y changes your hero. The menu (Party, Save, Extras, Settings) opens with Start on a controller, Esc on a keyboard, or the Menu button in the corner of the map. On a controller the D-pad moves, A picks and B closes; the View button opens Exit.</li>
    <li><b>Story scenes:</b> Enter, Space, or a click moves the dialogue along. Skip scene jumps to the end.</li></ul>`],
  ['battle','Battle basics',()=>`
   <p>Battles are turn-based, with no timing or reflexes needed. Turns follow <b>speed</b>: faster characters come up more often, so Joseph and Tricia can act twice before slow and sturdy Josh acts once. Every action has a weight too. Light moves like Quick Jab and items bring your next turn back sooner, and heavy moves like Starfall Blade, Hexfire, Undertow, and Meteor Strike push it back. Morphing and swapping are free.</p>
@@ -7120,9 +7227,10 @@ const MANUAL_TABS=[
  ['save','Saving',()=>`
   <ul>
    <li>There are <b>three save files</b>. Each one shows your next chapter, chapters cleared, fragments, play time, and when it was saved.</li>
-   <li><b>Autosave</b> (on by default) saves whenever you clear a chapter, solve a puzzle, change heroes, or buy something. You can turn it off on the title screen or in town.</li>
-   <li><b>Save by hand</b> in town with the Save button or the glowing Meteor Crystal by the fountain. This also remembers exactly where you're standing.</li>
-   <li><b>Exit</b> (top bar) lets you <b>Save and exit</b> or <b>Exit without saving</b>. Leaving in the middle of a battle starts that battle over next time.</li></ul>`]];
+   <li><b>Autosave</b> (on by default) saves whenever you clear a chapter, solve a puzzle, change heroes, or buy something. You can turn it off in Settings.</li>
+   <li><b>Save by hand</b> with Save in the menu or the glowing Meteor Crystal by the fountain. This also remembers exactly where you're standing.</li>
+   <li><b>Settings</b> (top bar) has sound, music and effects volume, difficulty, autosave, text size, the guide arrow, banter, online play and this manual. <b>Fullscreen</b> (top bar) fills the whole screen.</li>
+    <li><b>Exit</b> (top bar) lets you <b>Save and exit</b> or <b>Exit without saving</b>. Leaving in the middle of a battle starts that battle over next time.</li></ul>`]];
 function renderManual(){
   $('manualTabs').innerHTML=MANUAL_TABS.map(([id,l])=>`<button id="mt-${id}" ${id===MANUAL.tab?'class="primary"':''}>${l}</button>`).join('');
   MANUAL_TABS.forEach(([id])=>$('mt-'+id).onclick=()=>{MANUAL.tab=id;renderManual();sfx('cursor')});
@@ -7153,6 +7261,7 @@ async function doExit(){
 $('exitBtn').onclick=openExit;$('exitYes').onclick=doExit;$('exitNo').onclick=closeExit;
 $('exitDiscard').onclick=()=>{clearTimeout(SAVE.timer);SAVE.active=null;location.reload()};
 setInterval(()=>{$('exitBtn').hidden=TITLE.active},250);
+setupLayout();
 
 S=newState(CHAPTERS[0]);S.over=true;showTitle();render();saveInit();
 $('soundBtn').onclick=()=>{unlockAudio();toggleSound()};$('skipBtn').onclick=e=>{e.stopPropagation();cutSkip()};$('screen').addEventListener('click',e=>{if(TITLE.active){if(!TITLE.pressed)titlePress();return}if(CUT.active){cutAdvance();return}

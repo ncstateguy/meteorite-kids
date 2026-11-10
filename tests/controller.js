@@ -1,5 +1,5 @@
 const path=require('path');const GAME='file://'+path.resolve(process.env.GAME||path.join(__dirname,'../src/meteorite-kids-battle.html'));const OUT=path.join(__dirname,'out');require('fs').mkdirSync(OUT,{recursive:true});
-// Simulated Xbox-layout controller: Start opens the town menu, D-pad/A/B work in it and in every pop-up window.
+// Simulated Xbox-layout controller: Start opens the town menu, D-pad/A/B work in it, in Settings and in every pop-up window.
 const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1000,height:1100}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.addInitScript(()=>{const pad={index:0,connected:true,id:'Test pad',axes:[0,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};window.__pad=pad;navigator.getGamepads=()=>[pad]});
 await p.route('**/fonts.googleapis.com/**',r=>r.abort());await p.goto(GAME);await p.waitForTimeout(900);
@@ -14,12 +14,12 @@ await press('Right');r.moved=await st();
 await press('B');r.closed=await st();
 await press('Start');await p.evaluate(()=>setFocus($('hubParty'),true));await press('A');r.party=await st();
 await press('B');await p.waitForTimeout(300);r.backFromParty=await st();
-await press('Start');await p.evaluate(()=>setFocus($('hubDiff'),true));await press('A');await p.waitForTimeout(200);r.diff=await st();
+await press('Start');await p.evaluate(()=>setFocus($('hubSettings'),true));await press('A');await p.waitForTimeout(200);r.settings=await st();await p.evaluate(()=>setFocus($('diffTop'),true));await press('A');await p.waitForTimeout(200);r.diff=await st();
 await press('Down');r.diffFocus=await st();await press('B');r.diffClosed=await st();
-await press('Start');await p.evaluate(()=>setFocus($('hubSwitch'),true));await press('A');r.heroPick=await st();
+r.backInMenu=(await st()).menu;await p.evaluate(()=>setFocus($('hubSwitch'),true));await press('A');r.heroPick=await st();
 await p.screenshot({path:path.join(OUT,'controller.png')});
 await press('B');
 await press('Select');r.exitOpen=await p.evaluate(()=>EXIT.open);await press('B');r.exitClosed=!(await p.evaluate(()=>EXIT.open));
 console.log(JSON.stringify(r,null,1),errs);
-const ok=r.open.menu&&r.open.focus==='hubSwitch'&&r.moved.focus&&r.moved.focus!=='hubSwitch'&&!r.closed.menu&&r.party.saving&&!r.party.menu&&!r.backFromParty.saving&&r.diff.modal==='diffDlg'&&/^$|.*/.test(r.diffFocus.focus||'')&&r.diffFocus.modal==='diffDlg'&&!r.diffClosed.modal&&r.heroPick.choosing&&r.exitOpen&&r.exitClosed&&!errs.length;
+const ok=r.backInMenu&&r.settings.modal==='setDlg'&&r.open.menu&&r.open.focus==='hubSwitch'&&r.moved.focus&&r.moved.focus!=='hubSwitch'&&!r.closed.menu&&r.party.saving&&!r.party.menu&&!r.backFromParty.saving&&r.diff.modal==='diffDlg'&&/^$|.*/.test(r.diffFocus.focus||'')&&r.diffFocus.modal==='diffDlg'&&!r.diffClosed.modal&&r.heroPick.choosing&&r.exitOpen&&r.exitClosed&&!errs.length;
 console.log(ok?'PASS':'FAIL');await b.close();process.exit(ok?0:1)})();
