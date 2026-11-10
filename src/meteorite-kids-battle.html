@@ -86,7 +86,7 @@ button.special{border-color:var(--accent)}.special.pulse{animation:mkpulse 1.1s 
 button.mini{font-size:13px;padding:4px 10px;align-items:center}
 .vol{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .vol input{width:80px;accent-color:var(--accent);cursor:pointer}
-button.pad-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);outline:none}
+button.pad-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);outline:none}#menu.menu-open{box-shadow:0 0 0 2px var(--accent)}
 .controls{font-size:13px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 
@@ -3236,9 +3236,11 @@ function toggleSound(){AU.on=!AU.on;try{localStorage.setItem('mk-sound',AU.on?'o
 // ================= Input: Xbox controller + keyboard =================
 const PAD={active:false,index:-1,prev:{},hold:{},blocked:false};
 let navMode='mouse';
+function openModal(){return !$('exitDlg').hidden?$('exitDlg'):!$('manualDlg').hidden?$('manualDlg'):[...document.querySelectorAll('.modal')].find(m=>!m.hidden)||null}
+function closeModal(m){const x=m.querySelector('#diffCancel,#netX,#xferX,#devX,#manualX,#exitNo');sfx('cancel');if(x)x.click();else m.hidden=true}
 function navItems(){
-  const root=!$('manualDlg').hidden?$('manualDlg'):!$('exitDlg').hidden?$('exitDlg'):$('battleUI').hidden?$('menu'):$('btns');
-  const extra=[...document.querySelectorAll('header button')];
+  const mo=openModal();const root=mo||($('battleUI').hidden?$('menu'):$('btns'));
+  const extra=mo||HUB.menuNav?[]:[...document.querySelectorAll('header button')];
   return [...root.querySelectorAll('button')].concat(extra).filter(b=>!b.disabled&&b.offsetParent!==null);
 }
 function setFocus(b,quiet){document.querySelectorAll('.pad-focus').forEach(x=>x.classList.remove('pad-focus'));if(!b)return;b.classList.add('pad-focus');b.focus({preventScroll:true});
@@ -3254,7 +3256,7 @@ function moveFocus(dx,dy){
   if(best)setFocus(best);
 }
 function pressA(){if(CUT.active&&!EXIT.open){cutAdvance();return}navMode='pad';const cur=currentFocus();if(cur)cur.click();else ensureFocus()}
-function pressB(){if(!$('exitDlg').hidden){sfx('cancel');closeExit();return}if(CUT.active)return;navMode='pad';const back=document.getElementById('cmd-back')||(!$('menu').hidden&&(document.getElementById('backBtn')||document.getElementById('slotBack')||document.getElementById('shopBack')||document.getElementById('partyBack')||document.getElementById('forgeBack')));if(back){sfx('cancel');back.click()}}
+function pressB(){if(!$('exitDlg').hidden){sfx('cancel');closeExit();return}{const mo=openModal();if(mo&&mo.id!=='manualDlg'){closeModal(mo);return}}if(CUT.active)return;navMode='pad';const back=document.getElementById('cmd-back')||(!$('menu').hidden&&(document.getElementById('backBtn')||document.getElementById('slotBack')||document.getElementById('shopBack')||document.getElementById('partyBack')||document.getElementById('forgeBack')));if(back){sfx('cancel');back.click()}}
 function pressStart(){if(CUT.active){cutSkip();return}navMode='pad';const p=document.getElementById('goBtn')||document.getElementById('nextBtn')||document.getElementById('retryBtn');if(p)p.click();else pressA()}
 document.addEventListener('keydown',e=>{
   if(EXIT.open){if(e.key==='Escape'){e.preventDefault();closeExit();return}const dirs={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};if(dirs[e.key]){e.preventDefault();moveFocus(...dirs[e.key])}return}
@@ -3296,14 +3298,18 @@ function pollPad(){
     if(edge('Sel')){EXIT.open?closeExit():openExit()}
     if(EXIT.open){if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);if(edge('A'))pressA();if(edge('B'))pressB();PAD.prev=st;requestAnimationFrame(pollPad);return}
     if(TITLE.active&&!TITLE.pressed){if(edge('A')||edge('Start'))titlePress();PAD.prev=st;requestAnimationFrame(pollPad);return}
+    {const mo=openModal();if(mo){HUB.pad=[0,0];if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);if(edge('A'))pressA();if(edge('B'))closeModal(mo);PAD.prev=st;requestAnimationFrame(pollPad);return}}
     if(HUB.active&&!CUT.active&&!HUB.saving){const ax2=Math.abs(ax)>.25?ax:0,ay2=Math.abs(ay)>.25?ay:0;
       HUB.pad=[Math.max(-1,Math.min(1,(btn(14)?-1:0)+(btn(15)?1:0)+ax2)),Math.max(-1,Math.min(1,(btn(12)?-1:0)+(btn(13)?1:0)+ay2))];
       if(HUB.choosing){if(rep('L'))pickMove(-1);if(rep('R'))pickMove(1);if(edge('A'))pickHero(PARTY_ORDER[HUB.pick]);if(edge('B')&&HUB.state.hero)pickHero(HUB.leader);HUB.pad=[0,0];PAD.prev=st;requestAnimationFrame(pollPad);return}
       if(HUB.choice){HUB.pad=[0,0];if(rep('L')||rep('U'))choiceMove(-1);if(rep('R')||rep('D'))choiceMove(1);if(edge('A'))choicePick();else if(edge('B'))choicePick(HUB.choice.opts.length-1);PAD.prev=st;requestAnimationFrame(pollPad);return}
+      if(HUB.menuNav){HUB.pad=[0,0];if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);
+        if(edge('A')){pressA();setTimeout(()=>{if(HUB.saving||!HUB.active||HUB.choosing||HUB.talking||openModal())closeHubMenu(true)},0)}
+        else if(edge('B')||edge('Start'))closeHubMenu();PAD.prev=st;requestAnimationFrame(pollPad);return}
       if(edge('A')){HUB.talking?hubAdvance():hubInteract(HUB.near)}if(edge('B')&&HUB.talking)hubAdvance();
       const X=btn(2)||btn(3);if(X&&!PAD.prevX&&!HUB.talking)openHeroPick();PAD.prevX=X;
       const LB=btn(4)||btn(5);if(LB&&!PAD.prevLB&&!HUB.talking)switchEra();PAD.prevLB=LB;
-      if(edge('Start')&&!HUB.talking){HUB.pad=[0,0];hubMenuKey()}
+      if(edge('Start')&&!HUB.talking){HUB.pad=[0,0];openHubMenu()}
       PAD.prev=st;requestAnimationFrame(pollPad);return}
     if(rep('U'))moveFocus(0,-1);if(rep('D'))moveFocus(0,1);if(rep('L'))moveFocus(-1,0);if(rep('R'))moveFocus(1,0);
     if(edge('A'))pressA();if(edge('B'))pressB();if(edge('Start'))pressStart();
@@ -4841,6 +4847,11 @@ function teenNpc(o,L,me){const R=REVEALED();
   if(o.id==='fan')return R?[['Little Kid','Okay. The Meteorite Kids are TIED with the Earth Guardians now.'],['Little Kid',"Can you sign my lunchbox? It's an Earth Guardians lunchbox, but still."]]
     :[['Little Kid','The Earth Guardians are the best heroes EVER. Way better than those old mystery ones.'],me('Hey, the old ones were okay.'),['Little Kid','Nobody even knows what they looked like. They were probably boring.']];
   return null}
+function openHubMenu(){if(HUB.talking||HUB.choosing||HUB.choice)return;HUB.menuNav=true;HUB.keys={};HUB.pad=[0,0];HUB.target=null;navMode='pad';
+  $('menu').classList.add('menu-open');const first=$('hubSwitch')||$('menu').querySelector('button');if(first)setFocus(first,true);
+  try{$('menu').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}HUB.banner={s:'Menu · B to close',t:100};sfx('cursor')}
+function closeHubMenu(quiet){if(!HUB.menuNav)return;HUB.menuNav=false;$('menu').classList.remove('menu-open');document.querySelectorAll('.pad-focus').forEach(x=>x.classList.remove('pad-focus'));
+  try{document.activeElement&&document.activeElement.blur()}catch(e){}if(!quiet){sfx('cancel');try{$('screen').scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}}
 function hubMenuKey(){if(!STORY||part1Done()){HUB.active=false;showChapters()}else openExit()}
 const ERAS=[['kid','kids'],['teen','teens'],['adult','adults']];
 function switchEra(){if(STORY&&!part1Done())return;const i=ERAS.findIndex(e=>e[0]===HUB.age);const n=ERAS[(i+1)%3];HUB.age=n[0];buildObjs();buildPatrols();sfx('magic');HUB.banner={s:`Era: ${n[1]}`,t:110};const b=$('hubEra');if(b)b.textContent=`Era: ${n[1]}`}
@@ -4850,6 +4861,7 @@ function updateHubHud(){
   if(el)el.textContent=`Playing as ${K.kid} (${K.name}) · ${K.passive} · Field power: ${POWERS[HUB.leader].name}`;const s=$('hubShards');if(s)s.textContent=`Meteor fragments found: ${n} of 5 · Coins: ${P().coins}`;const gl=$('hubGoal');if(gl){const g=nextGoal();gl.hidden=!g;gl.innerHTML=g?`<strong>Goal:</strong> ${g.text}`:''}
 }
 function enterHub(){
+  HUB.menuNav=false;
   if(HUB.area)return enterArea();
   CUT.active=false;HUB.active=true;S=newState(CHAPTERS[0]);S.over=true;$('battleUI').hidden=true;$('menu').hidden=false;$('chLabel').textContent='Hometown';
   if(!HUB.map||HUB.mapArea){HUB.map=townMap();HUB.x=19*TS+16;HUB.y=17*TS+8}buildObjs();HUB.trail=Array.from({length:80},(_,i)=>({x:HUB.x-i*1.3,y:HUB.y+(i>40?1:0),f:HUB.face,d:'down'}));HUB.dir='down';
@@ -4859,8 +4871,9 @@ function enterHub(){
   $('menu').innerHTML=`<h2>Hometown</h2><p class="goal" id="hubGoal" hidden></p><p class="tip" id="hubLeader"></p><p class="tip" id="hubShards"></p><p id="hubPrompt">Walk around town. Look for people to help and places to visit.</p>
    <div class="row"><button id="hubTalk">Talk / use</button><button id="hubSwitch">Change hero</button>${eraOK?'<button id="hubEra">Era: kids</button>':''}<button id="hubParty">Party</button>${STORY?(part1Done()?'<button id="hubChapters">Extras</button>':''):'<button id="hubChapters">Chapters</button>'}</div>
    <div class="row" style="margin-top:6px"><button class="guideBtn" id="hubGuide">Guide arrow: ${GUIDE?'On':'Off'}</button><button class="banterBtn" id="hubBanter">Banter: ${BANTER_ON?'On':'Off'}</button><button class="textBtn" id="hubText">Text size: ${TEXT_SIZES[TEXT_SIZE][1]}</button><button id="hubSave">Save</button></div>
-   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use: Enter, Space, or A. Change hero: Tab, Q, or X/Y.${STORY?' Follow the yellow arrow to find where the story goes next.':''}${eraOK?' Change era (kids, teens, or adults): R or the bumpers.':''} Party: levels, items, and coins. Save: the Save button or the glowing meteor crystal by the fountain. Ashling patrols roam the edges of town: walk into one to fight, or sneak up from behind for an ambush. ${STORY?(part1Done()?'Extras: Esc or Start.':'Exit: Esc or Start.'):'Chapter list: Esc or Start.'} Each kid's human power solves a different problem around town.</p>`;
-  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;if($('hubEra'))$('hubEra').onclick=switchEra;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;if($('hubChapters'))$('hubChapters').onclick=()=>{HUB.active=false;showChapters()};
+   <div class="row" style="margin-top:6px"><button id="hubDiff">Difficulty</button><button id="hubManual">Manual</button><button id="hubExit">Exit game</button></div>
+   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use: Enter, Space, or A. Change hero: Tab, Q, or X/Y.${STORY?' Follow the yellow arrow to find where the story goes next.':''}${eraOK?' Change era (kids, teens, or adults): R or the bumpers.':''} Party: levels, items, and coins. Save: the Save button or the glowing meteor crystal by the fountain. Ashling patrols roam the edges of town: walk into one to fight, or sneak up from behind for an ambush. ${STORY?(part1Done()?'Extras: Esc.':'Exit: Esc.'):'Chapter list: Esc.'} Controller: Start opens this menu, Select exits. Each kid's human power solves a different problem around town.</p>`;
+  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;if($('hubEra'))$('hubEra').onclick=switchEra;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;$('hubDiff').onclick=()=>$('diffTop').click();$('hubManual').onclick=()=>$('manualBtn').click();$('hubExit').onclick=openExit;if($('hubChapters'))$('hubChapters').onclick=()=>{HUB.active=false;showChapters()};
   HUB.promptTxt='';buildPatrols();updateHubHud();playSong(townSong());HUB.banner={s:'Hometown',t:120};banterEnter();
   if(HUB.state.hero&&KIDS[HUB.state.hero]&&heroUnlocked(HUB.state.hero)){HUB.leader=HUB.state.hero;morningNudge()}else openHeroPick();
   if(HUB.pendingBeat){const b=HUB.pendingBeat;HUB.pendingBeat=null;setTimeout(()=>storyBeat(b),350)}else if(!HUB.firstMorning)joinNotice();
@@ -5710,7 +5723,7 @@ async function enterDungeon(c,place){const d=DUNGEONS[c.key];const again=!!progr
   const r=await hubChoice(again?`Explore ${d.name} again?`:`Chapter ${c.num}: ${c.title}`,[again?'Go inside':"Let's go",'Not yet']);
   if(r!==0)return;HUB.down=new Set();goArea(d.start,'entry')}
 function sayLines(lines){const L=HUB.leader;return (lines||[]).filter(([s])=>!s.startsWith('me:')||s.slice(3)===L).map(([s,t])=>s==='me'||s.startsWith('me:')?[kidName(L),t,kidCol(L)]:KIDS[s]?[kidName(s),t,kidCol(s)]:[s,t])}
-function enterArea(){const A=AREAS[HUB.area];
+function enterArea(){const A=AREAS[HUB.area];HUB.menuNav=false;
   CUT.active=false;HUB.active=true;S=newState(CHAPTERS[0]);S.over=true;$('battleUI').hidden=true;$('menu').hidden=false;$('chLabel').textContent=A.name;
   if(!HUB.map||HUB.mapArea!==HUB.area){HUB.map=A.rows.map(r=>[...r]);HUB.mapArea=HUB.area;MW=HUB.map[0].length;MH=HUB.map.length;AGROUND.key=null}
   buildAreaObjs();HUB.dir=HUB.dir||'down';banterEnter();
@@ -5718,8 +5731,9 @@ function enterArea(){const A=AREAS[HUB.area];
   $('menu').innerHTML=`<h2>${A.name}</h2><p class="goal" id="hubGoal" hidden></p><p class="tip" id="hubLeader"></p><p class="tip" id="hubShards"></p><p id="hubPrompt">Explore. Each kid's field power solves a different kind of puzzle.</p>
    <div class="row"><button id="hubTalk">Talk / use</button><button id="hubSwitch">Change hero</button><button id="hubParty">Party</button></div>
    <div class="row" style="margin-top:6px"><button class="guideBtn" id="hubGuide">Guide arrow: ${GUIDE?'On':'Off'}</button><button class="banterBtn" id="hubBanter">Banter: ${BANTER_ON?'On':'Off'}</button><button class="textBtn" id="hubText">Text size: ${TEXT_SIZES[TEXT_SIZE][1]}</button><button id="hubSave">Save</button></div>
-   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use a field power: Enter, Space, or A. Change hero: Tab, Q, or X/Y. Walk into enemies to fight them, or sneak up from behind for an ambush. Doorways lead to the next room. Save at a meteor crystal.</p>`;
-  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;
+   <div class="row" style="margin-top:6px"><button id="hubDiff">Difficulty</button><button id="hubManual">Manual</button><button id="hubExit">Exit game</button></div>
+   <p class="controls">Move with the arrow keys or WASD, the D-pad or left stick, or tap where you want to go. Talk or use a field power: Enter, Space, or A. Change hero: Tab, Q, or X/Y. Controller: Start opens this menu, Select exits. Walk into enemies to fight them, or sneak up from behind for an ambush. Doorways lead to the next room. Save at a meteor crystal.</p>`;
+  $('hubTalk').onclick=()=>hubInteract(HUB.near);$('hubSwitch').onclick=openHeroPick;$('hubSave').onclick=()=>openSlots('save',enterHub);$('hubParty').onclick=openParty;$('hubGuide').onclick=toggleGuide;$('hubBanter').onclick=toggleBanter;if($('hubText'))$('hubText').onclick=cycleTextSize;$('hubDiff').onclick=()=>$('diffTop').click();$('hubManual').onclick=()=>$('manualBtn').click();$('hubExit').onclick=openExit;
   HUB.promptTxt='';buildPatrols();updateHubHud();playSong(DSONG[A.theme]||'dungeon');
   if(HUB.lastBanner!==HUB.area){HUB.banner={s:A.name.split(' · ').pop(),t:130};HUB.lastBanner=HUB.area}
   if(HUB.state.hero&&KIDS[HUB.state.hero]&&heroUnlocked(HUB.state.hero))HUB.leader=HUB.state.hero;else openHeroPick();
@@ -7028,7 +7042,7 @@ const MANUAL_TABS=[
    <li><b>Keyboard:</b> arrow keys or WASD to move and choose, Enter or Space to confirm, Esc to go back.</li>
    <li><b>Mouse or touch:</b> click buttons, and tap where you want to walk in town.</li>
    <li><b>Xbox controller:</b> D-pad or left stick to move, A to confirm, B to go back, Start to begin or skip, the View button to open Exit.</li>
-   <li><b>In town:</b> Tab, Q, or X/Y changes your hero. Esc or Start opens the exit menu.</li>
+   <li><b>In town and dungeons:</b> Tab, Q, or X/Y changes your hero. On a controller, Start opens the menu (Party, Save, Extras, options): the D-pad moves, A picks, B closes. The View button opens Exit. On a keyboard, Esc opens the exit menu.</li>
    <li><b>Story scenes:</b> Enter, Space, or a click moves the dialogue along. Skip scene jumps to the end.</li></ul>`],
  ['battle','Battle basics',()=>`
   <p>Battles are turn-based, with no timing or reflexes needed. Turns follow <b>speed</b>: faster characters come up more often, so Joseph and Tricia can act twice before slow and sturdy Josh acts once. Every action has a weight too. Light moves like Quick Jab and items bring your next turn back sooner, and heavy moves like Starfall Blade, Hexfire, Undertow, and Meteor Strike push it back. Morphing and swapping are free.</p>

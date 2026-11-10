@@ -33,8 +33,7 @@ rep('.modal-box h2{margin:0 0 6px}', '.modal-box h2{margin:0 0 6px}.modal-box h3
 rep('<button class="mini" id="exitBtn" hidden>Exit</button>\n', '<button class="mini" id="exitBtn" hidden>Exit</button>\n      <button class="mini" id="devBtn" style="border-color:var(--accent);color:var(--accent)">Dev tools</button>\n')
 # Dev tools dialog, after the caption box
 rep('<div class="cap" id="cap" hidden></div>\n', '<div class="cap" id="cap" hidden></div>\n    <div class="modal" id="devDlg" hidden><div class="modal-box" style="width:min(94%,920px);max-height:86vh;overflow:auto"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Dev tools</h2><button id="devX">Close</button></div><p class="tip">Dev build. Press the backtick key (`) or the Dev tools button any time.</p><div id="devBody"></div></div></div>\n')
-# Controller focus can move inside the dev dialog
-rep("const root=!$('manualDlg').hidden?$('manualDlg'):", "const root=!$('manualDlg').hidden?$('manualDlg'):!$('devDlg').hidden?$('devDlg'):")
+# Controller focus inside the dev dialog is handled by openModal() in the main file (any open .modal)
 # Story gates off
 rep('const STORY=true;', 'const STORY=false;')
 rep("if(progress.ch12){b3.innerHTML=`Interlude", "if(true){b3.innerHTML=`Interlude")
