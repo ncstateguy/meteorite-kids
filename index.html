@@ -180,7 +180,7 @@ body:not(.in-battle) .screen .tq-row,body.cut .screen .tq-row{display:none}
 .log.open{max-height:220px;overflow-y:auto}
 /* menu as a window over the picture (landscape) */
 body.wide .screen #menu{position:absolute;left:50%;bottom:2.5%;transform:translateX(-50%);width:min(94%,820px);max-height:92%;overflow-y:auto;z-index:8;background:rgba(22,18,42,.96);box-shadow:0 6px 30px rgba(0,0,0,.6)}
-body.wide.hubwalk .screen #menu,body.cut .screen #menu{display:none}
+body.wide.hubwalk .screen #menu,body.cut .screen #menu,body.wide .screen #menu:has(#hubSwitch):not(.menu-open),body.enc #menu,body.enc #hubHud,body.enc #mapBtns{display:none!important}
 /* town HUD and on-map buttons */
 #hubHud{display:none;font-size:calc(12px*var(--ts));line-height:1.35;color:#e8ecff}
 #hubHud p{margin:0}
@@ -6609,13 +6609,13 @@ async function startBattle(c,noScene){
   if(sc){S=newState(c);S.over=true;await playCutscene(sc)}
   playSong(c.music||(c.key==='patrol'?'skirmish':c.final?'finale':c.scripted?'knight':'battle'));
   const fx=c===DREAM?null:c.key==='patrol'?(c.ambushMsg?'strike':'field'):'boss';
-  if(fx)await ENC.cover(fx,c);
+  document.body.classList.add('enc');try{if(fx)await ENC.cover(fx,c)}catch(e){}
   if(c.stages){S=newState(makeStage(c,0));S.base=c;S.stageIdx=0}else S=newState(c);
   S.itemsAtStart=JSON.stringify(P().items);PLOG.start(c);
   showBattleUI(true);log(c.stages?c.stages[0].line:`${c.villain} appears. Round 1!`);
   if(c.ambushMsg){S.skipBoss=true;log(c.ambushMsg)}
   if(c.roster.length>3)log('Benched friends rest and cool down. Use Swap to tag them in.');
-  renderStatus();if(fx)await ENC.reveal(fx);battle();
+  renderStatus();try{if(fx)await ENC.reveal(fx)}finally{document.body.classList.remove('enc')}battle();
 }
 // ================= Encounter transitions =================
 // Field fights: two flashes, then stone shards close in and fall away. When you sneak up on them first: same, in gold.

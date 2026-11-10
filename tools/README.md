@@ -28,6 +28,7 @@ All tests use Playwright and read `src/meteorite-kids-battle.html` unless `GAME=
 | `node tests/textsize.js` | Text size cycles, scales menus and dialogue, is remembered, no sideways scroll on phones |
 | `node tests/partygear.js` | Party gear slots open the forge (Back returns to Party) and find charms |
 | `node tests/layout.js [WxH,...]` | Picture size and page fit at several screen sizes; screenshots in tests/out/layout |
+| `node tests/encmenu.js` | No menu shows during the battle intro animation (town and chapter list) |
 | `node tests/dev-panel.js` | The Dev tools panel opens in the dev copy |
 | `node tests/render-songs.js` | Renders each song to WAV and reports levels |
 | `python3 tests/balance.py N keys [tune] [profiles] [difficulty]` | Simulated boss fights: win rate, rounds, health left |
