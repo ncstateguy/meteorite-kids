@@ -2416,10 +2416,11 @@ function openParty(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();
       <p style="margin:8px 0 2px"><b>${K.passive}</b> (human) · <b>${K.ppassive}</b> (morphed)</p><ul style="margin:4px 0 0;padding-left:18px">${ups}</ul>
     </div></div>
    <h3>Equipment</h3>
+   <p class="tip" style="margin:0 0 6px">Each hero has one weapon and one outfit. Josh upgrades them at the Old Forge, and the new one is worn right away. Charms are crafted there too, then equipped here.</p>
    <div class="slots">
-    <div class="slot" style="cursor:default">Weapon: ${weaponName(who,g.w)}<small>${g.w?`+${WEAPON_TIERS[g.w].v} ${main}`:'No bonus yet'} · ${tierOpen(WEAPON_TIERS[g.w+1])?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></div>
-    <div class="slot" style="cursor:default">Outfit: ${g.o?OUTFIT_TIERS[g.o].name:'Everyday clothes'}<small>${g.o?`+${OUTFIT_TIERS[g.o].v} HP`:'No bonus yet'} · ${tierOpen(OUTFIT_TIERS[g.o+1])?(progress.ch4?'Josh can upgrade it at the Old Forge.':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></div>
-    <div class="slot" style="cursor:default">Charm: ${g.c?`${CHARMS[g.c].name}`:'None'}<small>${g.c?CHARMS[g.c].desc:(owned.length?'Pick one below.':'Josh can craft charms at the Old Forge.')}</small></div>
+    <button class="slot" id="pgW" ${progress.ch4?'':'disabled'}>Weapon: ${weaponName(who,g.w)}<small>${g.w?`+${WEAPON_TIERS[g.w].v} ${main}`:'No bonus yet'} · ${tierOpen(WEAPON_TIERS[g.w+1])?(progress.ch4?'Upgrade at the forge':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></button>
+    <button class="slot" id="pgO" ${progress.ch4?'':'disabled'}>Outfit: ${g.o?OUTFIT_TIERS[g.o].name:'Everyday clothes'}<small>${g.o?`+${OUTFIT_TIERS[g.o].v} HP`:'No bonus yet'} · ${tierOpen(OUTFIT_TIERS[g.o+1])?(progress.ch4?'Upgrade at the forge':'Josh can upgrade it once he joins the team.'):'Fully upgraded for now.'}</small></button>
+    <button class="slot" id="pgC" ${owned.length||progress.ch4?'':'disabled'}>Charm: ${g.c?`${CHARMS[g.c].name}`:'None'}<small>${g.c?CHARMS[g.c].desc:(owned.length?'Pick one below.':progress.ch4?'Craft one at the forge':'Josh can craft charms once he joins the team.')}</small></button>
     ${owned.map(cid=>{const c=CHARMS[cid],holder=HERO_IDS.find(h=>p.gear[h].c===cid);return `<button class="slot" id="pc-${cid}" ${holder===who?'disabled':''}>${holder===who?'Wearing':'Equip'}: ${c.name}<small>${c.desc}${holder&&holder!==who?` · now worn by ${KIDS[holder].kid}, equipping moves it`:''}</small></button>`}).join('')}
     ${g.c?`<button class="slot" id="pcOff">Take off the ${CHARMS[g.c].name}</button>`:''}
    </div>
@@ -2432,6 +2433,8 @@ function openParty(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();
   owned.forEach(cid=>{const b=$('pc-'+cid);if(b)b.onclick=()=>{HERO_IDS.forEach(h=>{if(p.gear[h].c===cid)p.gear[h].c=null});g.c=cid;saveProgress();sfx('confirm');openParty(who)}});
   if($('pcOff'))$('pcOff').onclick=()=>{g.c=null;saveProgress();sfx('cancel');openParty(who)};
   lineupIds().forEach((id,i,arr)=>{const mv=d=>{const a=arr.slice(),j=i+d;[a[i],a[j]]=[a[j],a[i]];progress.lineup=a;saveProgress();sfx('cursor');openParty(who);const b=$((d<0?'lu-up-':'lu-dn-')+id);if(b&&!b.disabled&&navMode!=='mouse')setFocus(b,true)};$('lu-up-'+id).onclick=()=>mv(-1);$('lu-dn-'+id).onclick=()=>mv(1)});
+  const toForge=()=>{FORGE_RET=who;openForge(who)};if($('pgW'))$('pgW').onclick=toForge;if($('pgO'))$('pgO').onclick=toForge;
+  if($('pgC'))$('pgC').onclick=()=>{const first=$('menu').querySelector('[id^="pc-"]:not([disabled])');if(first){setFocus(first);first.scrollIntoView({block:'nearest'})}else if(progress.ch4)toForge()};
   $('partyBack').onclick=()=>{HUB.saving=false;enterHub()};
 }
 let PARTY_WHO=null;
@@ -2520,6 +2523,7 @@ const canPay=(cost,coins)=>{const p=P();return p.coins>=coins&&Object.entries(co
 const pay=(cost,coins)=>{const p=P();p.coins-=coins;Object.entries(cost).forEach(([m,n])=>{p.mats[m]-=n;if(!p.mats[m])delete p.mats[m]})};
 const costTxt=(cost,coins)=>{const p=P();return Object.entries(cost).map(([m,n])=>`<span style="color:${(p.mats[m]||0)>=n?'inherit':'var(--danger)'}">${m} ${p.mats[m]||0}/${n}</span>`).join(' · ')+` · <span style="color:${p.coins>=coins?'inherit':'var(--danger)'}">${coins} coins</span>`};
 const weaponName=(id,t)=>t?`${WEAPON_TIERS[t].pre} ${WEAPON_NAMES[id]}`:`Old ${WEAPON_NAMES[id]}`;
+let FORGE_RET=null;
 function openForge(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();const ids=HERO_IDS.filter(heroUnlocked);who=who&&ids.includes(who)?who:(FORGE_WHO&&ids.includes(FORGE_WHO)?FORGE_WHO:ids[0]);FORGE_WHO=who;
   const g=p.gear[who],K=KIDS[who],st=MAIN_STAT[who]==='atk'?'Attack':'Magic';
   const wn=tierOpen(WEAPON_TIERS[g.w+1])?WEAPON_TIERS[g.w+1]:null,on=tierOpen(OUTFIT_TIERS[g.o+1])?OUTFIT_TIERS[g.o+1]:null;
@@ -2536,7 +2540,7 @@ function openForge(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();
       return own?`<button class="slot" id="eq-${cid}" ${holder===who?'disabled':''}>${holder===who?'Equipped':'Equip'}: ${c.name}<small>${c.desc}${holder&&holder!==who?` · now worn by ${KIDS[holder].kid}`:''}</small></button>`
         :`<button class="slot" id="cc-${cid}" ${canPay(c.cost,c.coins)?'':'disabled'}>Craft: ${c.name}<small>${c.desc}. Needs ${costTxt(c.cost,c.coins)}</small></button>`}).join('')}
     ${g.c?`<button class="slot" id="unEq">Take off the ${CHARMS[g.c].name}</button>`:''}
-   </div><p class="tip" id="forgeMsg"></p><div class="row"><button id="forgeBack">Back</button><button id="forgeCh">Replay Chapter 4</button></div>`;
+   </div><p class="tip" id="forgeMsg"></p><div class="row"><button id="forgeBack">${FORGE_RET?'Back to Party':'Back'}</button><button id="forgeCh">Replay Chapter 4</button></div>`;
   const msg=t=>{const m=$('forgeMsg');if(m)m.textContent=t};
   ids.forEach(id=>$('fw-'+id).onclick=()=>openForge(id));
   if($('craftW'))$('craftW').onclick=()=>{if(!canPay(wn.cost,wn.coins))return;pay(wn.cost,wn.coins);g.w++;saveProgress();sfx('clang');openForge(who);msg(`Clang! ${K.kid} now has the ${weaponName(who,g.w)}.`)};
@@ -2545,7 +2549,7 @@ function openForge(who){HUB.saving=true;HUB.keys={};HUB.target=null;const p=G();
     if(e)e.onclick=()=>{HERO_IDS.forEach(h=>{if(p.gear[h].c===cid)p.gear[h].c=null});g.c=cid;saveProgress();sfx('confirm');openForge(who);msg(`${K.kid} puts on the ${c.name}.`)};
     if(cc)cc.onclick=()=>{if(!canPay(c.cost,c.coins))return;pay(c.cost,c.coins);p.charms.push(cid);if(!g.c)g.c=cid;saveProgress();sfx('magic');openForge(who);msg(`Josh hands over the ${c.name}.${g.c===cid?` ${K.kid} puts it on.`:''}`)}});
   if($('unEq'))$('unEq').onclick=()=>{g.c=null;saveProgress();sfx('cancel');openForge(who)};
-  $('forgeBack').onclick=()=>{HUB.saving=false;enterHub()};$('forgeCh').onclick=()=>{HUB.saving=false;exitHubTo(CHAPTERS.find(c=>c.key==='ch4'))};
+  $('forgeBack').onclick=()=>{if(FORGE_RET){const r=FORGE_RET;FORGE_RET=null;openParty(FORGE_WHO||r);return}HUB.saving=false;enterHub()};$('forgeCh').onclick=()=>{HUB.saving=false;exitHubTo(CHAPTERS.find(c=>c.key==='ch4'))};
 }
 let FORGE_WHO=null;
 
