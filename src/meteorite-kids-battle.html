@@ -4794,8 +4794,8 @@ async function hubInteract(o){
   if(o.type==='sign'&&HUB.age==='adult'&&o.ch==='ch10'&&progress.ch21){const c=CHAPTERS.find(c=>c.key==='ch22');return enterDungeon(c,o.name)}
   if(o.type==='sign'&&HUB.age==='adult'&&o.ch==='ch7'&&progress.ch21){
     if(!progress.ch22)return hubSay([['','The crater is quiet.'],me('The relic sites first. Josh has the truck ready on the east road.')]);
-    if(!progress.ch23)return exitHubTo(CHAPTERS.find(c=>c.key==='ch23'));
-    if(!progress.ch27){const r=await hubChoice('The rift over the crater is open. Go through and face Vorath?',['Go','Not yet']);if(r===0)exitHubTo(CHAPTERS.find(c=>c.key==='ch27'));return}
+    if(!progress.ch23)return enterDungeon(CHAPTERS.find(c=>c.key==='ch23'),o.name);
+    if(!progress.ch27){const r=await hubChoice('The rift over the crater is open. Go through and face Vorath?',['Go','Explore the crater','Not yet']);if(r===0)exitHubTo(CHAPTERS.find(c=>c.key==='ch27'));else if(r===1){HUB.down=new Set();goArea('cr_wall','entry')}return}
     if(!progress.ch25&&HUB.state.ep_cer)return playFinale();
     return hubSay([['','The crater park. Five small gray stones sit on the plaque, warm in the sun.']])}
   if(o.type==='sign'&&HUB.age==='adult'&&o.ch==='ch7'&&progress.ch19&&!progress.ch21){
@@ -5240,6 +5240,9 @@ const PAGES={
  mem1:{n:10,part:2,ch:'ch13',where:'Hometown High',kind:'memory',find:'a sliver of crystal that hums when you touch it',title:'Memory: The Tower of Lights',
   text:['Two moons hang over a city of white towers. At the top of the tallest one, five lights burn in a circle around a sixth, a crimson light in the center that holds them together.','Every night, the people climb the stairs just to sit near them. Nobody up there is ever alone.'],
   react:()=>[['lightheart','Five lights. Those were our stones. That was home for them.'],['nightshade','And a red one in the middle. Holding them together. That was Aldric\'s.']]},
+ warden:{n:15,part:2,ch:'ch23',where:'the crater',kind:'memory',find:'a sliver of crystal, still warm',title:"Memory: The Warden's Last Note",
+  text:['Before the dark reached the tower, the Warden wrote one last message and sealed it inside the crimson light.','"To the five who come after: we held our lights too tightly, and we hid our cracks from each other. Do not. The light was never ours to keep."'],
+  react:()=>[['nightshade','Aldric carried this for fifty years and never knew.'],['lightheart','Then we read it for him.']]},
  mem2:{n:11,part:2,ch:'ch14',where:'the Hollow',kind:'memory',find:'a sliver of crystal, warm as a hand',title:'Memory: The Keepers',
   text:['The lights always chose the young. Each keeper was a child who carried one virtue: Hope, Courage, Calm, Making, or Memory.','The Warden stood in the middle and held all five together, so no keeper ever stood alone. Every night they passed the lights between them, so no one held one for too long.'],
   react:()=>[['nightshade','Passed between them. "They were meant to be given." That is what Aldric meant.'],['scareth','Wait. Courage? Mine is Courage? Not... scary?'],['nightshade','Courage, Joseph. Power over fear. Not fear itself.']]},
@@ -5266,10 +5269,10 @@ async function openGold(o){const S2=HUB.state,L=HUB.leader,p=G();
     startPatrol({z:{id:'gold_'+o.id,kind:o.guard.kind,name:o.guard.name,bg:o.guard.bg}},false,{hp:1.4,villain:'Gold Box Guards',victory:'The guards scatter. The gold box is unguarded.',
       onWin(){HUB.state[o.id+'_g']=true;saveHub()}});return}
   if(o.power&&!S2[o.id+'_s']){if(L!==POWER_OWNER[o.power])return needPower(o);if(o.power==='flare'&&!progress.pw_flare)return hubSay([['',o.hint]]);if(await sputter(L,o))return;await castPower(o);S2[o.id+'_s']=true;saveHub();await hubSay(sayLines(o.done))}
-  S2[o.id]=true;if(!p.charms.includes(o.charm))p.charms.push(o.charm);p.pages=p.pages||[];if(!p.pages.includes(o.page))p.pages.push(o.page);saveProgress();saveHub();
+  S2[o.id]=true;if(o.charm&&!p.charms.includes(o.charm))p.charms.push(o.charm);p.pages=p.pages||[];if(!p.pages.includes(o.page))p.pages.push(o.page);saveProgress();saveHub();
   sfx('magic');rumble(.4,260);for(let i=0;i<3;i++)burst(o.tx*TS+8,o.ty*TS+6,i?'#ffd04a':'#fff8c0',14);HUB.banner={s:'Gold Box!',t:90};
   const c=CHARMS[o.charm],g=PAGES[o.page];
-  await hubSay([['',`Inside the gold box: the ${c.name}! ${c.desc}.`],['','(Only one exists. Give it to someone on the Party screen.)'],['',`Tucked underneath is ${g.find}.`],...pageLines(o.page),...(g.react?sayLines(g.react().filter(([s])=>!KIDS[s]||heroUnlocked(s))):[]),['',`(Page added to the Scrapbook. ${p.pages.filter(i=>(PAGES[i].part||1)===(g.part||1)).length} of ${Object.keys(PAGES).filter(i=>(PAGES[i].part||1)===(g.part||1)).length} ${g.part===2?'memories':'pages'} found.)`]])}
+  await hubSay([...(c?[['',`Inside the gold box: the ${c.name}! ${c.desc}.`],['','(Only one exists. Give it to someone on the Party screen.)'],['',`Tucked underneath is ${g.find}.`]]:[['',`Inside the gold box is ${g.find}.`]]),...pageLines(o.page),...(g.react?sayLines(g.react().filter(([s])=>!KIDS[s]||heroUnlocked(s))):[]),['',`(Page added to the Scrapbook. ${p.pages.filter(i=>(PAGES[i].part||1)===(g.part||1)).length} of ${Object.keys(PAGES).filter(i=>(PAGES[i].part||1)===(g.part||1)).length} ${g.part===2?'memories':'pages'} found.)`]])}
 function drawGold(o,x,y){const S2=HUB.state,open=S2[o.id],hidden=o.power==='glow'&&!S2[o.id+'_s'];
   if(o.guard&&!S2[o.id+'_g'])for(let i=0;i<2;i++){const gx=Math.round(x+o.guard.side*(13+i*10)),gy=Math.round(y-3+(i%2)*3);if(o.guard.kind==='ashling')drawAshling(gx-1,gy+2,i);else drawFoe(o.guard.kind,gx,gy,i)}
   if(hidden){if(T%80<8){px(x+7,y+6,2,2,'#fff8c0');px(x+6,y+7,4,0.5,'#fff8c0')}return}
@@ -5718,6 +5721,37 @@ DUNGEONS.ch22={scene:'ch22open',start:'rr_hub',name:'the Relic Road',town:[37,15
 const SITE=["####################","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","#########E##########"];
 const RELIC=(id,who,g,name,hint,learn,lines)=>({type:'relic',area:true,id,who,g,tx:9,ty:3,name,hint,learn,solid:true,lines:[...lines,who==='lightheart'?['',"Jake's stone stays dark. But he can feel the other four now, and he can pass his share of the light to any of them."]:['',`Light pours from the pedestal into ${KIDS[who].kid}'s stone. It glows again, just a little.`]]});
 const siteGoal=(id,hint)=>()=>aSt()[id]?goalTo('Head back to the Relic Road.',9,9):goalTo(hint,9,3);
+
+// ======== Chapter 23: down into the crater ========
+Object.assign(AREAS,{
+ cr_wall:{name:'The Crater · Lumoran Wall',short:'the crater wall',ch:'ch23',theme:'mine',tf:{z:'cr_wall'},
+  rows:["#########D##########","########zzz#########","#..................#","#...m..........m...#","#..................#","#..................#","#..................#","#.m................#","#..................#","#########E##########"],
+  spawns:{entry:[9,8,'up'],back:[9,2,'down']},
+  intro:()=>[['','A path of loose stones winds down the inside of the crater. Faint purple writing covers the walls.'],['nightshade','Lumoran. The whole wall.']],
+  objs:()=>[AEXIT(9,9,'town'),AEXIT(9,0,'cr_pool','fromWall'),PRIZE('cr_c1',17,8,{item:'bandaid'}),
+    {type:'runestone',area:true,id:'cr_runes',tx:12,ty:3,name:'Lumoran Wall',power:'hex',sets:'cr_wall',solid:true,hint:'Purple writing covers the wall from top to bottom. A glowing seal blocks the path down.',
+     done:[['','Tricia lays her hand on the wall. The writing lights up, one line at a time.'],['nightshade','"The lights were a bridge. Sent to guard this world until it could guard itself."'],['kaytahn','And then give their power away.'],['','The purple seal across the path fades.']]}],
+  goal(){return aSt().cr_wall?goalTo('The seal is open. Keep going down.',9,0):goalTo('Lumoran writing covers the wall. Tricia can read it.',12,3)}},
+ cr_pool:{name:'The Crater · Sunken Ledge',short:'the sunken ledge',ch:'ch23',theme:'mine',tf:{f:'cr_fill',k:'cr_slab'},
+  rows:["#########D##########","##.........m......##","#..................#","#________kk________#","#..................#","#ffffffffffffffffff#","#..................#","#..............m...#","#..................#","#########E##########"],
+  spawns:{fromWall:[9,8,'up'],back:[9,1,'down']},
+  intro:()=>[['','Halfway down, rainwater has pooled across the crater. A crack splits the ledge beyond it.'],['thornforge','There was a bridge here once. Pieces of one, anyway.']],
+  objs:()=>[AEXIT(9,9,'cr_wall','back'),AEXIT(9,0,'cr_floor','fromPool'),
+    {type:'basin',area:true,id:'cr_basin',tx:4,ty:6,name:'Crater Pool',power:'tide',sets:'cr_fill',solid:true,hint:'The pool sits low in a bed of mud. Broken crates are stuck at the bottom.',
+     done:[['','Lindsey lifts her hands. The pool rises, and the crates float up level with the ledge.'],['me:kaytahn','Still got it.']]},
+    {type:'repair',area:true,id:'cr_fix',tx:14,ty:4,name:'Fallen Bridge',power:'heave',sets:'cr_slab',solid:true,hint:'The old bridge across the crack has fallen in. The planks are still here.',
+     done:[['','Josh drags the planks into place and wedges them tight with a chunk of black glass.'],['me:thornforge','Not my best work. It will hold.']]}],
+  goal(){const S2=aSt();return !S2.cr_fill?goalTo('The pool is too low to cross. Lindsey could raise it.',4,6):!S2.cr_slab?goalTo('The bridge across the crack fell in. Josh can fix it.',14,4):goalTo('Keep going down.',9,0)}},
+ cr_floor:{name:'The Crater · Crater Floor',short:'the crater floor',ch:'ch23',theme:'mine',
+  rows:["####################","#######......##|...#","#..............|...#","#..............|...#","#..............||||#","#..................#","#..............m...#","#..................#","#..................#","#########E##########"],
+  spawns:{fromPool:[9,8,'up']},
+  intro:()=>[['','The bottom of the crater. Something big is down here, and it is not moving.'],['scareth','Cool. I hate it.']],
+  objs:()=>[AEXIT(9,9,'cr_pool','back'),SAVEPT(4,7),GOLD('gold_ch23',17,2,{page:'warden'}),
+    {type:'shadow',area:true,id:'cr_sh1',tx:13,ty:3,to:[17,3],name:'Deep Shadow',power:'shadow',hint:'A shadow pools against the bars. Behind them, something gold glints.',done:[['','Joseph slips into the shadow and steps out on the other side of the bars.'],['me:scareth','Still the best at this.']]},
+    {type:'shadow',area:true,id:'cr_sh2',tx:16,ty:3,to:[12,3],name:'Deep Shadow',power:'shadow',hint:'The way back out.'},
+    BOSSD('ch23',9,1,'The Crater Floor','At the very bottom of the crater, a suit of crimson armor kneels in the dust.','Go down')],
+  goal(){return progress.ch23?null:goalTo('Something is waiting at the very bottom.',9,1)}}});
+DUNGEONS.ch23={start:'cr_wall',name:'the crater',town:[6,27],enterText:'The crater is quiet. A path of loose stones winds down the inside wall.',againText:'The crater is quiet. Lumoran writing glows faintly on the walls.'};
 Object.assign(AREAS,{
  rr_hub:{name:'The Relic Road',short:'the Relic Road',ch:'ch22',theme:'trail',tf:{z:'rr_all'},
   rows:["##D##D########D##D##","#.......#.#........#","#.......#z#........#","#..................#","#..................#","#..................#","#..................#","#..................#","#..................#","####D####E##########"],
@@ -6478,9 +6512,6 @@ SCENES.ch22={pre:{label:'Chapter 22 · The Relic Sites',steps:[
   {cap:'Next: the crater, where it all began.',top:true},{fade:'out',ms:1000}]}};
 SCENES.ch23={pre:{label:'Chapter 23 · The Crater',steps:[
   {fx:'reset'},{bg:'woods',woods:{red:false,crater:true},music:'mystery'},...P3S,{fade:'in',ms:1000},
-  {cap:'The crater. This time, they go down.',top:true},
-  {say:'nightshade',text:'The walls are covered in Lumoran. "The lights were a bridge. Sent to guard this world until it could guard itself."'},
-  {say:'kaytahn',text:'And then give their power away.'},
   {fx:'shake',n:14},{cap:'At the bottom, a suit of crimson armor stands up.',top:true},{boss:'ch23',ms:1400},
   {say:'scareth',text:'Aldric.'},
   {say:'lightheart',text:'Not him. Just what he left behind.'},

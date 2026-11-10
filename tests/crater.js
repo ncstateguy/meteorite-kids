@@ -1,0 +1,38 @@
+const path=require('path');const GAME='file://'+path.resolve(process.env.GAME||path.join(__dirname,'../src/meteorite-kids-battle.html'));const OUT=path.join(__dirname,'out','crater');require('fs').mkdirSync(OUT,{recursive:true});
+// Crater dungeon (Ch 23): each room's path opens only after its puzzle, with the right hero; gold box gives the Warden page; Sentinel door at the end.
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1366,height:768}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.route('**/fonts.googleapis.com/**',r=>r.abort());await p.goto(GAME);await p.waitForTimeout(800);
+await p.evaluate(()=>{
+  window.__drain=async()=>{for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,40));if(HUB.choice){choicePick(HUB.choice.opts.length-1);continue}if(HUB.talking)hubAdvance();else if(i>20)break}};
+  window.__use=async(id,who)=>{await __drain();HUB.leader=who;HUB.state.hero=who;const o=OBJS.find(o=>o.id===id);if(!o)return 'missing '+id;HUB.x=o.tx*TS+8;HUB.y=(o.ty+1)*TS+12;HUB.near=o;const pr=hubInteract(o);await __drain();await pr;await __drain();return 'ok'};
+  window.__reach=(from,to)=>{const M=HUB.map,H=M.length,W=M[0].length,solidObj=new Set(OBJS.filter(o=>o.solid&&o.tx!=null).map(o=>o.tx+','+o.ty));const seen=new Set([from+'']);const q=[from];
+    while(q.length){const [x,y]=q.shift();if(x===to[0]&&y===to[1])return true;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(nx<0||ny<0||nx>=W||ny>=H||seen.has(k))continue;const c=M[ny][nx];
+      const goal=nx===to[0]&&ny===to[1];if(!goal&&(areaSolid(c,nx,ny)||solidObj.has(k)||c==='D'||c==='E'))continue;seen.add(k);q.push([nx,ny])}}return false};
+});
+const r={};const shot=n=>p.screenshot({path:path.join(OUT,n+'.png')});
+await p.evaluate(async()=>{['opening','dream','ch1','ch2','ch3','ch4','ch5','ch6','ch7','ch8','ch9','ch10','ch11','ch12','interlude','part2','ch13','ch14','ch15','ch16','ch17','ch18a','ch18','part3','ch19','ch20','ch21','ch22'].forEach(k=>progress[k]=true);
+  HUB.age='adult';HUB.state.hero='lightheart';Object.keys(HERO_JOIN).forEach(id=>HUB.state['met_'+id]=true);HUB.firstMorning=false;TITLE.active=false;HUB.down=new Set();goArea('cr_wall','entry');await __drain()});
+await p.waitForTimeout(400);await shot('1_wall');
+r.wall_before=await p.evaluate(()=>__reach([9,8],[9,0]));
+r.wall_wrongHero=await p.evaluate(async()=>{await __use('cr_runes','lightheart');return !!HUB.state.cr_wall});
+r.wall_tricia=await p.evaluate(async()=>{await __use('cr_runes','nightshade');return !!HUB.state.cr_wall});
+r.wall_after=await p.evaluate(()=>__reach([9,8],[9,0]));
+await p.evaluate(async()=>{goArea('cr_pool','fromWall');await __drain()});await p.waitForTimeout(400);await shot('2_pool');
+r.pool_before=await p.evaluate(()=>__reach([9,8],[9,0]));
+r.pool_fixUnreachable=await p.evaluate(()=>!__reach([9,8],[13,4]));
+await p.evaluate(async()=>{await __use('cr_basin','kaytahn')});
+r.pool_afterFill_fixReachable=await p.evaluate(()=>__reach([9,8],[13,4]));
+r.pool_afterFill_door=await p.evaluate(()=>__reach([9,8],[9,0]));
+await p.evaluate(async()=>{await __use('cr_fix','thornforge')});
+r.pool_flags=await p.evaluate(()=>({fill:HUB.state.cr_fill,slab:HUB.state.cr_slab,leader:HUB.leader,area:HUB.area}));r.pool_after=await p.evaluate(()=>__reach([9,8],[9,0]));
+await p.waitForTimeout(300);await shot('2_pool_done');
+await p.evaluate(async()=>{goArea('cr_floor','fromPool');await __drain()});await p.waitForTimeout(400);await shot('3_floor');
+r.floor_goldReachable=await p.evaluate(()=>__reach([9,8],[17,3]));
+r.floor_bossReachable=await p.evaluate(()=>__reach([9,8],[9,2]));
+await p.evaluate(async()=>{await __use('cr_sh1','scareth')});r.floor_shadowTo=await p.evaluate(()=>[Math.floor(HUB.x/TS),Math.floor((HUB.y-2)/TS)]);
+await p.evaluate(async()=>{await __use('gold_ch23','scareth')});r.page=await p.evaluate(()=>(G().pages||[]).includes('warden'));
+r.bossDoor=await p.evaluate(()=>!!OBJS.find(o=>o.type==='bossdoor'&&o.ch==='ch23'));
+r.preSceneTrimmed=await p.evaluate(()=>!JSON.stringify(SCENES.ch23.pre).includes('This time, they go down'));
+console.log(JSON.stringify(r,null,1),errs);
+const ok=!r.wall_before&&!r.wall_wrongHero&&r.wall_tricia&&r.wall_after&&!r.pool_before&&r.pool_fixUnreachable&&r.pool_afterFill_fixReachable&&!r.pool_afterFill_door&&r.pool_after&&!r.floor_goldReachable&&r.floor_bossReachable&&r.floor_shadowTo[0]===17&&r.page&&r.bossDoor&&r.preSceneTrimmed&&!errs.length;
+console.log(ok?'PASS':'FAIL');await b.close();process.exit(ok?0:1)})();
