@@ -30,6 +30,7 @@ All tests use Playwright and read `src/meteorite-kids-battle.html` unless `GAME=
 | `node tests/layout.js [WxH,...]` | Picture size and page fit at several screen sizes; screenshots in tests/out/layout |
 | `node tests/encmenu.js` | No menu shows during the battle intro animation (town and chapter list) |
 | `node tests/crater.js` | Crater dungeon: each path opens only after its puzzle, gold box gives the Warden page |
+| `node tests/p3.js` | Long boss names fit, Combo! only on set-up hits, online messages when the service does not answer, Feeding Frenzy rename |
 | `node tests/dev-panel.js` | The Dev tools panel opens in the dev copy |
 | `node tests/render-songs.js` | Renders each song to WAV and reports levels |
 | `python3 tests/balance.py N keys [tune] [profiles] [difficulty]` | Simulated boss fights: win rate, rounds, health left |
